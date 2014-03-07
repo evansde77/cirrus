@@ -46,7 +46,7 @@ def read_gitconfig():
         content = handle.read()
 
     if "[cirrus]" in content:
-
+        pass
 
 
 def main():

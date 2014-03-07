@@ -22,13 +22,13 @@ cd $LOCATION
 # replace this with git clone of cirrus repo
 git clone ${CIRRUS_REPO} .
 
+cd cirrus
 # bootstrap virtualenv
-virtualenv --distribute bootstrap_venv
-. bootstrap_venv/bin/activate
-pip install -r cirrus/bootstrap-requirements.txt
+virtualenv --distribute venv
+. venv/bin/activate
+pip install -r bootstrap-requirements.txt
 
 # run installer
-cd cirrus
 python bootstrap.py
 
 
