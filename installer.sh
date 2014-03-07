@@ -20,7 +20,7 @@ echo "Installing cirrus in ${LOCATION}..."
 mkdir -p $LOCATION
 cd $LOCATION
 # replace this with git clone of cirrus repo
-git clone ${CIRRUS_REPO} .
+git clone ${CIRRUS_REPO} -b develop .
 
 cd cirrus
 # bootstrap virtualenv
