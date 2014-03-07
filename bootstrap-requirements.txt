@@ -3,5 +3,4 @@ venv/cache/argparse-1.2.1.tar.gz
 venv/cache/distribute-0.7.3.zip
 venv/cache/gitconfig-0.0.2.tar.gz
 venv/cache/requests-2.2.1-py2.py3-none-any.whl
-venv/cache/setuptools-2.2-py2.py3-none-any.whl
 venv/cache/virtualenv-1.11.4-py2.py3-none-any.whl
