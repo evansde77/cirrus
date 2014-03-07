@@ -8,7 +8,11 @@ cirrus python bootstrap script invoked by the bash installer script
 import os
 import json
 import getpass
+import gitconfig
+import requests
+from xml.dom.minidom import parseString
 
+GITHUB_AUTH_URL = "https://api.github.com/authorizations"
 
 def ask_question(question, default=None, valid=None):
     """
@@ -39,22 +43,126 @@ def ask_question(question, default=None, valid=None):
             raise RuntimeError(msg)
     return result
 
+def create_github_token(git_config):
+    """
+    _create_github_token_
+
+    Prompts for github user and pass and generates an access
+    token which is added to .gitconfig
+
+    We first look for tokens that are present with cirrus in
+    the notes field and use that if it exists.
+
+    If not we proceed to generate a token and save it to .gitconfig
+
+    Once the token is in place we can use it to make github API
+    requests for things like pull requests
+
+    """
+    user = ask_question('what is your github username?', default=os.environ['USER'])
+    passwd = getpass.getpass('what is your github password?')
+    resp = requests.get(GITHUB_AUTH_URL, auth=(user, passwd))
+    resp.raise_for_status()
+    apps = resp.json()
+    matched_app = None
+    for app in apps:
+        if app['app']['name'] == 'cirrus script (API)':
+            matched_app = app
+            print "Token found for cirrus script... reusing it..."
+            break
+
+    if matched_app is None:
+        # need to create a new token
+        print "Creating a new Token for github access..."
+        resp = requests.post(
+            GITHUB_AUTH_URL,
+            auth=(user, passwd),
+            data=json.dumps({"scopes":["gist","repo"], "note": "cirrus script"})
+            )
+        resp.raise_for_status()
+        matched_app = resp.json()
+
+    token = matched_app['token']
+    url = matched_app['url']
+    git_config.set('cirrus', 'github-user', user)
+    git_config.set('cirrus', 'github-token', token)
+    git_config.set('cirrus', 'github-url', url)
+    del passwd
+    return
+
+
+def create_fogbugz_token(git_config):
+    """
+    _create_fogbugz_token_
+
+    Call out to FB to get the access token for the users
+    FB account and add it to gitconfig, which will allow us
+    to access and update ticket information as work progresses
+
+    """
+    fb_url = "https://cloudant.fogbugz.com/api.asp"
+    email = ask_question(
+        'what is your fogbugz user email?',
+        default='{0}@cloudant.com'.format(os.environ['USER'])
+    )
+    passwd = getpass.getpass('what is your fogbugz password?')
+    params = {'cmd': 'logon', 'email' : email, 'password': passwd}
+    resp = requests.get(fb_url, params=params)
+    resp.raise_for_status()
+    # response comes back as an xml snippet
+    xml_resp = resp.text
+    dom = parseString(xml_resp)
+    token_elem = dom.getElementsByTagName('token')[0]
+    token = token_elemq.firstChild.wholeText
+    # add details to gitconfig
+    git_config.set('cirrus', 'fogbugz-email', email)
+    git_config.set('cirrus', 'fogbugz-url', fb_url)
+    git_config.set('cirrus', 'fogbugz-token', token)
+    del passwd
+    return
 
 def read_gitconfig():
-    gitconfig = os.path.join(os.environ['HOME'], '.gitconfig')
-    with open(gitconfig, 'r') as handle:
-        content = handle.read()
+    """
+    _read_gitconfig_
 
-    if "[cirrus]" in content:
-        pass
+    Looks for ~/.gitconfig and reads it to determine wether
+    there is already a token for github access
 
+    """
+    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+    config = gitconfig.config(gitconfig_file)
+
+    github_user = config.get('cirrus', 'github-user')
+    github_token = config.get('cirrus', 'github-token')
+    if github_token is None:
+        print "We need to generate a github access token"
+        print "Please enter you github username and password when prompted"
+        print "(Dont worry, they arent stored just used to create the token)"
+        create_github_token(config)
+    else:
+        print "Looks like you already have a github token in .gitconfig..."
+
+    fb_token = config.get('cirrus', 'fogbugz-token')
+    if fb_token is None:
+        print "Generating Fogbugz Access Token"
+        create_fogbugz_token(config)
+    else:
+        print "Looks like you already have a FB token in .gitconfig..."
+
+    return config
 
 def main():
-    """main installer call"""
-    github_username = ask_question('what is your github username?', default=os.environ['USER'])
-    #install_dir = ask_question('where should we install cirrus?', default=os.path.join(os.environ['HOME'], '.cirrus'))
-    #github_pass = getpass.getpass('what is your github password?')
-    #read_gitconfig()
+    """
+    main installer call
+
+    - Sets up github access token
+    - Sets up FB access token
+    - Sets up full virtualenv installation
+    - Adds aliases to git pointing at the commands defined in src
+
+    """
+    config = read_gitconfig()
+
 
 if __name__ == '__main__':
     main()
