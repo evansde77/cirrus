@@ -16,7 +16,7 @@ read -p "Installation directory [${INSTALL_DIR}]: " LOCATION
 LOCATION=${LOCATION:-$INSTALL_DIR}
 echo "LOCATION=${LOCATION}"
 
-
+echo "Installing cirrus in ${LOCATION}..."
 mkdir -p $LOCATION
 cd $LOCATION
 # replace this with git clone of cirrus repo
@@ -26,7 +26,7 @@ cd cirrus
 # bootstrap virtualenv
 virtualenv --distribute venv
 . venv/bin/activate
-pip install -r bootstrap-requirements.txt
+pip install -r bootstrap-requirements.txt 1>/dev/null
 
 # run installer
 python bootstrap.py
