@@ -29,6 +29,8 @@ virtualenv --distribute venv
 pip install -r bootstrap-requirements.txt 1>/dev/null
 
 # run installer
+export CIRRUS_HOME=$LOCATION/cirrus
 python bootstrap.py
+python setup.py develop
 
 

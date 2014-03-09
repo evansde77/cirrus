@@ -113,13 +113,14 @@ def create_fogbugz_token(git_config):
     xml_resp = resp.text
     dom = parseString(xml_resp)
     token_elem = dom.getElementsByTagName('token')[0]
-    token = token_elemq.firstChild.wholeText
+    token = token_elem.firstChild.wholeText
     # add details to gitconfig
     git_config.set('cirrus', 'fogbugz-email', email)
     git_config.set('cirrus', 'fogbugz-url', fb_url)
     git_config.set('cirrus', 'fogbugz-token', token)
     del passwd
     return
+
 
 def read_gitconfig():
     """
@@ -151,6 +152,58 @@ def read_gitconfig():
 
     return config
 
+def update_shell_profile():
+    """
+    _update_shell_profile_
+
+    append a line that sets CIRRUS_HOME to ~/.bash_profile
+    or ~/.bashrc whichever one is chosen.
+
+    In case of non-bash shell, user is on their own due to
+    being weird
+
+    """
+    cirrus_home = os.environ['CIRRUS_HOME']
+    if os.environ.get('SHELL') == '/bin/bash':
+        bash_prof = '{0}/.bash_profile'.format(os.environ['HOME'])
+        bash_rc = '{0}/.bashrc'.format(os.environ['HOME'])
+        if os.path.exists(bash_prof):
+            default = bash_prof
+        else:
+            default = bash_rc
+        bash = ask_question(
+            'what is your bash_profile file?',
+            default=default
+        )
+
+        newline = 'export CIRRUS_HOME={0}'.format(cirrus_home)
+        print 'adding CIRRUS_HOME to {0}...'.format(bash)
+        print newline
+
+        # dupe prevention
+        dupe_found = None
+        for line in  open(bash, 'r'):
+            if line.startswith('export CIRRUS_HOME'):
+                dupe_found = line
+        if dupe_found is None:
+            with open(bash, 'a') as handle:
+                handle.write("\n")
+                handle.write(newline)
+                handle.write("\n")
+        else:
+            if dupe_found != newline:
+                msg = (
+                    "Looks like your bash profile {0} already contains a CIRRUS_HOME "
+                    "Please verify it is set to {1} after this script completes"
+                ).format(bash, cirrus_home)
+                print msg
+
+    else:
+        print "Please add the environment variable setting:"
+        print "CIRRUS_HOME={0}".format(os.environ['CIRRUS_HOME'])
+        print "To the rc/startup file of whatever shell you are using"
+
+
 def main():
     """
     main installer call
@@ -159,9 +212,11 @@ def main():
     - Sets up FB access token
     - Sets up full virtualenv installation
     - Adds aliases to git pointing at the commands defined in src
+    - Needs to add export CIRRUS_HOME to bash_profile or bashrc
 
     """
     config = read_gitconfig()
+    update_shell_profile()
 
 
 if __name__ == '__main__':
