@@ -212,11 +212,18 @@ def main():
     - Sets up FB access token
     - Sets up full virtualenv installation
     - Adds aliases to git pointing at the commands defined in src
-    - Needs to add export CIRRUS_HOME to bash_profile or bashrc
+    - Adds export CIRRUS_HOME to bash_profile or bashrc, or complains
+      about people who dont use bash
 
     """
     config = read_gitconfig()
     update_shell_profile()
+    # set the git alias in gitconfig
+    config.set(
+        'alias',
+        'cirrus',
+        '! {0}/bin/cirrus'.format(os.environ['CIRRUS_HOME'])
+    )
 
 
 if __name__ == '__main__':

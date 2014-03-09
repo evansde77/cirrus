@@ -16,6 +16,8 @@ import sys
 import signal
 import subprocess
 
+import cirrus.environment as env
+
 
 def install_signal_handlers():
     """
@@ -62,7 +64,7 @@ def main():
     entry points by setup.py as cirrus_commands
 
     """
-    home = os.environ.get('CIRRUS_HOME', os.path.expanduser('~/.cirrus'))
+    home = env.virtualenv_home()
     commands = []
     for script in pkg_resources.iter_entry_points(group="cirrus_commands"):
         comm = str(script).split(" = ", 1)[0]

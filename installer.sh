@@ -26,11 +26,11 @@ cd cirrus
 # bootstrap virtualenv
 virtualenv --distribute venv
 . venv/bin/activate
-pip install -r bootstrap-requirements.txt 1>/dev/null
+pip install -r bootstrap-requirements.txt 1> $INSTALL_DIR/install.log
 
 # run installer
 export CIRRUS_HOME=$LOCATION/cirrus
 python bootstrap.py
-python setup.py develop
+python setup.py develop  1>> $INSTALL_DIR/install.log
 
 
