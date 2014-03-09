@@ -10,7 +10,7 @@
 
 INSTALL_DIR="${HOME}/.cirrus"
 DEFAULT_USER="${USER}"
-CIRRUS_REPO="file:///Users/david/Documents/work/repos/cirrus"
+CIRRUS_REPO="git@github.com:evansde77/cirrus.git"
 
 read -p "Installation directory [${INSTALL_DIR}]: " LOCATION
 LOCATION=${LOCATION:-$INSTALL_DIR}
@@ -20,7 +20,7 @@ echo "Installing cirrus in ${LOCATION}..."
 mkdir -p $LOCATION
 cd $LOCATION
 # replace this with git clone of cirrus repo
-git clone ${CIRRUS_REPO} -b develop cirrus >> $INSTALL_DIR/install.log
+git clone ${CIRRUS_REPO} cirrus >> $INSTALL_DIR/install.log
 
 cd cirrus
 # bootstrap virtualenv
