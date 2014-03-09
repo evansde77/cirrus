@@ -14,13 +14,14 @@ CIRRUS_REPO="git@github.com:evansde77/cirrus.git"
 
 read -p "Installation directory [${INSTALL_DIR}]: " LOCATION
 LOCATION=${LOCATION:-$INSTALL_DIR}
-echo "Installing cirrus to LOCATION=${LOCATION}" > ${LOCATION}/install.log
 
 echo "Installing cirrus in ${LOCATION}..."
 mkdir -p $LOCATION
+
+echo "Installing cirrus to LOCATION=${LOCATION}" > ${LOCATION}/install.log
 cd $LOCATION
 # replace this with git clone of cirrus repo
-git clone ${CIRRUS_REPO} cirrus 1>> ${LOCATION}/install.log
+git clone ${CIRRUS_REPO} cirrus 1 >> ${LOCATION}/install.log
 
 cd cirrus
 # bootstrap virtualenv
