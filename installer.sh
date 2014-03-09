@@ -30,7 +30,7 @@ pip install -r bootstrap-requirements.txt 1>> $INSTALL_DIR/install.log
 
 # run installer
 export CIRRUS_HOME=$LOCATION/cirrus
-export VIRTUALENV_HOME=$LOCATION/cirrus/cirrus/venv
+export VIRTUALENV_HOME=$LOCATION/cirrus/venv
 python bootstrap.py
 python setup.py develop  1>> $INSTALL_DIR/install.log
 
