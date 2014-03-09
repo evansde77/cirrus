@@ -222,7 +222,7 @@ def main():
     config.set(
         'alias',
         'cirrus',
-        '! {0}/bin/cirrus'.format(os.environ['CIRRUS_HOME'])
+        '! {0}/bin/cirrus'.format(os.environ['VIRTUALENV_HOME'])
     )
 
 
