@@ -14,24 +14,24 @@ CIRRUS_REPO="git@github.com:evansde77/cirrus.git"
 
 read -p "Installation directory [${INSTALL_DIR}]: " LOCATION
 LOCATION=${LOCATION:-$INSTALL_DIR}
-echo "Installing cirrus to LOCATION=${LOCATION}" > $INSTALL_DIR/install.log
+echo "Installing cirrus to LOCATION=${LOCATION}" > ${LOCATION}/install.log
 
 echo "Installing cirrus in ${LOCATION}..."
 mkdir -p $LOCATION
 cd $LOCATION
 # replace this with git clone of cirrus repo
-git clone ${CIRRUS_REPO} cirrus >> $INSTALL_DIR/install.log
+git clone ${CIRRUS_REPO} cirrus 1>> ${LOCATION}/install.log
 
 cd cirrus
 # bootstrap virtualenv
 virtualenv --distribute venv
 . venv/bin/activate
-pip install -r bootstrap-requirements.txt 1>> $INSTALL_DIR/install.log
+pip install -r bootstrap-requirements.txt 1>> ${LOCATION}/install.log
 
 # run installer
 export CIRRUS_HOME=$LOCATION/cirrus
 export VIRTUALENV_HOME=$LOCATION/cirrus/venv
 python bootstrap.py
-python setup.py develop  1>> $INSTALL_DIR/install.log
+python setup.py develop  1>> ${LOCATION}/install.log
 
 
