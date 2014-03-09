@@ -217,7 +217,7 @@ def main():
 
     """
     config = read_gitconfig()
-    update_shell_profile()
+    #update_shell_profile()
     # set the git alias in gitconfig
     config.set(
         'alias',
