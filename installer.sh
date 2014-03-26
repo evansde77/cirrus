@@ -27,7 +27,7 @@ cd cirrus
 # bootstrap virtualenv
 virtualenv --distribute venv
 . venv/bin/activate
-pip install -r bootstrap-requirements.txt 1>> ${LOCATION}/install.log
+pip install -r requirements.txt 1>> ${LOCATION}/install.log
 
 # run installer
 export CIRRUS_HOME=$LOCATION/cirrus

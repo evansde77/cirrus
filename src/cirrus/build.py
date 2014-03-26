@@ -28,7 +28,7 @@ def main():
     - pip installs the requirements into it
 
     """
-    working_dir = os.getpwd()
+    working_dir = os.getcwd()
     config = load_configuration()
     build_params = config.get('build', {})
 

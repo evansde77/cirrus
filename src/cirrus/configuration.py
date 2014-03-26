@@ -12,6 +12,7 @@ conf = load_configuration()
 
 """
 import os
+import gitconfig
 import ConfigParser
 
 
@@ -74,6 +75,20 @@ def load_configuration():
     config_instance = Configuration()
     config_instance.load(config)
     return config_instance
+
+
+def get_github_auth():
+    """
+    _get_git_auth_
+
+    Pull in github auth user & token from gitconfig
+    """
+    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+    config = gitconfig.config(gitconfig_file)
+    github_user = config.get('cirrus', 'github-user')
+    github_token = config.get('cirrus', 'github-token')
+    return github_user, github_token
+
 
 if __name__ == '__main__':
     load_configuration()
