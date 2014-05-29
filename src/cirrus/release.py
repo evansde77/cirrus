@@ -6,9 +6,12 @@ Implement git cirrus release command
 
 
 """
+import datetime
 import itertools
+
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
+from cirrus.git_tools import build_release_notes
 
 
 def highlander(iterable):
@@ -94,6 +97,19 @@ def new_release(opts):
     branch_name = "release/{0}".format(new_version)
 
     config.update_package_version(new_version)
+
+    # update release notes file
+    relnotes = "Release: {0} Created: {1}\n".format(
+        new_version,
+        datetime.datetime.utcnow().isoformat()
+    )
+    relnotes += build_release_notes(
+        config.organisation_name(),
+        config.package_name(),
+        current_version
+    )
+    print relnotes
+
 
 
 

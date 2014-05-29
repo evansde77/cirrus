@@ -58,6 +58,9 @@ class Configuration(dict):
     def package_name(self):
         return self.get('package', {}).get('name')
 
+    def organisation_name(self):
+        return self.get('package', {}).get('organisation')
+
     def update_package_version(self, new_version):
         """
         _update_package_version_

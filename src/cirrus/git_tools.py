@@ -5,13 +5,20 @@ _git_tools_
 Utils for doing git and github related business
 
 """
-
+import itertools
 import posixpath
 import requests
 from cirrus.configuration import get_github_auth
 
 
 def get_tags_with_sha(owner, repo, token=None):
+    """
+    _get_tags_with_sha_
+
+    Get list of tags for a repo and return a map of
+    tag:sha
+
+    """
     url = "https://api.github.com/repos/{owner}/{repo}/tags".format(
         owner=owner, repo=repo
     )
@@ -26,6 +33,7 @@ def get_tags_with_sha(owner, repo, token=None):
     resp.raise_for_status()
     result = { r['name']:r['commit']['sha'] for r in resp.json()}
     return result
+
 
 def get_tags(owner, repo, token=None):
     """
@@ -78,7 +86,13 @@ def get_releases(owner, repo, token=None):
 
 
 def get_commit_msgs(owner, repo, since_sha, token=None):
+    """
+    _get_commit_msgs_
 
+    Get commit message data for the repo provided since the
+    since_sha value of a commit or tag.
+
+    """
     url = "https://api.github.com/repos/{owner}/{repo}/commits".format(
         owner=owner, repo=repo
     )
@@ -97,19 +111,51 @@ def get_commit_msgs(owner, repo, since_sha, token=None):
     for commit in resp.json():
         result.append({
             "committer" : commit['committer']['login'],
-            "message":  commit['commit']['message']
+            "message":  commit['commit']['message'],
+            "date" : commit['commit']['committer']['date']
 
         })
-
     return result
 
 
+def format_commit_messages(rows):
+    """
+    _format_commit_messages_
+
+    Consume the data produced by get_commit_msgs and
+    generate a set of release notes, broken down by author
+
+    Output looks like:
+
+    - Commit History:
+    -- Author: GITHUBUSERNAME
+    --- DATETIME: COMMIT MESSAGE
+
+    """
+
+    result = [" - Commit History:"]
+
+    for author, commits in itertools.groupby(rows, lambda x: x['committer']):
+        result.append(" -- Author: {0}".format(author))
+        sorted_commits = sorted([ c for c in commits ], key=lambda x: x['date'], reverse=True)
+        result.extend( ' --- {0}: {1}'.format(commit['date'],commit['message']) for commit in sorted_commits)
+
+    return '\n'.join(result)
 
 
-if __name__ == '__main__':
-    tags = get_tags_with_sha('evansde77', 'ExampleMeddling')
-    print tags
-    # sha_087 = tags['0.8.7']
-    # get_commit_msgs('cloudant', 'carburetor', sha_087)
-    #releases = get_releases('cloudant', 'carburetor')
-    #print releases
+def build_release_notes(org, repo, since_tag):
+    """
+    Given an org, repo and tag, generate release notes for all
+    commits since that tag
+
+    """
+    tags = get_tags_with_sha(org, repo)
+    if since_tag not in tags:
+        msg = "Could not find tag {0} in {1}/{2}".format(since_tag, org, repo)
+        raise RuntimeError(msg)
+
+    sha = tags[since_tag]
+    msgs = get_commit_msgs(org, repo, sha)
+    rel_notes = format_commit_messages(msgs)
+    return rel_notes
+
