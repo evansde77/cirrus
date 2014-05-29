@@ -21,8 +21,9 @@ class Configuration(dict):
     _Configuration_
 
     """
-    def __init__(self):
+    def __init__(self, config_file):
         super(Configuration, self).__init__(self)
+        self.config_file = config_file
 
     def load(self, parser):
         """
@@ -51,6 +52,19 @@ class Configuration(dict):
             raise KeyError('section {0} not found'.format(section))
         return self[section].get(param, default)
 
+    def package_version(self):
+        return self.get('package', {}).get('version')
+
+    def package_name(self):
+        return self.get('package', {}).get('name')
+
+    def update_package_version(self, new_version):
+        """
+        _update_package_version_
+
+        Update the version in the configuration field
+        """
+
 
 def load_configuration():
     """
@@ -72,7 +86,7 @@ def load_configuration():
 
     config = ConfigParser.RawConfigParser()
     config.read(config_path)
-    config_instance = Configuration()
+    config_instance = Configuration(config_path)
     config_instance.load(config)
     return config_instance
 

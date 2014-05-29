@@ -6,14 +6,33 @@ Implement git cirrus release command
 
 
 """
-
+import itertools
 from argparse import ArgumentParser
+from cirrus.configuration import load_configuration
+
 
 def highlander(iterable):
     """check only single True value in iterable"""
     # There Can Be Only One!!!
     i = iter(iterable)
     return any(i) and not any(i)
+
+
+def parse_version(version):
+    split = version.split('.', 2)
+    return {
+        'major': int(split[0]),
+        'minor': int(split[1]),
+        'micro': int(split[2]),
+    }
+
+
+def bump_version_field(version, field='major'):
+    """in string of form X.Y.Z, increment X"""
+    vers_params = parse_version(version)
+    vers_params[field] += 1
+    return "{major}.{minor}.{micro}".format(**vers_params)
+
 
 
 def build_parser(argslist):
@@ -51,12 +70,32 @@ def build_parser(argslist):
 def new_release(opts):
     """
     _new_release_
-    """
-    print opts
 
+    - Create a new release branch in the local repo
+    - Edit the conf to bump the version
+    - Edit the history file with release notes
+
+    """
     if not highlander( [opts.major, opts.minor, opts.micro]):
         msg = "Can only specify one of --major, --minor or --micro"
         raise RuntimeError(msg)
+
+    fields = ['major', 'minor', 'micro']
+    mask = [opts.major, opts.minor, opts.micro]
+    field = [ x for x in itertools.compress(fields, mask)][0]
+
+    config = load_configuration()
+
+    # version bump:
+    current_version = config.package_version()
+    new_version = bump_version_field(current_version, field)
+
+    # release branch
+    branch_name = "release/{0}".format(new_version)
+
+    config.update_package_version(new_version)
+
+
 
 def publish_release(opts):
     """
