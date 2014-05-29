@@ -62,8 +62,6 @@ def build_parser(argslist):
         dest='major'
     )
 
-
-
     publish_command = subparsers.add_parser('publish')
 
     opts = parser.parse_args(argslist)
