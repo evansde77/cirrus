@@ -108,9 +108,6 @@ def new_release(opts):
         config.package_name(),
         current_version
     )
-    print relnotes
-
-
 
 
 def publish_release(opts):
