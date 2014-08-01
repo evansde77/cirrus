@@ -24,21 +24,23 @@ class Configuration(dict):
     def __init__(self, config_file):
         super(Configuration, self).__init__(self)
         self.config_file = config_file
+        self.parser = None
 
-    def load(self, parser):
+    def load(self):
         """
-        _load_
+        _load_from_file_
 
-        :param parser: ConfigParser.RawConfigParser instance that
-         has read in the cirrus.conf file
+        Reread the cirrus config file
 
         """
-        for section in parser.sections():
+        self.parser = ConfigParser.RawConfigParser()
+        self.parser.read(self.config_file)
+        for section in self.parser.sections():
             self.setdefault(section, {})
-            for option in parser.options(section):
+            for option in self.parser.options(section):
                 self[section].setdefault(
                     option,
-                    parser.get(section, option)
+                    self.parser.get(section, option)
                 )
 
     def get_param(self, section, param, default=None):
@@ -61,36 +63,50 @@ class Configuration(dict):
     def organisation_name(self):
         return self.get('package', {}).get('organisation')
 
+    def gitflow_branch_name(self):
+        return self.get('gitflow', {}).get('develop_branch', 'develop')
+
+    def gitflow_feature_prefix(self):
+        return self.get('gitflow', {}).get('feature_branch_prefix', 'feature/')
+
+    def gitflow_release_prefix(self):
+        return self.get('gitflow', {}).get('release_branch_prefix', 'release/')
+
     def update_package_version(self, new_version):
         """
         _update_package_version_
 
         Update the version in the configuration field
         """
+        self['package']['version'] = new_version
+        self.parser.set('package', 'version', new_version)
+        with open(self.config_file, 'w') as handle:
+            self.parser.write(handle)
 
 
-def load_configuration():
+def load_configuration(package_dir=None):
     """
     _load_configuration_
 
     Load the cirrus.conf file and parse it into a nested dictionary
     like Configuration instance.
 
+    :params package_dir: Location of cirrus managed package if not pwd
     :returns: Configuration instance
 
     """
-    config_path = os.path.join(
-        os.getcwd(),
-        'cirrus.conf'
-    )
+    dirname = os.getcwd()
+    if package_dir is not None:
+        dirname = package_dir
+
+    config_path = os.path.join(dirname, 'cirrus.conf')
+
     if not os.path.exists(config_path):
         msg = "Couldnt find ./cirrus.conf, are you in a package directory?"
         raise RuntimeError(msg)
 
-    config = ConfigParser.RawConfigParser()
-    config.read(config_path)
     config_instance = Configuration(config_path)
-    config_instance.load(config)
+    config_instance.load()
     return config_instance
 
 
