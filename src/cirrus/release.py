@@ -22,6 +22,17 @@ def highlander(iterable):
 
 
 def parse_version(version):
+    """
+    _parse_version_
+
+    Parse semantic major.minor.micro version string
+
+    :param version: X.Y.Z format version string
+
+    :returns: dictionary containing major, minor, micro versions
+    as integers
+
+    """
     split = version.split('.', 2)
     return {
         'major': int(split[0]),
@@ -31,14 +42,23 @@ def parse_version(version):
 
 
 def bump_version_field(version, field='major'):
-    """in string of form X.Y.Z, increment X"""
+    """
+    parse the version and increment the major, minor or micro
+    version specified by field
+    Return the updated version string
+    """
     vers_params = parse_version(version)
     vers_params[field] += 1
     return "{major}.{minor}.{micro}".format(**vers_params)
 
 
-
 def build_parser(argslist):
+    """
+    _build_parser_
+
+    Set up command line parser for the release command
+
+    """
     parser = ArgumentParser(
         description='git cirrus release command'
     )
@@ -92,7 +112,10 @@ def new_release(opts):
     new_version = bump_version_field(current_version, field)
 
     # release branch
-    branch_name = "release/{0}".format(new_version)
+    branch_name = "{0}{1}".format(
+        config.gitflow_release_prefix(),
+        new_version
+    )
 
     config.update_package_version(new_version)
 
