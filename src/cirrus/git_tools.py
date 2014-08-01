@@ -51,8 +51,10 @@ def branch(repo, branchname, branch_from):
 
     if not str(repo.active_branch) == branchname:
         msg = "uh oh, not on expected branch"
-        print repo.active_branch, branchname
-        raise RuntimeError(msg)
+        raise RuntimeError((
+            "{0}. You are here -> {1}, "
+            "you expected to be here -> {2}"
+            ).format(msg, repo.active_branch, branchname))
 
 
 def get_tags_with_sha(owner, repo, token=None):
