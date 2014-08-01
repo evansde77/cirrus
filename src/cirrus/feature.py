@@ -39,7 +39,7 @@ def main():
     Execute feature command
     """
     config = load_configuration()
-    feature_params = config.get('prestage', {})
+    feature_params = config.get('feature', {})
     local_repo = feature_params['local_repo']
     feature_name = feature_params['name']
     git_checkout_develop(local_repo)
