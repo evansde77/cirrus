@@ -25,29 +25,34 @@ def checkout_and_pull(repo_dir, branch_from):
     repo = git.Repo(repo_dir)
 
     if repo.active_branch != branch_from:
+        print "***active_branch: {0}, branch_from: {1}".format(repo.active_branch, branch_from)
+        print "***heads: {0}".format(repo.heads)
         dev_branch = getattr(repo.heads, branch_from)
         dev_branch.checkout()
 
     # pull branch_from from remote
     ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_from)
 
-    return repo.remotes.origin.pull(ref)
+#     return repo.remotes.origin.pull(ref)
 
 
-def branch(repo, branchname, branch_from):
+def branch(repo_dir, branchname, branch_from):
     """
     _git_branch_
 
     Create a new branch off of branch_from, from repo, named
     branchname
     """
+    repo = git.Repo(repo_dir)
+
     if branchname in repo.heads:
         msg = "Branch: {0} already exists.".format(branchname)
         print "{0} /n checking it out...".format(msg)
         branch_ref = getattr(repo.heads, branchname)
         branch_ref.checkout()
     else:
-        git.Git(repo).checkout(branch_from, b=branchname)
+        g = git.Git(repo_dir)
+        g.checkout(branch_from, b=branchname)
 
     if not str(repo.active_branch) == branchname:
         msg = "uh oh, not on expected branch"
