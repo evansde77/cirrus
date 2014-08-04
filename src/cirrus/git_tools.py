@@ -32,8 +32,7 @@ def checkout_and_pull(repo_dir, branch_from):
 
     # pull branch_from from remote
     ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_from)
-
-#     return repo.remotes.origin.pull(ref)
+    return repo.remotes.origin.pull(ref)
 
 
 def branch(repo_dir, branchname, branch_from):
@@ -60,6 +59,25 @@ def branch(repo_dir, branchname, branch_from):
             "{0}. You are here -> {1}, "
             "you expected to be here -> {2}"
             ).format(msg, repo.active_branch, branchname))
+
+
+def commit_files(repo_dir, commit_msg, *filenames):
+    """
+    _commit_files_
+
+    Add the list of filenames and commit them with the message provided
+    to the current branch in the repo specified.
+    Pushes changes to remote branch after commit
+
+    """
+    repo = git.Repo(repo_dir)
+    repo.index.add(files)
+
+    # commits with message
+    new_commit = repo.index.commit(commit_msg)
+    # push branch to origin
+    result = repo.remotes.origin.push(repo.head)
+    return
 
 
 def get_tags_with_sha(owner, repo, token=None):

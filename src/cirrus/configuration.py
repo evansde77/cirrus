@@ -72,6 +72,24 @@ class Configuration(dict):
     def gitflow_release_prefix(self):
         return self.get('gitflow', {}).get('release_branch_prefix', 'release/')
 
+    def release_notes(self):
+        """
+        returns the release notes file and release notes sentinel from the config
+        """
+        return (
+            self.get('package', {}).get('release_notes_file'),
+            self.get('package', {}).get('release_notes_sentinel')
+        )
+
+    def version_file(self):
+        """
+        returns the version file and version attr from the configuration
+        """
+        return (
+            self.get('package', {}).get('version_file'),
+            self.get('package', {}).get('version_attribute', '__version__')
+        )
+
     def update_package_version(self, new_version):
         """
         _update_package_version_

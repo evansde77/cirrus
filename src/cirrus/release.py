@@ -6,12 +6,17 @@ Implement git cirrus release command
 
 
 """
+import os
 import datetime
 import itertools
 
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.git_tools import build_release_notes
+from cirrus.git_tools import checkout_and_pull
+from cirrus.git_tools import branch
+from cirrus.git_tools import commit_files
+from cirrus.utils import update_file, update_version
 
 
 def highlander(iterable):
@@ -119,16 +124,40 @@ def new_release(opts):
 
     config.update_package_version(new_version)
 
+    changes = ['cirrus.conf']
     # update release notes file
-    relnotes = "Release: {0} Created: {1}\n".format(
-        new_version,
-        datetime.datetime.utcnow().isoformat()
-    )
-    relnotes += build_release_notes(
-        config.organisation_name(),
-        config.package_name(),
-        current_version
-    )
+    relnotes_file, relnotes_sentinel = config.release_notes()
+    if (relnotes_file is not None) and (relnotes_sentinel is not None):
+        relnotes = "Release: {0} Created: {1}\n".format(
+            new_version,
+            datetime.datetime.utcnow().isoformat()
+        )
+        relnotes += build_release_notes(
+            config.organisation_name(),
+            config.package_name(),
+            current_version
+        )
+        update_file(relnotes_file, relnotes_sentinel, relnotes)
+        changes.append(relnotes_file)
+
+    # update __version__ or equivalent
+    version_file, version_attr = config.version_file()
+    if version_file is not None:
+        update_version(version_file, new_version, version_attr)
+        changes.append(version_file)
+
+    # create new release branch
+    repo_dir = os.getcwd()
+    main_branch = config.gitflow_branch_name()
+    # pull develop
+    checkout_and_pull(repo_dir,  main_branch)
+    # create release branch
+    branch(repo_dir, branchname, main_branch)
+    # update files
+    msg = "cirrus release: new release created for {0}".format(branchname)
+    commit_files(repo_dir, msg, *changes)
+    return
+
 
 
 def publish_release(opts):

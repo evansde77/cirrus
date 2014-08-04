@@ -49,6 +49,9 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(config.gitflow_release_prefix(), 'release/')
         self.assertEqual(config.gitflow_feature_prefix(), 'feature/')
 
+        self.assertEqual(config.release_notes(), (None, None))
+        self.assertEqual(config.version_file(), (None, '__version__'))
+
         # test updating version
         config.update_package_version('1.2.4')
         self.assertEqual(config.package_version(), '1.2.4')
