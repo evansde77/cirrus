@@ -31,7 +31,7 @@ def checkout_and_pull(repo_dir, branch_from):
     # pull branch_from from remote
     ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_from)
 
-#     return repo.remotes.origin.pull(ref)
+    return repo.remotes.origin.pull(ref)
 
 
 def branch(repo_dir, branchname, branch_from):
