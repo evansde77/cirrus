@@ -106,6 +106,8 @@ def new_release(opts):
         msg = "Can only specify one of --major, --minor or --micro"
         raise RuntimeError(msg)
 
+
+
     fields = ['major', 'minor', 'micro']
     mask = [opts.major, opts.minor, opts.micro]
     field = [ x for x in itertools.compress(fields, mask)][0]
@@ -122,9 +124,18 @@ def new_release(opts):
         new_version
     )
 
-    config.update_package_version(new_version)
+    # need to be on the latest develop
+    repo_dir = os.getcwd()
+    main_branch = config.gitflow_branch_name()
+    checkout_and_pull(repo_dir,  main_branch)
 
+    # create release branch
+    branch(repo_dir, branch_name, main_branch)
+
+    # update cirrus conf
+    config.update_package_version(new_version)
     changes = ['cirrus.conf']
+
     # update release notes file
     relnotes_file, relnotes_sentinel = config.release_notes()
     if (relnotes_file is not None) and (relnotes_sentinel is not None):
@@ -146,15 +157,8 @@ def new_release(opts):
         update_version(version_file, new_version, version_attr)
         changes.append(version_file)
 
-    # create new release branch
-    repo_dir = os.getcwd()
-    main_branch = config.gitflow_branch_name()
-    # pull develop
-    checkout_and_pull(repo_dir,  main_branch)
-    # create release branch
-    branch(repo_dir, branchname, main_branch)
-    # update files
-    msg = "cirrus release: new release created for {0}".format(branchname)
+    # update files changed
+    msg = "cirrus release: new release created for {0}".format(branch_name)
     commit_files(repo_dir, msg, *changes)
     return
 
