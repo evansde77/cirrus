@@ -71,13 +71,13 @@ def commit_files(repo_dir, commit_msg, *filenames):
 
     """
     repo = git.Repo(repo_dir)
-    repo.index.add(files)
+    repo.index.add(filenames)
 
     # commits with message
     new_commit = repo.index.commit(commit_msg)
     # push branch to origin
     result = repo.remotes.origin.push(repo.head)
-    return
+    return result
 
 
 def get_tags_with_sha(owner, repo, token=None):
