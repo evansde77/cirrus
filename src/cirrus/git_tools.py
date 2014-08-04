@@ -25,8 +25,6 @@ def checkout_and_pull(repo_dir, branch_from):
     repo = git.Repo(repo_dir)
 
     if repo.active_branch != branch_from:
-        print "***active_branch: {0}, branch_from: {1}".format(repo.active_branch, branch_from)
-        print "***heads: {0}".format(repo.heads)
         dev_branch = getattr(repo.heads, branch_from)
         dev_branch.checkout()
 
