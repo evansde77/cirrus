@@ -29,14 +29,8 @@ class FeatureCommandTest(unittest.TestCase):
             'cirrus.feature.load_configuration',
             self.config)
         self.harness.setUp()
-        self.patch_pull = mock.patch('cirrus.feature.checkout_and_pull')
-        self.patch_branch = mock.patch('cirrus.feature.branch')
-        self.mock_pull = self.patch_pull.start()
-        self.mock_branch = self.patch_branch.start()
 
     def tearDown(self):
-        self.patch_pull.stop()
-        self.patch_branch.stop()
         self.harness.tearDown()
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
@@ -49,13 +43,15 @@ class FeatureCommandTest(unittest.TestCase):
         opts.command = 'new'
         opts.name = 'testbranch'
 
-        new_feature_branch(opts)
-        self.failUnless(self.mock_pull.called)
-        self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
-        self.failUnless(self.mock_branch.called)
-        self.assertEqual(
-            self.mock_branch.call_args[0][1],
-            ''.join(('feature/', opts.name)))
+        with mock.patch('cirrus.feature.checkout_and_pull') as mock_pull:
+            with mock.patch('cirrus.feature.branch') as mock_branch:
+                new_feature_branch(opts)
+                self.failUnless(mock_pull.called)
+                self.assertEqual(mock_pull.call_args[0][1], 'develop')
+                self.failUnless(mock_branch.called)
+                self.assertEqual(
+                    mock_branch.call_args[0][1],
+                    ''.join(('feature/', opts.name)))
 
     def test_push_feature(self):
         """
@@ -69,9 +65,11 @@ class FeatureCommandTest(unittest.TestCase):
         with mock.patch('cirrus.feature.commit_files') as mock_commit:
             push_feature(opts)
             self.failUnless(mock_commit.called)
-            self.failUnlessAlmostEqual(
+            self.failUnlessEqual(
                 mock_commit.call_args[0][1],
-                opts.c_msg,
+                opts.c_msg,)
+            self.failUnlessEqual(
+                mock_commit.call_args[0][2],
                 opts.c_files.split(','))
 
 if __name__ == '__main__':
