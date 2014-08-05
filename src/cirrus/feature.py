@@ -43,7 +43,7 @@ def new_feature_branch(opts):
         repo_dir,
         config.gitflow_branch_name())
     branch(repo_dir,
-           ''.join(config.gitflow_feature_prefix(), opts.name),
+           ''.join((config.gitflow_feature_prefix(), opts.name)),
            config.gitflow_branch_name())
 
 
