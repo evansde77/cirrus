@@ -7,7 +7,7 @@ import os
 from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration
-from cirrus.git_tools import checkout_and_pull, branch
+from cirrus.git_tools import checkout_and_pull, branch, commit_files
 
 
 def build_parser(argslist):
@@ -30,7 +30,17 @@ def build_parser(argslist):
         required=True
     )
 
-    subparsers.add_parser('push')
+    push_command = subparsers.add_parser('push')
+    push_command.add_argument(
+        '-m',
+        dest='c_msg',
+        help='Commit Message',
+        required=True)
+    push_command.add_argument(
+        '--add',
+        dest='c_files',
+        help="list of files separated by ','",
+        required=True)
 
     opts = parser.parse_args(argslist)
     return opts
@@ -48,7 +58,8 @@ def new_feature_branch(opts):
 
 
 def push_feature(opts):
-    raise NotImplementedError
+    repo_dir = os.getcwd()
+    commit_files(repo_dir, opts.c_msg, opts.c_files.split(','))
 
 
 def main(argslist):
@@ -60,6 +71,7 @@ def main(argslist):
     opts = build_parser(argslist)
     if opts.command == 'new':
         new_feature_branch(opts)
-
-if __name__ == '__main__':
-    main(['new', '--name'])
+    if opts.command == 'push':
+        push_feature(opts)
+    else:
+        exit(1)

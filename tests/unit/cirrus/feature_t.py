@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 from cirrus.feature import new_feature_branch
+from cirrus.feature import push_feature
 
 from harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
@@ -41,6 +42,9 @@ class FeatureCommandTest(unittest.TestCase):
             os.system('rm -rf {0}'.format(self.dir))
 
     def test_new_feature_branch(self):
+        """
+        _test_new_feature_branch_
+        """
         opts = mock.Mock()
         opts.command = 'new'
         opts.name = 'testbranch'
@@ -53,6 +57,22 @@ class FeatureCommandTest(unittest.TestCase):
             self.mock_branch.call_args[0][1],
             ''.join(('feature/', opts.name)))
 
+    def test_push_feature(self):
+        """
+        _test_push_feature_
+        """
+        opts = mock.Mock()
+        opts.command = 'push'
+        opts.c_msg = 'test message'
+        opts.c_files = 'file1.txt,file2.py,file3.py'
+
+        with mock.patch('cirrus.feature.commit_files') as mock_commit:
+            push_feature(opts)
+            self.failUnless(mock_commit.called)
+            self.failUnlessAlmostEqual(
+                mock_commit.call_args[0][1],
+                opts.c_msg,
+                opts.c_files.split(','))
 
 if __name__ == '__main__':
     unittest.main()
