@@ -16,6 +16,7 @@ class GitToolsTest(unittest.TestCase):
             patch_git.Repo = mock.Mock()
             patch_git.Repo.return_value = mock_repo
             checkout_and_pull(None, 'master')
+            self.failUnless(patch_git.Repo.called)
 
     def test_branch(self):
         with mock.patch('cirrus.git_tools.git') as patch_git:
@@ -25,6 +26,7 @@ class GitToolsTest(unittest.TestCase):
             patch_git.Repo = mock.Mock()
             patch_git.Repo.return_value = mock_repo
             branch(None, mock_repo.active_branch, 'master')
+            self.failUnless(patch_git.Repo.called)
 
 
 if __name__ == "__main__":
