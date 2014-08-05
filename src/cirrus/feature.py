@@ -9,9 +9,6 @@ from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.git_tools import checkout_and_pull, branch
 
-CONFIG = load_configuration()
-REPO_DIR = os.getcwd()
-
 
 def build_parser(argslist):
     """
@@ -40,12 +37,14 @@ def build_parser(argslist):
 
 
 def new_feature_branch(opts):
+    config = load_configuration()
+    repo_dir = os.getcwd()
     checkout_and_pull(
-        REPO_DIR,
-        CONFIG.gitflow_branch_name())
-    branch(REPO_DIR,
-           ''.join(CONFIG.gitflow_feature_prefix(), opts.name),
-           CONFIG.gitflow_branch_name())
+        repo_dir,
+        config.gitflow_branch_name())
+    branch(repo_dir,
+           ''.join(config.gitflow_feature_prefix(), opts.name),
+           config.gitflow_branch_name())
 
 
 def push_feature(opts):
@@ -61,3 +60,6 @@ def main(argslist):
     opts = build_parser(argslist)
     if opts.command == 'new':
         new_feature_branch(opts)
+
+if __name__ == '__main__':
+    main(['new', '--name'])
