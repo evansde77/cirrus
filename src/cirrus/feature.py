@@ -3,21 +3,61 @@ _feature_
 
 Command to create a new feature branch off of the develop branch
 '''
+import os
+from argparse import ArgumentParser
+
 from cirrus.configuration import load_configuration
 from cirrus.git_tools import checkout_and_pull, branch
 
-DEVELOP_BRANCH = 'develop'
+CONFIG = load_configuration()
+REPO_DIR = os.getcwd()
 
 
-def main():
+def build_parser(argslist):
+    """
+    _build_parser_
+
+    Set up command line parser for the release command
+
+    """
+    parser = ArgumentParser(
+        description='git cirrus feature command'
+    )
+    parser.add_argument('command', nargs='?')
+
+    subparsers = parser.add_subparsers(dest='command')
+    new_command = subparsers.add_parser('new')
+    new_command.add_argument(
+        '--name',
+        dest='name',
+        required=True
+    )
+
+    subparsers.add_parser('push')
+
+    opts = parser.parse_args(argslist)
+    return opts
+
+
+def new_feature_branch(opts):
+    checkout_and_pull(
+        REPO_DIR,
+        CONFIG.gitflow_branch_name())
+    branch(REPO_DIR,
+           ''.join(CONFIG.gitflow_feature_prefix(), opts.name),
+           CONFIG.gitflow_branch_name())
+
+
+def push_feature(opts):
+    raise NotImplementedError
+
+
+def main(argslist):
     """
     _main_
 
     Execute feature command
     """
-    config = load_configuration()
-    feature_params = config.get('feature', {})
-    local_repo = feature_params['local_repo']
-    feature_name = feature_params['name']
-    checkout_and_pull(local_repo, DEVELOP_BRANCH)
-    branch(local_repo, feature_name, DEVELOP_BRANCH)
+    opts = build_parser(argslist)
+    if opts.command == 'new':
+        new_feature_branch(opts)
