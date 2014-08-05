@@ -26,14 +26,6 @@ class GitToolsTest(unittest.TestCase):
             patch_git.Repo.return_value = mock_repo
             branch(None, mock_repo.active_branch, 'master')
 
-    def test_branch_exists(self):
-        with mock.patch('cirrus.git_tools.git') as patch_git:
-            mock_repo = mock.Mock()
-            mock_repo.heads = 'new_branch'
-            mock_repo.active_branch = 'new_branch'
-            patch_git.Repo = mock.Mock()
-            patch_git.Repo.return_value = mock_repo
-            branch(None, 'new_branch', 'master')
 
 if __name__ == "__main__":
     unittest.main()
