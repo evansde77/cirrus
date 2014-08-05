@@ -16,23 +16,25 @@ import ConfigParser
 from cirrus.configuration import Configuration
 
 
-def write_cirrus_conf(config_file, package, gitflow):
+def write_cirrus_conf(config_file, **sections):
     """
     _write_cirrus_conf_
 
     Util to create a cirrus configuration file and populate it
-    with the settings for the package and gitflow section.
+    with the settings for the package, gitflow, pypi etc sections.
 
-    TODO: better location
+    sections should be nested dict of the form {sectionname: {sectionsettings}}
+
+    Eg:
+
+    settings={'package': {'name': 'package_name'} }
 
     """
     parser = ConfigParser.RawConfigParser()
-    parser.add_section('package')
-    parser.add_section('gitflow')
-    for key, value in package.iteritems():
-        parser.set('package', key, value)
-    for key, value in gitflow.iteritems():
-        parser.set('gitflow', key, value)
+    for section, settings in sections.iteritems():
+        parser.add_section(section)
+        for key, value in settings.iteritems():
+            parser.set(section, key, value)
 
     with open(config_file, 'w') as handle:
         parser.write(handle)
@@ -48,7 +50,7 @@ class CirrusConfigurationHarness(object):
     TODO: better location for this, plus maybe combine with
        generating the cirrus config file
     """
-    def __init__(self, module_symbol, config_file, package=dict(), github=dict() ):
+    def __init__(self, module_symbol, config_file, **settings):
         self.module_symbol = module_symbol
         self.config_file = config_file
 
