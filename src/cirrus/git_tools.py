@@ -45,7 +45,7 @@ def branch(repo_dir, branchname, branch_from):
 
     if branchname in repo.heads:
         msg = "Branch: {0} already exists.".format(branchname)
-        print "{0} /n checking it out...".format(msg)
+        print "{0} Checking it out...".format(msg)
         branch_ref = getattr(repo.heads, branchname)
         branch_ref.checkout()
     else:
