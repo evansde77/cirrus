@@ -80,6 +80,16 @@ def commit_files(repo_dir, commit_msg, *filenames):
     return result
 
 
+def push(repo_dir):
+    """
+    _push_
+
+    Push local branch to remote
+    """
+    repo = git.Repo(repo_dir)
+    return repo.remotes.origin.push(repo.head)
+
+
 def get_tags_with_sha(owner, repo, token=None):
     """
     _get_tags_with_sha_

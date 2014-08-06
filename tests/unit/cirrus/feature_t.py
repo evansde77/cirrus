@@ -62,15 +62,10 @@ class FeatureCommandTest(unittest.TestCase):
         opts.c_msg = 'test message'
         opts.c_files = 'file1.txt,file2.py,file3.py'
 
-        with mock.patch('cirrus.feature.commit_files') as mock_commit:
-            push_feature(opts)
-            self.failUnless(mock_commit.called)
-            self.failUnlessEqual(
-                mock_commit.call_args[0][1],
-                opts.c_msg,)
-            self.failUnlessEqual(
-                mock_commit.call_args[0][2],
-                opts.c_files.split(','))
+        with mock.patch('cirrus.feature.push') as mock_push:
+            push_feature()
+            self.failUnless(mock_push.called)
+
 
 if __name__ == '__main__':
     unittest.main()

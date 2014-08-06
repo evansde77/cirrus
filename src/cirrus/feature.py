@@ -7,7 +7,7 @@ import os
 from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration
-from cirrus.git_tools import checkout_and_pull, branch, commit_files
+from cirrus.git_tools import checkout_and_pull, branch, push
 
 
 def build_parser(argslist):
@@ -57,9 +57,9 @@ def new_feature_branch(opts):
            config.gitflow_branch_name())
 
 
-def push_feature(opts):
+def push_feature():
     repo_dir = os.getcwd()
-    commit_files(repo_dir, opts.c_msg, opts.c_files.split(','))
+    push(repo_dir)
 
 
 def main(argslist):
@@ -72,6 +72,6 @@ def main(argslist):
     if opts.command == 'new':
         new_feature_branch(opts)
     if opts.command == 'push':
-        push_feature(opts)
+        push_feature()
     else:
         exit(1)
