@@ -8,7 +8,6 @@ import tempfile
 import unittest
 
 from cirrus.feature import new_feature_branch
-from cirrus.feature import push_feature
 
 from harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
@@ -42,29 +41,43 @@ class FeatureCommandTest(unittest.TestCase):
         opts = mock.Mock()
         opts.command = 'new'
         opts.name = 'testbranch'
+        opts.push = False
 
         with mock.patch('cirrus.feature.checkout_and_pull') as mock_pull:
             with mock.patch('cirrus.feature.branch') as mock_branch:
-                new_feature_branch(opts)
-                self.failUnless(mock_pull.called)
-                self.assertEqual(mock_pull.call_args[0][1], 'develop')
-                self.failUnless(mock_branch.called)
-                self.assertEqual(
-                    mock_branch.call_args[0][1],
-                    ''.join(('feature/', opts.name)))
+                with mock.patch('cirrus.feature.push') as mock_push:
+                    new_feature_branch(opts)
+                    self.failUnless(mock_pull.called)
+                    self.assertEqual(mock_pull.call_args[0][1], 'develop')
+                    self.failUnless(mock_branch.called)
+                    self.assertEqual(
+                        mock_branch.call_args[0][1],
+                        ''.join(('feature/', opts.name)))
+                    self.failIf(mock_push.called)
 
-    def test_push_feature(self):
+    def test_new_feature_branch_push(self):
         """
-        _test_push_feature_
+        _test_new_feature_branch_push_
+
+        test creating a new feature branch and pushing it to
+        remote
         """
         opts = mock.Mock()
-        opts.command = 'push'
-        opts.c_msg = 'test message'
-        opts.c_files = 'file1.txt,file2.py,file3.py'
+        opts.command = 'new'
+        opts.name = 'testbranch'
+        opts.push = True
 
-        with mock.patch('cirrus.feature.push') as mock_push:
-            push_feature()
-            self.failUnless(mock_push.called)
+        with mock.patch('cirrus.feature.checkout_and_pull') as mock_pull:
+            with mock.patch('cirrus.feature.branch') as mock_branch:
+                with mock.patch('cirrus.feature.push') as mock_push:
+                    new_feature_branch(opts)
+                    self.failUnless(mock_pull.called)
+                    self.assertEqual(mock_pull.call_args[0][1], 'develop')
+                    self.failUnless(mock_branch.called)
+                    self.assertEqual(
+                        mock_branch.call_args[0][1],
+                        ''.join(('feature/', opts.name)))
+                    self.failUnless(mock_push.called)
 
 
 if __name__ == '__main__':

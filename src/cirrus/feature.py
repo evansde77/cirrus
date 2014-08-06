@@ -24,23 +24,8 @@ def build_parser(argslist):
 
     subparsers = parser.add_subparsers(dest='command')
     new_command = subparsers.add_parser('new')
-    new_command.add_argument(
-        '--name',
-        dest='name',
-        required=True
-    )
-
-    push_command = subparsers.add_parser('push')
-    push_command.add_argument(
-        '-m',
-        dest='c_msg',
-        help='Commit Message',
-        required=True)
-    push_command.add_argument(
-        '--add',
-        dest='c_files',
-        help="list of files separated by ','",
-        required=True)
+    new_command.add_argument(dest='name', required=True)
+    new_command.add_argument('--push', dest='push', action='store_true')
 
     opts = parser.parse_args(argslist)
     return opts
@@ -55,11 +40,9 @@ def new_feature_branch(opts):
     branch(repo_dir,
            ''.join((config.gitflow_feature_prefix(), opts.name)),
            config.gitflow_branch_name())
-
-
-def push_feature():
-    repo_dir = os.getcwd()
-    push(repo_dir)
+    if opts.push:
+        print opts.push
+        push(repo_dir)
 
 
 def main(argslist):
@@ -71,7 +54,5 @@ def main(argslist):
     opts = build_parser(argslist)
     if opts.command == 'new':
         new_feature_branch(opts)
-    if opts.command == 'push':
-        push_feature()
     else:
         exit(1)
