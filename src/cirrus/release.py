@@ -9,6 +9,7 @@ Implement git cirrus release command
 import os
 import datetime
 import itertools
+from fabric.operations import put, local
 
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
@@ -17,6 +18,7 @@ from cirrus.git_tools import checkout_and_pull
 from cirrus.git_tools import branch
 from cirrus.git_tools import commit_files
 from cirrus.utils import update_file, update_version
+from cirrus.fabric_helpers import FabricHelper
 
 
 def highlander(iterable):
@@ -57,6 +59,23 @@ def bump_version_field(version, field='major'):
     return "{major}.{minor}.{micro}".format(**vers_params)
 
 
+def artifact_name(config):
+    """
+    given cirrus config, build the expected
+    artifact name
+    """
+    artifact_name = "{0}-{1}.tar.gz".format(
+        config.package_name(),
+        config.package_version()
+    )
+    build_artifact = os.path.join(
+        os.getcwd(),
+        'dist',
+        artifact_name
+    )
+    return build_artifact
+
+
 def build_parser(argslist):
     """
     _build_parser_
@@ -86,6 +105,8 @@ def build_parser(argslist):
         action='store_true',
         dest='major'
     )
+
+    build_command = subparsers.add_parser('build')
 
     publish_command = subparsers.add_parser('publish')
 
@@ -163,27 +184,64 @@ def new_release(opts):
     return
 
 
+def upload_release(opts):
+    """
+    _upload_release_
+    """
+    config = load_configuration()
+    build_artifact = artifact_name(config)
+    if not os.path.exists(build_artifact):
+        msg = (
+            "Expected build artifact: {0} Not Found, upload aborted\n"
+            "Did you run git cirrus release build?"
+        )
+        raise RuntimeError(msg)
 
-def publish_release(opts):
+    pypi_conf = config.pypi_config()
+    package_dir = pypi_conf['pypi_upload_path']
+    with FabricHelper(
+            pypi_conf['pypi_hostname'],
+            pypi_conf['pypi_username'],
+            pypi_conf['pypi_ssh_key']):
+
+        # fabric put the file onto the pypi server
+        put(build_artifact, package_dir, use_sudo=True)
+
+    #TODO:
+    # Merge release branch to master and tag
+    # push to master
+    # Merge release branch back to develop
+    # push to develop
+
+
+def build_release(opts):
     """
-    _publish_release_
+    _build_release_
+
+    run python setup.py sdist to create the release artifact
+
     """
-    print opts
+    config = load_configuration()
+    local('python setup.py sdist')
+    build_artifact = artifact_name(config)
+    if not os.path.exists(build_artifact):
+        msg = "Expected build artifact: {0} Not Found".format(build_artifact)
+        raise RuntimeError(msg)
+    return build_artifact
 
 
 def main(argslist):
-
     opts = build_parser(argslist)
     if opts.command == 'new':
         new_release(opts)
 
-    if opts.command == 'publish':
-        publish_release(opts)
+    if opts.command == 'upload':
+        upload_release(opts)
 
-
-
+    if opts.command == 'build':
+        build_release(opts)
 
 
 if __name__ == '__main__':
-    main(['new', '--micro'])
+
     main(['publish'])
