@@ -13,6 +13,18 @@ import requests
 from cirrus.configuration import get_github_auth
 
 
+def open_pull_request(repo_dir, notifiers=None, branch_from=None):
+    """
+    Creates a pull_request on GitHub
+
+    :param repo_dir: directory of git repository
+    :param notifiers: list of GitHub accounts to notify on the PR
+    :param branch_from: remote branch you are requesting to merge,
+        defaults to active branch if none provided
+    """
+    repo = git.Repo(repo_dir)
+
+
 def checkout_and_pull(repo_dir, branch_from):
     """
     _checkout_and_pull_
