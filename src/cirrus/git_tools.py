@@ -6,11 +6,6 @@ Utils for doing git and github related business
 
 """
 import git
-import itertools
-import posixpath
-import requests
-
-from cirrus.configuration import get_github_auth
 
 
 def checkout_and_pull(repo_dir, branch_from):
@@ -76,3 +71,23 @@ def commit_files(repo_dir, commit_msg, *filenames):
     # push branch to origin
     result = repo.remotes.origin.push(repo.head)
     return result
+
+
+def push(repo_dir):
+    """
+    _push_
+
+    Push local branch to remote
+    """
+    repo = git.Repo(repo_dir)
+    return repo.remotes.origin.push(repo.head)
+
+
+def get_active_branch(repo_dir):
+    """
+    _active_branch_
+
+    Returns active branch for a give directory
+    """
+    repo = git.Repo(repo_dir)
+    return repo.active_branch
