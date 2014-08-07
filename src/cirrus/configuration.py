@@ -63,6 +63,22 @@ class Configuration(dict):
     def organisation_name(self):
         return self.get('package', {}).get('organization')
 
+    def pypi_url(self):
+        return self.get('pypi', {}).get('pypi_url')
+
+    def pypi_auth(self):
+        return (
+            self.get('pypi', {}).get('pypi_username'),
+            self.get('pypi', {}).get('pypi_password')
+        )
+
+    def pypi_config(self):
+        """
+        get the details for uploading to pypi
+
+        """
+        return self.get('pypi', {})
+
     def gitflow_branch_name(self):
         return self.get('gitflow', {}).get('develop_branch', 'develop')
 
