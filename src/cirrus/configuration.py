@@ -63,6 +63,22 @@ class Configuration(dict):
     def organisation_name(self):
         return self.get('package', {}).get('organisation')
 
+    def pypi_url(self):
+        return self.get('pypi', {}).get('pypi_url')
+
+    def pypi_auth(self):
+        return (
+            self.get('pypi', {}).get('pypi_username'),
+            self.get('pypi', {}).get('pypi_password')
+        )
+
+    def pypi_config(self):
+        """
+        get the details for uploading to pypi
+
+        """
+        return self.get('pypi', {})
+
     def gitflow_branch_name(self):
         return self.get('gitflow', {}).get('develop_branch', 'develop')
 
@@ -71,6 +87,24 @@ class Configuration(dict):
 
     def gitflow_release_prefix(self):
         return self.get('gitflow', {}).get('release_branch_prefix', 'release/')
+
+    def release_notes(self):
+        """
+        returns the release notes file and release notes sentinel from the config
+        """
+        return (
+            self.get('package', {}).get('release_notes_file'),
+            self.get('package', {}).get('release_notes_sentinel')
+        )
+
+    def version_file(self):
+        """
+        returns the version file and version attr from the configuration
+        """
+        return (
+            self.get('package', {}).get('version_file'),
+            self.get('package', {}).get('version_attribute', '__version__')
+        )
 
     def update_package_version(self, new_version):
         """
