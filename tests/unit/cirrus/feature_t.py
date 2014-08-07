@@ -20,14 +20,15 @@ class FeatureCommandTest(unittest.TestCase):
         """set up test files"""
         self.dir = tempfile.mkdtemp()
         self.config = os.path.join(self.dir, 'cirrus.conf')
-        write_cirrus_conf(
-            self.config,
-            {
-             'name': 'cirrus_unittest',
-             'version': '1.2.3',
-             'organization': 'testorg',
-             'owner': 'Bob'},
-            {'develop_branch': 'develop', 'feature_branch_prefix': 'feature/'})
+        write_cirrus_conf(self.config, **{
+            'package': {
+                'name': 'cirrus_unittest',
+                'version': '1.2.3',
+                'organization': 'testorg',
+                'owner': 'Bob'},
+            'gitflow': {
+                'develop_branch': 'develop',
+                'feature_branch_prefix': 'feature/'}})
         self.harness = CirrusConfigurationHarness(
             'cirrus.feature.load_configuration',
             self.config)
