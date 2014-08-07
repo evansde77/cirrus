@@ -157,5 +157,24 @@ def get_github_auth():
     return github_user, github_token
 
 
+def get_pypi_auth():
+    """
+    _pypi_auth_
+
+    Get pypi credentials from gitconfig
+
+    """
+    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+    config = gitconfig.config(gitconfig_file)
+    pypi_user = config.get('pypi', 'pypi-user')
+    pypi_key = config.get('pypi', 'pypi-ssh-key')
+    pypi_token = config.get('pypi', 'pypi-token')
+    return {
+        'username': pypi_user,
+        'ssh_key': pypi_key,
+        'token': pypi_token
+    }
+
+
 if __name__ == '__main__':
     load_configuration()

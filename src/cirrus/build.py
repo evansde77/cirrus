@@ -33,11 +33,12 @@ def main():
     config = load_configuration()
     build_params = config.get('build', {})
 
+
     # we have custom build controls in the cirrus.conf
     venv_name = build_params.get('virtualenv_name', 'venv')
     reqs_name = build_params.get('requirements_file', 'requirements.txt')
     venv_path = os.path.join(working_dir, venv_name)
-    venv_command = os.path.join(cirrus_home(), 'bin', 'virtualenv')
+    venv_command = os.path.join(cirrus_home(), 'cirrus', 'venv', 'bin', 'virtualenv')
     if not os.path.exists(venv_path):
         cmd = [venv_command, '--distribute', venv_path]
         subprocess.call(cmd)
