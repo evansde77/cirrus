@@ -7,7 +7,7 @@ import os
 import tempfile
 import unittest
 
-from cirrus.feature import new_feature_branch
+from cirrus.feature import new_feature_branch, new_pr
 
 from harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
@@ -20,10 +20,14 @@ class FeatureCommandTest(unittest.TestCase):
         """set up test files"""
         self.dir = tempfile.mkdtemp()
         self.config = os.path.join(self.dir, 'cirrus.conf')
-        write_cirrus_conf(self.config,
-            {'name': 'cirrus_unittest', 'version': '1.2.3'},
-            {'develop_branch': 'develop', 'feature_branch_prefix': 'feature/'}
-            )
+        write_cirrus_conf(
+            self.config,
+            {
+             'name': 'cirrus_unittest',
+             'version': '1.2.3',
+             'organization': 'testorg',
+             'owner': 'Bob'},
+            {'develop_branch': 'develop', 'feature_branch_prefix': 'feature/'})
         self.harness = CirrusConfigurationHarness(
             'cirrus.feature.load_configuration',
             self.config)
@@ -78,6 +82,21 @@ class FeatureCommandTest(unittest.TestCase):
                         mock_branch.call_args[0][1],
                         ''.join(('feature/', opts.name)))
                     self.failUnless(mock_push.called)
+
+    def test_new_pr(self):
+        """
+        _test_new_pr_
+        """
+        opts = mock.Mock()
+        opts.command = 'pull-request'
+        opts.title = 'Fancy Title Here'
+        opts.body = 'Super descriptive description.'
+        opts.notify = '@nobody'
+
+        with mock.patch('cirrus.feature.create_pull_request') as mock_pr:
+            new_pr(opts)
+            self.failUnlessEqual(mock_pr.call_args[0][1], 'testorg')
+            self.failUnless(mock_pr.called)
 
 
 if __name__ == '__main__':

@@ -61,7 +61,7 @@ class Configuration(dict):
         return self.get('package', {}).get('name')
 
     def organisation_name(self):
-        return self.get('package', {}).get('organisation')
+        return self.get('package', {}).get('organization')
 
     def gitflow_branch_name(self):
         return self.get('gitflow', {}).get('develop_branch', 'develop')
