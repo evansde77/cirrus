@@ -26,18 +26,31 @@ def build_parser(argslist):
     subparsers = parser.add_subparsers(dest='command')
     new_command = subparsers.add_parser('new')
     new_command.add_argument('name', required=True)
-    new_command.add_argument('--push', action='store_true')
+    new_command.add_argument(
+        '--push',
+        help='include this to push new feature to remote',
+        action='store_true')
 
-    pr_command = subparsers.add_parser('pull-request')
-    pr_command.add_argument('--title', required=True)
-    pr_command.add_argument('--body', required=True)
-    pr_command.add_argument('--notify', required=False)
+    pr_command = subparsers.add_parser('pr', 'pull-request')
+    pr_command.add_argument('-t', '--title', dest='title', required=True)
+    pr_command.add_argument('-b', '--body', dest='body', required=True)
+    pr_command.add_argument(
+        '-n',
+        '--notify',
+        help='users you would like to be notified',
+        required=False)
 
     opts = parser.parse_args(argslist)
     return opts
 
 
 def new_feature_branch(opts):
+    """
+    _new_feature_branch_
+
+    Checks out branch, creates new branch 'name', optionally
+    pushes new branch to remote
+    """
     config = load_configuration()
     repo_dir = os.getcwd()
     checkout_and_pull(
@@ -51,6 +64,11 @@ def new_feature_branch(opts):
 
 
 def new_pr(opts):
+    """
+    _new_pr_
+
+    Creates a pull request
+    """
     config = load_configuration()
     repo_dir = os.getcwd()
     pr_body = '{0} \n{1}'.format(opts.notify, opts.body)

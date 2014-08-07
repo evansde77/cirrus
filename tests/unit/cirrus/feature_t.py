@@ -32,9 +32,18 @@ class FeatureCommandTest(unittest.TestCase):
             'cirrus.feature.load_configuration',
             self.config)
         self.harness.setUp()
+        self.patch_pull = mock.patch('cirrus.feature.checkout_and_pull')
+        self.patch_branch = mock.patch('cirrus.feature.branch')
+        self.patch_push = mock.patch('cirrus.feature.push')
+        self.mock_pull = self.patch_pull.start()
+        self.mock_branch = self.patch_branch.start()
+        self.mock_push = self.patch_push.start()
 
     def tearDown(self):
         self.harness.tearDown()
+        self.patch_pull.stop()
+        self.patch_branch.stop()
+        self.patch_push.stop()
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
 
@@ -47,17 +56,14 @@ class FeatureCommandTest(unittest.TestCase):
         opts.name = 'testbranch'
         opts.push = False
 
-        with mock.patch('cirrus.feature.checkout_and_pull') as mock_pull:
-            with mock.patch('cirrus.feature.branch') as mock_branch:
-                with mock.patch('cirrus.feature.push') as mock_push:
-                    new_feature_branch(opts)
-                    self.failUnless(mock_pull.called)
-                    self.assertEqual(mock_pull.call_args[0][1], 'develop')
-                    self.failUnless(mock_branch.called)
-                    self.assertEqual(
-                        mock_branch.call_args[0][1],
-                        ''.join(('feature/', opts.name)))
-                    self.failIf(mock_push.called)
+        new_feature_branch(opts)
+        self.failUnless(self.mock_pull.called)
+        self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
+        self.failUnless(self.mock_branch.called)
+        self.assertEqual(
+            self.mock_branch.call_args[0][1],
+            ''.join(('feature/', opts.name)))
+        self.failIf(self.mock_push.called)
 
     def test_new_feature_branch_push(self):
         """
@@ -71,17 +77,14 @@ class FeatureCommandTest(unittest.TestCase):
         opts.name = 'testbranch'
         opts.push = True
 
-        with mock.patch('cirrus.feature.checkout_and_pull') as mock_pull:
-            with mock.patch('cirrus.feature.branch') as mock_branch:
-                with mock.patch('cirrus.feature.push') as mock_push:
-                    new_feature_branch(opts)
-                    self.failUnless(mock_pull.called)
-                    self.assertEqual(mock_pull.call_args[0][1], 'develop')
-                    self.failUnless(mock_branch.called)
-                    self.assertEqual(
-                        mock_branch.call_args[0][1],
-                        ''.join(('feature/', opts.name)))
-                    self.failUnless(mock_push.called)
+        new_feature_branch(opts)
+        self.failUnless(self.mock_pull.called)
+        self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
+        self.failUnless(self.mock_branch.called)
+        self.assertEqual(
+            self.mock_branch.call_args[0][1],
+            ''.join(('feature/', opts.name)))
+        self.failUnless(self.mock_push.called)
 
     def test_new_pr(self):
         """
