@@ -7,13 +7,15 @@ Implement git cirrus release command
 
 """
 import os
+import sys
 import datetime
 import itertools
 from fabric.operations import put, local
 
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
-from cirrus.git_tools import build_release_notes
+from cirrus.configuration import get_pypi_auth
+from cirrus.github_tools import build_release_notes
 from cirrus.git_tools import checkout_and_pull
 from cirrus.git_tools import branch
 from cirrus.git_tools import commit_files
@@ -108,7 +110,7 @@ def build_parser(argslist):
 
     build_command = subparsers.add_parser('build')
 
-    publish_command = subparsers.add_parser('publish')
+    upload_command = subparsers.add_parser('upload')
 
     opts = parser.parse_args(argslist)
     return opts
@@ -198,11 +200,12 @@ def upload_release(opts):
         raise RuntimeError(msg)
 
     pypi_conf = config.pypi_config()
+    pypi_auth = get_pypi_auth()
     package_dir = pypi_conf['pypi_upload_path']
     with FabricHelper(
-            pypi_conf['pypi_hostname'],
-            pypi_conf['pypi_username'],
-            pypi_conf['pypi_ssh_key']):
+            pypi_conf['pypi_url'],
+            pypi_auth['username'],
+            pypi_auth['ssh_key']):
 
         # fabric put the file onto the pypi server
         put(build_artifact, package_dir, use_sudo=True)
@@ -230,8 +233,8 @@ def build_release(opts):
     return build_artifact
 
 
-def main(argslist):
-    opts = build_parser(argslist)
+def main():
+    opts = build_parser(sys.argv)
     if opts.command == 'new':
         new_release(opts)
 
@@ -244,4 +247,4 @@ def main(argslist):
 
 if __name__ == '__main__':
 
-    main(['publish'])
+    main()
