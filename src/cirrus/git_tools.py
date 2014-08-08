@@ -91,3 +91,18 @@ def get_active_branch(repo_dir):
     """
     repo = git.Repo(repo_dir)
     return repo.active_branch
+
+
+def merge(repo_dir, source, destination):
+    """
+    _merge_
+
+    Merge source branch into destination branch
+    """
+    repo = git.Repo(repo_dir)
+    repo.git.checkout(source)
+
+    ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(source)
+    repo.remotes.origin.pull(ref)
+
+    repo.git.merge(destination)
