@@ -4,6 +4,7 @@ _feature_
 Command to create a new feature branch off of the develop branch
 '''
 import os
+import sys
 from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration
@@ -81,16 +82,20 @@ def new_pr(opts):
         pr_info)
 
 
-def main(argslist):
+def main():
     """
     _main_
 
     Execute feature command
     """
-    opts = build_parser(argslist)
+    opts = build_parser(sys.argv)
     if opts.command == 'new':
         new_feature_branch(opts)
     if opts.command == 'pull-request':
         new_pr(opts)
     else:
         exit(1)
+
+
+if __name__ == '__main__':
+    main()
