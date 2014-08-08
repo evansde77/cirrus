@@ -66,12 +66,6 @@ class Configuration(dict):
     def pypi_url(self):
         return self.get('pypi', {}).get('pypi_url')
 
-    def pypi_auth(self):
-        return (
-            self.get('pypi', {}).get('pypi_username'),
-            self.get('pypi', {}).get('pypi_password')
-        )
-
     def pypi_config(self):
         """
         get the details for uploading to pypi
