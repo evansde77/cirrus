@@ -10,6 +10,7 @@ This command:
 
 """
 import os
+import sys
 import subprocess
 from cirrus.environment import cirrus_home
 from cirrus.configuration import load_configuration
@@ -48,7 +49,19 @@ def main():
         '-r',
         reqs_name
     ]
-    subprocess.call(cmd)
+    try:
+        subprocess.call(cmd)
+    except OSError as ex:
+        msg = (
+            "Error running pip install command during build\n"
+            "Error was {0}\n"
+            "Running command: {1}\n"
+            "Working Dir: {2}\n"
+            "Virtualenv: {3}\n"
+            "Requirements: {4}\n"
+            ).format(ex, cmd, working_dir, venv_path, reqs_name)
+        print(msg)
+        sys.exit(1)
 
 
 if __name__ == '__main__':
