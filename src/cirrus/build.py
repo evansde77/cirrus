@@ -53,8 +53,8 @@ def main():
         'install',
         "-i",
         "https://{pypi_username}:{pypi_token}@{pypi_server}/simple".format(
-            pypi_token=pypi_conf['pypi_token'],
-            pypi_username=pypi_conf['pypi_username'],
+            pypi_token=pypi_conf['token'],
+            pypi_username=pypi_conf['username'],
             pypi_server=pypi_server
             ),
         '-r',
