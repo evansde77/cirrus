@@ -13,7 +13,7 @@ import os
 import sys
 import subprocess
 from cirrus.environment import cirrus_home
-from cirrus.configuration import load_configuration
+from cirrus.configuration import load_configuration, get_pypi_auth
 
 
 def main():
@@ -33,22 +33,42 @@ def main():
     config = load_configuration()
     build_params = config.get('build', {})
 
+
     # we have custom build controls in the cirrus.conf
     venv_name = build_params.get('virtualenv_name', 'venv')
     reqs_name = build_params.get('requirements_file', 'requirements.txt')
     venv_path = os.path.join(working_dir, venv_name)
-    venv_command = os.path.join(cirrus_home(), 'bin', 'virtualenv')
+    venv_command = os.path.join(cirrus_home(), 'cirrus', 'venv', 'bin', 'virtualenv')
     if not os.path.exists(venv_path):
         cmd = [venv_command, '--distribute', venv_path]
         subprocess.call(cmd)
 
-    # now we can install requirements into the newly created venv
-    cmd = [
+
+    # custom pypi server
+    pypi_server = config.pypi_url()
+    if pypi_server is not None:
+        pypi_conf = get_pypi_auth()
+        cmd = [
         '{0}/bin/pip'.format(venv_path),
         'install',
+        "-i",
+        "https://{pypi_username}:{pypi_token}@{pypi_server}/simple".format(
+            pypi_token=pypi_conf['token'],
+            pypi_username=pypi_conf['username'],
+            pypi_server=pypi_server
+            ),
         '-r',
         reqs_name
-    ]
+        ]
+
+    else:
+        # no pypi server
+        cmd = [
+            '{0}/bin/pip'.format(venv_path),
+            'install',
+            '-r',
+            reqs_name
+        ]
     try:
         subprocess.call(cmd)
     except OSError as ex:
