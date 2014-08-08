@@ -32,7 +32,7 @@ def build_parser(argslist):
         help='include this to push new feature to remote',
         action='store_true')
 
-    pr_command = subparsers.add_parser('pr', 'pull-request')
+    pr_command = subparsers.add_parser('pull-request')
     pr_command.add_argument('-t', '--title', dest='title', required=True)
     pr_command.add_argument('-b', '--body', dest='body', required=True)
     pr_command.add_argument(
