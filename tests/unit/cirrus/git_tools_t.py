@@ -7,6 +7,7 @@ import unittest
 from cirrus.git_tools import branch
 from cirrus.git_tools import checkout_and_pull
 from cirrus.git_tools import get_active_branch
+from cirrus.git_tools import merge
 from cirrus.git_tools import push
 
 
@@ -50,6 +51,13 @@ class GitToolsTest(unittest.TestCase):
         _test_get_active_branch_
         """
         get_active_branch(None)
+        self.failUnless(self.mock_git.Repo.called)
+
+    def test_merge(self):
+        branch1 = 'branch1'
+        branch2 = 'branch2'
+
+        merge(None, branch1, branch2)
         self.failUnless(self.mock_git.Repo.called)
 
 if __name__ == "__main__":
