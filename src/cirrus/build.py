@@ -38,9 +38,11 @@ def main():
     venv_name = build_params.get('virtualenv_name', 'venv')
     reqs_name = build_params.get('requirements_file', 'requirements.txt')
     venv_path = os.path.join(working_dir, venv_name)
+    venv_bin_path = os.path.join(venv_path, 'bin', 'python')
     venv_command = os.path.join(cirrus_home(), 'cirrus', 'venv', 'bin', 'virtualenv')
-    if not os.path.exists(venv_path):
+    if not os.path.exists(venv_bin_path):
         cmd = [venv_command, '--distribute', venv_path]
+        print "Bootstrapping virtualenv: {0}".format(venv_path)
         subprocess.call(cmd)
 
 
