@@ -26,7 +26,7 @@ def build_parser(argslist):
 
     subparsers = parser.add_subparsers(dest='command')
     new_command = subparsers.add_parser('new')
-    new_command.add_argument('name', required=True)
+    new_command.add_argument('name', nargs='+')
     new_command.add_argument(
         '--push',
         help='include this to push new feature to remote',
@@ -58,7 +58,7 @@ def new_feature_branch(opts):
         repo_dir,
         config.gitflow_branch_name())
     branch(repo_dir,
-           ''.join((config.gitflow_feature_prefix(), opts.name)),
+           ''.join((config.gitflow_feature_prefix(), opts.name[0])),
            config.gitflow_branch_name())
     if opts.push:
         push(repo_dir)
