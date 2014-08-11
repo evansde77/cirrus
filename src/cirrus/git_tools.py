@@ -83,17 +83,6 @@ def push(repo_dir):
     return repo.remotes.origin.push(repo.head)
 
 
-def push_head_with_tags(repo_dir):
-    """
-    _push_repo_with_tags_
-
-    Push the current repo head to origin including tags
-
-    """
-    repo = git.Repo(repo_dir)
-    repo.remotes.origin.push(repo.head, tags=True)
-
-
 def tag_release(repo_dir, tag, master='master'):
     """
     _tag_release_
