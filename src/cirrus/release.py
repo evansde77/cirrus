@@ -16,9 +16,10 @@ from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.configuration import get_pypi_auth
 from cirrus.github_tools import build_release_notes
-from cirrus.git_tools import checkout_and_pull
-from cirrus.git_tools import branch
+from cirrus.git_tools import checkout_and_pull, push
+from cirrus.git_tools import branch, merge
 from cirrus.git_tools import commit_files
+from cirrus.git_tools import tag_release, get_active_branch
 from cirrus.utils import update_file, update_version
 from cirrus.fabric_helpers import FabricHelper
 
@@ -78,6 +79,18 @@ def artifact_name(config):
     return build_artifact
 
 
+def release_branch_name(config):
+    """
+    build expected release branch name from current config
+
+    """
+    branch_name = "{0}{1}".format(
+        config.gitflow_release_prefix(),
+        config.package_version()
+    )
+    return branch_name
+
+
 def build_parser(argslist):
     """
     _build_parser_
@@ -125,15 +138,13 @@ def new_release(opts):
     - Edit the history file with release notes
 
     """
-    if not highlander( [opts.major, opts.minor, opts.micro]):
+    if not highlander([opts.major, opts.minor, opts.micro]):
         msg = "Can only specify one of --major, --minor or --micro"
         raise RuntimeError(msg)
 
-
-
     fields = ['major', 'minor', 'micro']
     mask = [opts.major, opts.minor, opts.micro]
-    field = [ x for x in itertools.compress(fields, mask)][0]
+    field = [x for x in itertools.compress(fields, mask)][0]
 
     config = load_configuration()
 
@@ -192,6 +203,17 @@ def upload_release(opts):
     """
     config = load_configuration()
     build_artifact = artifact_name(config)
+    repo_dir = os.getcwd()
+    curr_branch = get_active_branch(repo_dir)
+    expected_branch = release_branch_name(config)
+
+    if curr_branch.name != expected_branch:
+        msg = (
+            "Not on the expected release branch according "
+            "to cirrus.conf\n Expected:{0} but on {1}"
+        ).format(expected_branch, curr_branch)
+        raise RuntimeError(msg)
+
     if not os.path.exists(build_artifact):
         msg = (
             "Expected build artifact: {0} Not Found, upload aborted\n"
@@ -199,6 +221,7 @@ def upload_release(opts):
         )
         raise RuntimeError(msg)
 
+    # upload to pypi via fabric over ssh
     pypi_conf = config.pypi_config()
     pypi_auth = get_pypi_auth()
     package_dir = pypi_conf['pypi_upload_path']
@@ -210,11 +233,25 @@ def upload_release(opts):
         # fabric put the file onto the pypi server
         put(build_artifact, package_dir, use_sudo=True)
 
-    #TODO:
-    # Merge release branch to master and tag
-    # push to master
+    # merge in release branches and tag, push to remote
+    tag = config.package_version()
+    master = config.gitflow_master_name()
+    develop = config.gitflow_branch_name()
+
+    # merge release branch into master
+    checkout_and_pull(repo_dir, master)
+    merge(repo_dir, master, expected_branch)
+    push(repo_dir)
+    tag_release(repo_dir, tag, master)
+
     # Merge release branch back to develop
     # push to develop
+    checkout_and_pull(repo_dir, develop)
+    merge(repo_dir, develop, expected_branch)
+    push(repo_dir)
+
+    # TODO: clean up release branch
+    return
 
 
 def build_release(opts):

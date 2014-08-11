@@ -76,6 +76,9 @@ class Configuration(dict):
     def gitflow_branch_name(self):
         return self.get('gitflow', {}).get('develop_branch', 'develop')
 
+    def gitflow_master_name(self):
+        return self.get('gitflow', {}).get('master_branch', 'master')
+
     def gitflow_feature_prefix(self):
         return self.get('gitflow', {}).get('feature_branch_prefix', 'feature/')
 
@@ -84,7 +87,8 @@ class Configuration(dict):
 
     def release_notes(self):
         """
-        returns the release notes file and release notes sentinel from the config
+        returns the release notes file and release
+        notes sentinel from the config
         """
         return (
             self.get('package', {}).get('release_notes_file'),
