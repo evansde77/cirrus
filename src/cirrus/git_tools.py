@@ -83,6 +83,27 @@ def push(repo_dir):
     return repo.remotes.origin.push(repo.head)
 
 
+def tag_release(repo_dir, tag, master='master'):
+    """
+    _tag_release_
+
+    Checkout master, tag it and push tags
+
+    """
+    checkout_and_pull(repo_dir, master)
+    repo = git.Repo('.')
+    exists = any(existing_tag.name == tag for existing_tag in repo.tags)
+    if exists:
+        # tag already exists
+        msg = (
+            "Attempting to create tag {0} on "
+            "{1} but tag exists already"
+        ).format(tag, master)
+        raise RuntimeError(msg)
+    repo.create_tag(tag)
+    repo.remotes.origin.push(repo.head, tags=True)
+
+
 def get_active_branch(repo_dir):
     """
     _active_branch_
