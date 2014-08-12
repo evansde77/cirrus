@@ -24,16 +24,14 @@ def create_pull_request(
     """
     if repo_dir == None:
         raise RuntimeError('repo_dir is None')
-    if owner == None:
-        raise RuntimeError('owner is None')
     if 'title' not in pr_info:
         raise RuntimeError('title is None')
     if 'body' not in pr_info:
         raise RuntimeError('body is None')
-    config = load_configuration
+    config = load_configuration()
 
     url = 'https://api.github.com/repos/{0}/{1}/pulls'.format(
-        owner,
+        config.organisation_name(),
         repo_dir)
 
     if token is None:

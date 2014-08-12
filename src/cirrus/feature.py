@@ -70,16 +70,12 @@ def new_pr(opts):
 
     Creates a pull request
     """
-    config = load_configuration()
     repo_dir = os.getcwd()
     pr_body = '{0} \n{1}'.format(opts.notify, opts.body)
     pr_info = {
         'title': opts.title,
         'body': pr_body}
-    create_pull_request(
-        repo_dir,
-        config.organisation_name(),
-        pr_info)
+    create_pull_request(repo_dir, pr_info)
 
 
 def main():
