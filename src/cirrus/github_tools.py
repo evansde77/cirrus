@@ -11,7 +11,6 @@ from cirrus.git_tools import get_active_branch
 
 def create_pull_request(
             repo_dir,
-            owner,
             pr_info,
             token=None):
     """
@@ -24,17 +23,15 @@ def create_pull_request(
     """
     if repo_dir == None:
         raise RuntimeError('repo_dir is None')
-    if owner == None:
-        raise RuntimeError('owner is None')
     if 'title' not in pr_info:
         raise RuntimeError('title is None')
     if 'body' not in pr_info:
         raise RuntimeError('body is None')
-    config = load_configuration
+    config = load_configuration()
 
     url = 'https://api.github.com/repos/{0}/{1}/pulls'.format(
-        owner,
-        repo_dir)
+        config.organisation_name(),
+        config.package_name())
 
     if token is None:
         token = get_github_auth()[1]
@@ -45,12 +42,13 @@ def create_pull_request(
 
     data = {
         'title': pr_info['title'],
-        'head': get_active_branch(repo_dir),
+        'head': get_active_branch(repo_dir).name,
         'base': config.gitflow_branch_name(),
         'body': pr_info['body']}
 
+    print url
     resp = requests.post(url, data=json.dumps(data), headers=headers)
-    resp.rais_for_status()
+    resp.raise_for_status()
 
 
 def get_tags_with_sha(owner, repo, token=None):
