@@ -8,9 +8,20 @@ from the cirrus.conf file
 import setuptools
 import ConfigParser
 
+
+def get_default(parser, section, option, default):
+    """helper to get config settings with a default if not present"""
+    try:
+        result = parser.get(section, option)
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        result = default
+    return result
+
+
 parser = ConfigParser.RawConfigParser()
 parser.read('cirrus.conf')
-src_dir = parser.get('package', 'find_packages')
+src_dir = get_default(parser, 'package', 'find_packages', '.')
+excl_dirs = get_default(parser, 'package', 'exclude_packages', [])
 
 
 
@@ -28,7 +39,7 @@ if parser.has_section('console_scripts'):
     setup_args['entry_points'] = {'console_scripts' : scripts}
 
 if src_dir:
-    setup_args['packages'] = setuptools.find_packages(src_dir)
+    setup_args['packages'] = setuptools.find_packages(src_dir, exclude=excl_dirs)
     setup_args['provides'] = setuptools.find_packages(src_dir)
 
 

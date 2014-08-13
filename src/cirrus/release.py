@@ -22,6 +22,10 @@ from cirrus.git_tools import commit_files
 from cirrus.git_tools import tag_release, get_active_branch
 from cirrus.utils import update_file, update_version
 from cirrus.fabric_helpers import FabricHelper
+from cirrus.logger import get_logger
+
+
+LOGGER = get_logger()
 
 
 def highlander(iterable):
@@ -138,8 +142,10 @@ def new_release(opts):
     - Edit the history file with release notes
 
     """
+    LOGGER.info("Creating new release...")
     if not highlander([opts.major, opts.minor, opts.micro]):
         msg = "Can only specify one of --major, --minor or --micro"
+        LOGGER.error(msg)
         raise RuntimeError(msg)
 
     fields = ['major', 'minor', 'micro']
@@ -157,6 +163,7 @@ def new_release(opts):
         config.gitflow_release_prefix(),
         new_version
     )
+    LOGGER.info('release branch is {0}'.format(branch_name))
 
     # need to be on the latest develop
     repo_dir = os.getcwd()
@@ -173,6 +180,7 @@ def new_release(opts):
     # update release notes file
     relnotes_file, relnotes_sentinel = config.release_notes()
     if (relnotes_file is not None) and (relnotes_sentinel is not None):
+        LOGGER.info('Updating release notes in {0}'.format(relnotes_file))
         relnotes = "Release: {0} Created: {1}\n".format(
             new_version,
             datetime.datetime.utcnow().isoformat()
@@ -187,12 +195,16 @@ def new_release(opts):
 
     # update __version__ or equivalent
     version_file, version_attr = config.version_file()
+    print version_file, version_attr
     if version_file is not None:
+        LOGGER.info('Updating {0} attribute in {1}'.format(version_file, version_attr))
         update_version(version_file, new_version, version_attr)
         changes.append(version_file)
 
     # update files changed
     msg = "cirrus release: new release created for {0}".format(branch_name)
+    LOGGER.info('Committing files: {0}'.format(','.join(changes)))
+    LOGGER.info(msg)
     commit_files(repo_dir, msg, *changes)
     return
 
@@ -201,8 +213,10 @@ def upload_release(opts):
     """
     _upload_release_
     """
+    LOGGER.info("Uploading release...")
     config = load_configuration()
     build_artifact = artifact_name(config)
+    LOGGER.info("Uploading artifact: {0}".format(build_artifact))
     repo_dir = os.getcwd()
     curr_branch = get_active_branch(repo_dir)
     expected_branch = release_branch_name(config)
@@ -212,19 +226,22 @@ def upload_release(opts):
             "Not on the expected release branch according "
             "to cirrus.conf\n Expected:{0} but on {1}"
         ).format(expected_branch, curr_branch)
+        LOGGER.error(msg)
         raise RuntimeError(msg)
 
     if not os.path.exists(build_artifact):
         msg = (
             "Expected build artifact: {0} Not Found, upload aborted\n"
             "Did you run git cirrus release build?"
-        )
+        ).format(build_artifact)
+        LOGGER.error(msg)
         raise RuntimeError(msg)
 
     # upload to pypi via fabric over ssh
     pypi_conf = config.pypi_config()
     pypi_auth = get_pypi_auth()
     package_dir = pypi_conf['pypi_upload_path']
+    LOGGER.info("Uploading {0} to {1}".format(build_artifact, pypi_conf['pypi_url']))
     with FabricHelper(
             pypi_conf['pypi_url'],
             pypi_auth['username'],
@@ -239,6 +256,7 @@ def upload_release(opts):
     develop = config.gitflow_branch_name()
 
     # merge release branch into master
+    LOGGER.info("Tagging and pushing {0}".format(tag))
     checkout_and_pull(repo_dir, master)
     merge(repo_dir, master, expected_branch)
     push(repo_dir)
@@ -246,10 +264,11 @@ def upload_release(opts):
 
     # Merge release branch back to develop
     # push to develop
+    LOGGER.info("Merging back to develop...")
     checkout_and_pull(repo_dir, develop)
     merge(repo_dir, develop, expected_branch)
     push(repo_dir)
-
+    LOGGER.info("Release {0} has been uploaded".format(tag))
     # TODO: clean up release branch
     return
 
@@ -261,12 +280,15 @@ def build_release(opts):
     run python setup.py sdist to create the release artifact
 
     """
+    LOGGER.info("Building release...")
     config = load_configuration()
     local('python setup.py sdist')
     build_artifact = artifact_name(config)
     if not os.path.exists(build_artifact):
         msg = "Expected build artifact: {0} Not Found".format(build_artifact)
+        LOGGER.error(msg)
         raise RuntimeError(msg)
+    LOGGER.info("Release artifact created: {0}".format(build_artifact))
     return build_artifact
 
 
