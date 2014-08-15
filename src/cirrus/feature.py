@@ -83,8 +83,8 @@ def new_pr(opts):
     pr_info = {
         'title': opts.title,
         'body': pr_body}
-    create_pull_request(repo_dir, pr_info)
-    LOGGER.info("Created PR {0}".format(opts.title))
+    pr_url = create_pull_request(repo_dir, pr_info)
+    LOGGER.info("Created PR {0}".format(pr_url))
 
 
 def main():
