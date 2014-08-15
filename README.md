@@ -53,3 +53,60 @@ This file, coupled with the cirrus setup.py template and command line tools dict
 Cirrus Commands:
 ================ 
 
+#### cirrus hello 
+A simple test command that says hello, verifies that things are working and prints out some info about your cirrus install
+
+Usage:
+```bash
+git cirrus hello
+```
+
+
+#### cirrus build
+Builds a new virtualenv and installs the requirements for the package, setting up a development/testing/deployment environment for the package. 
+
+Usage:
+```bash
+git cirrus build 
+```
+
+The virtualenv is created in ./venv. 
+Optional parameters for the build command are read from the cirrus.conf, they are;
+
+1. build Section
+  1. virtualenv_name - sets the name of the virtualenv directory, defaults to venv
+  2. requirements_file - name of the requirements.txt file, defaults to requirements.txt 
+3. pypi Section
+  4. pypi_url - If present, will use the pypi server to install requirements, also requires the pypi username and token to be set in the cirrus section of your gitconfig  
+
+
+#### cirrus feature 
+Creates a new feature branch, optionally pushing the new branch upstream following a git-flow style workflow 
+
+
+#### cirrus pull-request 
+Creates a new Pull Request in github requesting to merge the current feature branch with the develop branch, specifying the title, body and list of people to tag in the PR. 
+
+#### cirrus release
+Commands related to creation of a new git-flow style release branch, building the release and uploading it to a pypi server. 
+There are three subcommands:
+
+1. new - creates a new release branch, increments the package version, builds the release notes if configured. 
+2. build - Runs sdist to create a new build artifact from the release branch 
+3. upload - Pushes the build artifact to the pypi server configured in the cirrus conf. 
+
+Usage:
+```bash 
+git cirrus release new --micro 
+# test things here!!
+git cirrus release build 
+git cirrus release upload 
+```
+
+Options:
+
+1. release new requires one of --micro, --minor or --macro to indicate which semantic version field to increment
+
+
+
+
