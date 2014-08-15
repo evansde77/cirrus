@@ -61,16 +61,10 @@ class Configuration(dict):
         return self.get('package', {}).get('name')
 
     def organisation_name(self):
-        return self.get('package', {}).get('organisation')
+        return self.get('package', {}).get('organization')
 
     def pypi_url(self):
         return self.get('pypi', {}).get('pypi_url')
-
-    def pypi_auth(self):
-        return (
-            self.get('pypi', {}).get('pypi_username'),
-            self.get('pypi', {}).get('pypi_password')
-        )
 
     def pypi_config(self):
         """
@@ -82,6 +76,9 @@ class Configuration(dict):
     def gitflow_branch_name(self):
         return self.get('gitflow', {}).get('develop_branch', 'develop')
 
+    def gitflow_master_name(self):
+        return self.get('gitflow', {}).get('master_branch', 'master')
+
     def gitflow_feature_prefix(self):
         return self.get('gitflow', {}).get('feature_branch_prefix', 'feature/')
 
@@ -90,7 +87,8 @@ class Configuration(dict):
 
     def release_notes(self):
         """
-        returns the release notes file and release notes sentinel from the config
+        returns the release notes file and release
+        notes sentinel from the config
         """
         return (
             self.get('package', {}).get('release_notes_file'),
@@ -155,6 +153,25 @@ def get_github_auth():
     github_user = config.get('cirrus', 'github-user')
     github_token = config.get('cirrus', 'github-token')
     return github_user, github_token
+
+
+def get_pypi_auth():
+    """
+    _pypi_auth_
+
+    Get pypi credentials from gitconfig
+
+    """
+    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+    config = gitconfig.config(gitconfig_file)
+    pypi_user = config.get('cirrus', 'pypi-user')
+    pypi_key = config.get('cirrus', 'pypi-ssh-key')
+    pypi_token = config.get('cirrus', 'pypi-token')
+    return {
+        'username': pypi_user,
+        'ssh_key': pypi_key,
+        'token': pypi_token
+    }
 
 
 if __name__ == '__main__':

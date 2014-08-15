@@ -1,8 +1,9 @@
 Fabric==1.9.0
 mock==1.0.1
-venv/cache/GitPython-0.3.2.RC1.tar.gz
-venv/cache/argparse-1.2.1.tar.gz
-venv/cache/distribute-0.7.3.zip
-venv/cache/gitconfig-0.0.2.tar.gz
-venv/cache/requests-2.2.1-py2.py3-none-any.whl
-venv/cache/virtualenv-1.11.4-py2.py3-none-any.whl
+GitPython==0.3.2.RC1
+argparse==1.2.1
+distribute==0.7.3
+gitconfig==0.0.2
+requests==2.3.0
+virtualenv
+

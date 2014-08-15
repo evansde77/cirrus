@@ -91,6 +91,36 @@ def create_github_token(git_config):
     return
 
 
+def insert_pypi_credentials(git_config):
+    """
+    prompt the user to provide pypi credentials if not present
+
+    """
+    user = git_config.get('cirrus', 'pypi-user')
+    token = git_config.get('cirrus', 'pypi-token')
+    key = git_config.get('cirrus', 'pypi-ssh-key')
+    if user is None:
+        user = ask_question(
+            'what is your pypi username?',
+            default=os.environ['USER']
+        )
+        git_config.set('cirrus', 'pypi-user', user)
+    if token is None:
+        token = ask_question(
+            'what is your pypi token/password?',
+            default='notprovided'
+        )
+        git_config.set('cirrus', 'pypi-token', token)
+    if key is None:
+        key = ask_question(
+            'what is your pypi upload ssh key?',
+            default=os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
+        )
+        git_config.set('cirrus', 'pypi-ssh-key', key)
+    return
+
+
+
 def create_fogbugz_token(git_config):
     """
     _create_fogbugz_token_
@@ -143,12 +173,15 @@ def read_gitconfig():
     else:
         print "Looks like you already have a github token in .gitconfig..."
 
-    fb_token = config.get('cirrus', 'fogbugz-token')
-    if fb_token is None:
-        print "Generating Fogbugz Access Token"
-        create_fogbugz_token(config)
-    else:
-        print "Looks like you already have a FB token in .gitconfig..."
+    insert_pypi_credentials(config)
+
+    # disabling FB integration until it is actually needed/plugin
+    # fb_token = config.get('cirrus', 'fogbugz-token')
+    # if fb_token is None:
+    #     print "Generating Fogbugz Access Token"
+    #     create_fogbugz_token(config)
+    # else:
+    #     print "Looks like you already have a FB token in .gitconfig..."
 
     return config
 
@@ -227,4 +260,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    #main()
+    read_gitconfig()
