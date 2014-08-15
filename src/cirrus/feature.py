@@ -10,6 +10,9 @@ from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.git_tools import checkout_and_pull, branch, push
 from cirrus.github_tools import create_pull_request
+from cirrus.logger import get_logger
+
+LOGGER = get_logger()
 
 
 def build_parser(argslist):
@@ -57,11 +60,16 @@ def new_feature_branch(opts):
     checkout_and_pull(
         repo_dir,
         config.gitflow_branch_name())
+    LOGGER.info("Checked out and pulled {0}".format(
+        config.gitflow_branch_name()))
+    branch_name = ''.join((config.gitflow_feature_prefix(), opts.name[0]))
     branch(repo_dir,
-           ''.join((config.gitflow_feature_prefix(), opts.name[0])),
+           branch_name,
            config.gitflow_branch_name())
+    LOGGER.info("Created branch {0}".format(branch_name))
     if opts.push:
         push(repo_dir)
+        LOGGER.info("Branch {0} pushed to remote".format(branch_name))
 
 
 def new_pr(opts):
@@ -76,6 +84,7 @@ def new_pr(opts):
         'title': opts.title,
         'body': pr_body}
     create_pull_request(repo_dir, pr_info)
+    LOGGER.info("Created PR {0}".format(opts.title))
 
 
 def main():

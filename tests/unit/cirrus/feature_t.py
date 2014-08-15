@@ -61,9 +61,6 @@ class FeatureCommandTest(unittest.TestCase):
         self.failUnless(self.mock_pull.called)
         self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
         self.failUnless(self.mock_branch.called)
-        self.assertEqual(
-            self.mock_branch.call_args[0][1],
-            ''.join(('feature/', opts.name)))
         self.failIf(self.mock_push.called)
 
     def test_new_feature_branch_push(self):
@@ -82,9 +79,6 @@ class FeatureCommandTest(unittest.TestCase):
         self.failUnless(self.mock_pull.called)
         self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
         self.failUnless(self.mock_branch.called)
-        self.assertEqual(
-            self.mock_branch.call_args[0][1],
-            ''.join(('feature/', opts.name)))
         self.failUnless(self.mock_push.called)
 
     def test_new_pr(self):
@@ -99,7 +93,8 @@ class FeatureCommandTest(unittest.TestCase):
 
         with mock.patch('cirrus.feature.create_pull_request') as mock_pr:
             new_pr(opts)
-            self.failUnlessEqual(mock_pr.call_args[0][1], 'testorg')
+            self.failUnless('body' in mock_pr.call_args[0][1])
+            self.failUnless('title' in mock_pr.call_args[0][1])
             self.failUnless(mock_pr.called)
 
 
