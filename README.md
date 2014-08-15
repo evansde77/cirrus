@@ -80,12 +80,18 @@ Optional parameters for the build command are read from the cirrus.conf, they ar
   4. pypi_url - If present, will use the pypi server to install requirements, also requires the pypi username and token to be set in the cirrus section of your gitconfig  
 
 
-#### cirrus feature 
-Creates a new feature branch, optionally pushing the new branch upstream following a git-flow style workflow 
+#### cirrus feature
+Commands related to the creatation and management of a git-flow style feature branch.
 
+1. new - Creates a new feature branch, optionally pushing the new branch upstream following a git-flow style workflow
+2. pull-request - Creates a new Pull Request in github requesting to merge the current feature branch with the develop branch, specifying the title, body and list of people to tag in the PR. 
 
-#### cirrus pull-request 
-Creates a new Pull Request in github requesting to merge the current feature branch with the develop branch, specifying the title, body and list of people to tag in the PR. 
+Usage:
+```bash 
+git cirrus feature new BRANCH_NAME --push
+git cirrus feature pull-request --title TITLE --body BODY --notify @AGITHUBUSER,@ANOTHERGITHUBUSER
+```
+
 
 #### cirrus release
 Commands related to creation of a new git-flow style release branch, building the release and uploading it to a pypi server. 
