@@ -88,6 +88,9 @@ class Configuration(dict):
     def test_where(self):
         return self.get('test', {}).get('where')
 
+    def test_venv_name(self):
+        return self.get('test', {}).get('virtualenv')
+
     def release_notes(self):
         """
         returns the release notes file and release
