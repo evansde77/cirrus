@@ -3,8 +3,6 @@ _test_
 
 Command to run available test suites in a package
 '''
-import os
-import posixpath
 import sys
 from fabric.operations import local
 
