@@ -1,11 +1,13 @@
 '''
 _test_
 
-Command to run available test suits in a package
+Command to run available test suites in a package
 '''
 import nose
 import sys
 from argparse import ArgumentParser
+
+from cirrus.configuration import load_configuration
 
 
 def build_parser(argslist):
@@ -18,7 +20,8 @@ def build_parser(argslist):
     parser = ArgumentParser(
         description='git cirrus test command'
     )
-    parser.add_argument('command', nargs='+')
+    subparsers = parser.add_argument('command', nargs='+')
+    subparsers.add_command('--suite')
 
     opts = parser.parse_args(argslist)
     return opts
@@ -30,10 +33,11 @@ def main():
 
     Execute test command
     """
+    config = load_configuration()
     opts = build_parser(sys.argv)
-    if opts.args[0].startswith('--suit'):
-        suit = opts.args[0].lstrip('--suit=')
-        nose.run(suit)
+    if opts.suite:
+        suite = config.nose_args()
+        nose.run(suite)
     else:
         nose.run()
 
