@@ -4,27 +4,12 @@ _test_
 Command to run available test suites in a package
 '''
 import nose
+import os
+import posixpath
 import sys
 from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration
-
-
-def build_parser(argslist):
-    """
-    _build_parser_
-
-    Set up command line parser for the release command
-
-    """
-    parser = ArgumentParser(
-        description='git cirrus test command'
-    )
-    subparsers = parser.add_argument('command', nargs='+')
-    subparsers.add_command('--suite')
-
-    opts = parser.parse_args(argslist)
-    return opts
 
 
 def main():
@@ -34,12 +19,18 @@ def main():
     Execute test command
     """
     config = load_configuration()
-    opts = build_parser(sys.argv)
-    if opts.suite:
-        suite = config.nose_args()
-        nose.run(suite)
+    opts = sys.argv[1]
+    current_dir = os.getcwd()
+    print "current_dir: {0}".format(current_dir)
+    print opts
+    if opts=='suite':
+        pkg = posixpath.join(current_dir, config.test_where())
+        nose_args = '-w {0}'.format(pkg)
+        print 'nose_args: {0}'.format(nose_args)
+        arguments = ['test.py', pkg]
+        print "Got some args: {0}".format(nose.run(argv=arguments))
     else:
-        nose.run()
+        print "No args here: {0}".format(nose.run())
 
 
 if __name__ == '__main__':

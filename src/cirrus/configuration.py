@@ -85,8 +85,8 @@ class Configuration(dict):
     def gitflow_release_prefix(self):
         return self.get('gitflow', {}).get('release_branch_prefix', 'release/')
 
-    def nose_args(self):
-        return self.get('test-unit', {}).get('arguments')
+    def test_where(self):
+        return self.get('test', {}).get('where')
 
     def release_notes(self):
         """
