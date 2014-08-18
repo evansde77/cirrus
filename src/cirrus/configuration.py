@@ -85,11 +85,14 @@ class Configuration(dict):
     def gitflow_release_prefix(self):
         return self.get('gitflow', {}).get('release_branch_prefix', 'release/')
 
-    def test_where(self):
-        return self.get('test', {}).get('where')
+    def test_where(self, suite=None):
+        if suite is not None:
+            return self.get('test-{0}'.format(suite), {}).get('where')
+        else:
+            return self.get('test-default', {}).get('where')
 
-    def test_venv_name(self):
-        return self.get('test', {}).get('virtualenv')
+    def venv_name(self):
+        return self.get('package', {}).get('virtualenv')
 
     def release_notes(self):
         """

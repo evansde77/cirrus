@@ -19,10 +19,16 @@ def main():
     """
     config = load_configuration()
 
-    local('. ./{0}/bin/activate && nosetests -w {1}'.format(
-        config.test_venv_name(),
-        config.test_where()))
-
+    if len(sys.argv) > 2 and sys.argv[1] != '--suite':
+        exit(1)  # only '--suite' is allowed as an option
+    elif len(sys.argv) > 2:  # suite has been specified
+        local('. ./{0}/bin/activate && nosetests -w {1}'.format(
+            config.venv_name(),
+            config.test_where(sys.argv[2])))
+    else:  # use default
+        local('. ./{0}/bin/activate && nosetests -w {1}'.format(
+            config.venv_name(),
+            config.test_where()))
 
 if __name__ == '__main__':
     main()
