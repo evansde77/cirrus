@@ -6,4 +6,5 @@ distribute==0.7.3
 gitconfig==0.0.2
 requests==2.3.0
 virtualenv
-
+pep8==1.5.7
+pylint==1.3.0
