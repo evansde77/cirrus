@@ -114,5 +114,17 @@ Options:
 1. release new requires one of --micro, --minor or --macro to indicate which semantic version field to increment
 
 
+#### cirrus test
+Command for running tests in a package.
 
+Usage:
+```bash 
+git cirrus test
+```
 
+Options and config:
+--suite SUITE_LOCATION
+
+Must define name of virtualenv in [package] virtualenv
+Must define [test-default] where (default location for tests, optional if you choose to always include --suite)
+May define [test-SUITE_LOCATION] where
