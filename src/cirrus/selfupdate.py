@@ -27,11 +27,14 @@ def build_parser(argslist):
     """
     _build_parser_
 
-    Set up command line parser for the release command
+    Set up command line parser for the selfupdate command
 
     """
     parser = argparse.ArgumentParser(
-        description='git cirrus feature command'
+        description=(
+            'git cirrus selfupdate command, '
+            'used to update cirrus itself'
+            )
     )
     parser.add_argument('command', nargs='?')
     parser.add_argument(
@@ -144,6 +147,14 @@ def update_to_tag(tag, config, origin='origin'):
 
 
 def main():
+    """
+    _main_
+
+    parse command line opts and deduce wether to check out
+    a branch or tag, default behaviour is to look up latest
+    release on github and install that
+
+    """
     opts = build_parser(sys.argv)
     config = load_configuration()
     if opts.branch and opts.version:
