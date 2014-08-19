@@ -4,9 +4,28 @@ _test_
 Command to run available test suites in a package
 '''
 import sys
+
 from fabric.operations import local
+from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration
+
+
+def build_parser(argslist):
+    """
+    _build_parser_
+
+    Set up command line parser for the release command
+
+    """
+    parser = ArgumentParser(
+        description='git cirrus test command'
+    )
+    parser.add_argument('test', nargs='+')
+    parser.add_argument('--suite') 
+
+    opts = parser.parse_args(argslist)
+    return opts
 
 
 def nose_test(location):
@@ -27,12 +46,12 @@ def main():
 
     Execute test command
     """
-    if len(sys.argv) > 2 and sys.argv[1] != '--suite':
-        exit(1)  # only '--suite' is allowed as an option
-    elif len(sys.argv) > 2:  # suite has been specified
-        nose_test(sys.argv[2])
-    else:  # use default
+    opts = build_parser(sys.argv)
+    if opts.suite is not None:
+        nose_test(opts.suite)
+    else:
         nose_test('default')
+
 
 if __name__ == '__main__':
     main()
