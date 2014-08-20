@@ -277,7 +277,8 @@ def upload_release(opts):
     if not opts.test:
         LOGGER.info("pushing to remote...")
         push(repo_dir)
-    tag_release(repo_dir, tag, master, push=opts.test)
+    do_push = not opts.test
+    tag_release(repo_dir, tag, master, push=do_push)
 
     # Merge release branch back to develop
     # push to develop
