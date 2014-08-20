@@ -89,7 +89,7 @@ class Configuration(dict):
         return self.get('test-{0}'.format(suite), {}).get('where')
 
     def venv_name(self):
-        return self.get('package', {}).get('virtualenv')
+        return self.get('build', {}).get('virtualenv_name', 'venv')
 
     def release_notes(self):
         """
