@@ -128,6 +128,18 @@ def build_parser(argslist):
     build_command = subparsers.add_parser('build')
 
     upload_command = subparsers.add_parser('upload')
+    upload_command.add_argument(
+        '--test',
+        action='store_true',
+        dest='test',
+        help="test only, do not actually push or upload"
+    )
+    upload_command.add_argument(
+        '--no-upload',
+        action='store_true',
+        dest='no_upload',
+        help="do not upload build artifact to pypi"
+    )
 
     opts = parser.parse_args(argslist)
     return opts
@@ -195,7 +207,6 @@ def new_release(opts):
 
     # update __version__ or equivalent
     version_file, version_attr = config.version_file()
-    print version_file, version_attr
     if version_file is not None:
         LOGGER.info('Updating {0} attribute in {1}'.format(version_file, version_attr))
         update_version(version_file, new_version, version_attr)
@@ -238,17 +249,20 @@ def upload_release(opts):
         raise RuntimeError(msg)
 
     # upload to pypi via fabric over ssh
-    pypi_conf = config.pypi_config()
-    pypi_auth = get_pypi_auth()
-    package_dir = pypi_conf['pypi_upload_path']
-    LOGGER.info("Uploading {0} to {1}".format(build_artifact, pypi_conf['pypi_url']))
-    with FabricHelper(
-            pypi_conf['pypi_url'],
-            pypi_auth['username'],
-            pypi_auth['ssh_key']):
+    if opts.no_upload or opts.test:
+        LOGGER.info("Uploading to pypi disabled by test or no-upload option...")
+    else:
+        pypi_conf = config.pypi_config()
+        pypi_auth = get_pypi_auth()
+        package_dir = pypi_conf['pypi_upload_path']
+        LOGGER.info("Uploading {0} to {1}".format(build_artifact, pypi_conf['pypi_url']))
+        with FabricHelper(
+                pypi_conf['pypi_url'],
+                pypi_auth['username'],
+                pypi_auth['ssh_key']):
 
-        # fabric put the file onto the pypi server
-        put(build_artifact, package_dir, use_sudo=True)
+            # fabric put the file onto the pypi server
+            put(build_artifact, package_dir, use_sudo=True)
 
     # merge in release branches and tag, push to remote
     tag = config.package_version()
@@ -259,16 +273,21 @@ def upload_release(opts):
     LOGGER.info("Tagging and pushing {0}".format(tag))
     checkout_and_pull(repo_dir, master)
     merge(repo_dir, master, expected_branch)
-    push(repo_dir)
-    tag_release(repo_dir, tag, master)
+
+    if not opts.test:
+        LOGGER.info("pushing to remote...")
+        push(repo_dir)
+    tag_release(repo_dir, tag, master, push=opts.test)
 
     # Merge release branch back to develop
     # push to develop
     LOGGER.info("Merging back to develop...")
     checkout_and_pull(repo_dir, develop)
     merge(repo_dir, develop, expected_branch)
-    push(repo_dir)
-    LOGGER.info("Release {0} has been uploaded".format(tag))
+    if not opts.test:
+        LOGGER.info("pushing to remote...")
+        push(repo_dir)
+    LOGGER.info("Release {0} has been tagged and uploaded".format(tag))
     # TODO: clean up release branch
     return
 
