@@ -138,11 +138,13 @@ def push(repo_dir):
     return repo.remotes.origin.push(repo.head)
 
 
-def tag_release(repo_dir, tag, master='master'):
+def tag_release(repo_dir, tag, master='master', push=True):
     """
     _tag_release_
 
     Checkout master, tag it and push tags
+
+    Optionally, do not push the tag if push is False
 
     """
     checkout_and_pull(repo_dir, master)
@@ -156,7 +158,8 @@ def tag_release(repo_dir, tag, master='master'):
         ).format(tag, master)
         raise RuntimeError(msg)
     repo.create_tag(tag)
-    repo.remotes.origin.push(repo.head, tags=True)
+    if push:
+        repo.remotes.origin.push(repo.head, tags=True)
 
 
 def get_active_branch(repo_dir):
