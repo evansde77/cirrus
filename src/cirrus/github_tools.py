@@ -14,11 +14,11 @@ def create_pull_request(
             pr_info,
             token=None):
     """
-    Creates a pull_request on GitHub
+    Creates a pull_request on GitHub and returns the html url of the
+    pull request created
 
     :param repo_dir: directory of git repository
     :param pr_info: dictionary containing title and body of pull request
-    :param owner: GitHub owner
     :param token: auth token
     """
     if repo_dir == None:
@@ -46,9 +46,11 @@ def create_pull_request(
         'base': config.gitflow_branch_name(),
         'body': pr_info['body']}
 
-    print url
     resp = requests.post(url, data=json.dumps(data), headers=headers)
     resp.raise_for_status()
+    resp_json = resp.json()
+
+    return resp_json['html_url']
 
 
 def get_tags_with_sha(owner, repo, token=None):

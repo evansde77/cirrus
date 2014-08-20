@@ -85,6 +85,12 @@ class Configuration(dict):
     def gitflow_release_prefix(self):
         return self.get('gitflow', {}).get('release_branch_prefix', 'release/')
 
+    def test_where(self, suite):
+        return self.get('test-{0}'.format(suite), {}).get('where')
+
+    def venv_name(self):
+        return self.get('build', {}).get('virtualenv_name', 'venv')
+
     def release_notes(self):
         """
         returns the release notes file and release
