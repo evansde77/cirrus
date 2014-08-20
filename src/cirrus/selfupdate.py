@@ -12,9 +12,12 @@ import git
 import argparse
 import arrow
 import os
+import inspect
+import contextlib
 
 from fabric.operations import local
 
+import cirrus
 from cirrus.configuration import load_configuration
 from cirrus.github_tools import get_releases
 from cirrus.git_tools import update_to_branch, update_to_tag
@@ -22,6 +25,17 @@ from cirrus.logger import get_logger
 
 
 LOGGER = get_logger()
+
+
+@contextlib.contextmanager
+def chdir(dirname=None):
+    curdir = os.getcwd()
+    try:
+        if dirname is not None:
+            os.chdir(dirname)
+        yield
+    finally:
+        os.chdir(curdir)
 
 
 def build_parser(argslist):
@@ -81,6 +95,24 @@ def latest_release(config):
     return most_recent_tag
 
 
+def find_cirrus_install():
+    """
+    _find_cirrus_install_
+
+    Use inspect to find root path of install so we
+    can cd there and run the cirrus updates in the right location
+
+    The install process will check out the cirrus repo, the cirrus
+    module will be in src/cirrus of that dir
+
+    """
+    cirrus_mod = os.path.dirname(inspect.getsourcefile(cirrus))
+    src_dir = os.path.dirname(cirrus_mod)
+    cirrus_dir = os.path.dirname(src_dir)
+    return cirrus_dir
+
+
+
 def setup_develop(config):
     """
     _setup_develop_
@@ -89,6 +121,10 @@ def setup_develop(config):
 
     """
     LOGGER.info("running setup.py develop...")
+    local(
+        'git cirrus build'
+    )
+
     local(
         ' . ./{0}/bin/activate && python setup.py develop'.format(
             config.venv_name()
@@ -106,24 +142,27 @@ def main():
     release on github and install that
 
     """
-    opts = build_parser(sys.argv)
-    config = load_configuration()
-    if opts.branch and opts.version:
-        msg = "Can specify branch -OR- version, not both"
-        raise RuntimeError(msg)
+    install = find_cirrus_install()
+    with chdir(install):
+        opts = build_parser(sys.argv)
+        config = load_configuration()
 
-    if opts.branch is not None:
-        update_to_branch(opts.branch, config)
+        if opts.branch and opts.version:
+            msg = "Can specify branch -OR- version, not both"
+            raise RuntimeError(msg)
+
+        if opts.branch is not None:
+            update_to_branch(opts.branch, config)
+            setup_develop(config)
+            return
+
+        if opts.version is not None:
+            tag = opts.version
+        else:
+            tag = latest_release(config)
+            LOGGER.info("Retrieved latest tag: {0}".format(tag))
+        update_to_tag(tag, config)
         setup_develop(config)
-        return
-
-    if opts.version is not None:
-        tag = opts.version
-    else:
-        tag = latest_release(config)
-        LOGGER.info("Retrieved latest tag: {0}".format(tag))
-    update_to_tag(tag, config)
-    setup_develop(config)
     return
 
 if __name__ == '__main__':
