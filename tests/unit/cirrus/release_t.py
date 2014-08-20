@@ -136,7 +136,7 @@ class ReleaseUploadCommandTest(unittest.TestCase):
                 'github': {'develop_branch': 'develop', 'release_branch_prefix': 'release/'},
                 'pypi': {
                     'pypi_upload_path': '/opt/pypi',
-                    'pypi_hostname': 'pypi.cloudant.com',
+                    'pypi_url': 'pypi.cloudant.com',
                     'pypi_username': 'steve',
                     'pypi_ssh_key': 'steves_creds'
                 }
@@ -148,12 +148,22 @@ class ReleaseUploadCommandTest(unittest.TestCase):
         self.patch_put =  mock.patch('cirrus.release.put')
         self.mock_put = self.patch_put.start()
 
+
     def tearDown(self):
         self.harness.tearDown()
         self.patch_put.stop()
 
-    def test_release_upload(self):
+
+    @mock.patch('cirrus.release.get_active_branch')
+    @mock.patch('cirrus.release.checkout_and_pull')
+    @mock.patch('cirrus.release.merge')
+    @mock.patch('cirrus.release.push')
+    @mock.patch('cirrus.release.tag_release')
+    def test_release_upload(self, m_tag_release, m_push, m_merge, m_checkout_and_pull, m_get_active_branch ):
         """test upload command, mocking out fabric put"""
+        mock_branch = mock.Mock()
+        mock_branch.name = "release/1.2.3"
+        m_get_active_branch.return_value = mock_branch
 
         with mock.patch('cirrus.release.os') as mock_os:
             mock_os.path = mock.Mock()
@@ -163,6 +173,8 @@ class ReleaseUploadCommandTest(unittest.TestCase):
             mock_os.path.join.return_value = 'build_artifact'
 
             opts = mock.Mock()
+            opts.no_upload = False
+            opts.test = False
             upload_release(opts)
 
             self.failUnless(mock_os.path.exists.called)
@@ -171,6 +183,12 @@ class ReleaseUploadCommandTest(unittest.TestCase):
             self.assertEqual(self.mock_put.call_args[0][1], '/opt/pypi' )
             self.assertEqual(mock_os.path.exists.call_args[0][0], 'build_artifact')
 
+            self.assertEqual(m_tag_release.call_args[0][1], '1.2.3')
+            self.assertEqual(m_tag_release.call_args[0][2], 'master')
+            self.failUnless(m_merge.called)
+            self.failUnless(m_push.called)
+            self.assertEqual(m_push.call_count, 2)
+            self.failUnless(m_checkout_and_pull.called)
 
 
 if __name__ == '__main__':

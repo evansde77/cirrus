@@ -11,9 +11,10 @@ This command:
 """
 import os
 import sys
-import subprocess
+
 from cirrus.environment import cirrus_home
 from cirrus.configuration import load_configuration, get_pypi_auth
+from fabric.operations import local
 
 
 def main():
@@ -41,38 +42,32 @@ def main():
     venv_bin_path = os.path.join(venv_path, 'bin', 'python')
     venv_command = os.path.join(cirrus_home(), 'cirrus', 'venv', 'bin', 'virtualenv')
     if not os.path.exists(venv_bin_path):
-        cmd = [venv_command, '--distribute', venv_path]
+        cmd = "{0} --distribute {1}".format(venv_command, venv_path)
         print "Bootstrapping virtualenv: {0}".format(venv_path)
-        subprocess.call(cmd)
-
+        local(cmd)
 
     # custom pypi server
     pypi_server = config.pypi_url()
     if pypi_server is not None:
         pypi_conf = get_pypi_auth()
-        cmd = [
-        '{0}/bin/pip'.format(venv_path),
-        'install',
-        "-i",
-        "https://{pypi_username}:{pypi_token}@{pypi_server}/simple".format(
+        pypi_url = "https://{pypi_username}:{pypi_token}@{pypi_server}/simple".format(
             pypi_token=pypi_conf['token'],
             pypi_username=pypi_conf['username'],
             pypi_server=pypi_server
-            ),
-        '-r',
-        reqs_name
-        ]
+        )
+
+        cmd = (
+            '{0}/bin/pip install '
+            "-i {1} "
+            '-r {2}'
+            ).format(venv_path, pypi_url, reqs_name)
 
     else:
         # no pypi server
-        cmd = [
-            '{0}/bin/pip'.format(venv_path),
-            'install',
-            '-r',
-            reqs_name
-        ]
+        cmd = '{0}/bin/pip install -r {1}'.format(venv_path, reqs_name)
+
     try:
-        subprocess.call(cmd)
+        local(cmd)
     except OSError as ex:
         msg = (
             "Error running pip install command during build\n"
