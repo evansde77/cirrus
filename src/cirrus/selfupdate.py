@@ -17,6 +17,7 @@ from fabric.operations import local
 
 from cirrus.configuration import load_configuration
 from cirrus.github_tools import get_releases
+from cirrus.git_tools import update_to_branch, update_to_tag
 from cirrus.logger import get_logger
 
 
@@ -93,57 +94,7 @@ def setup_develop(config):
             config.venv_name()
         )
     )
-
-
-def update_to_branch(branch, config, origin='origin'):
-    """
-    checkout specified branch and run setup.py develop
-    """
-    LOGGER.info(
-        "selfupdate running, will switch to branch {0}".format(
-            branch
-        )
-    )
-    repo_dir = os.getcwd()
-
-    LOGGER.info("fetching remotes...")
-    r = git.Repo(repo_dir)
-    r.remotes[origin].fetch()
-
-    g = git.Git()
-    LOGGER.info("checking out {0}...".format(branch))
-    g.checkout('{0}/{1}'.format(origin, branch), b=branch)
-
-    branch_ref = r.heads[branch]
-    branch_ref.checkout()
-
-    setup_develop(config)
     return
-
-
-def update_to_tag(tag, config, origin='origin'):
-    """
-    checkout specified tag, and run setup.py develop
-    """
-    LOGGER.info(
-        "selfupdate running, will switch to tag {0}".format(
-            tag
-        )
-    )
-    repo_dir = os.getcwd()
-
-    LOGGER.info("fetching remote tags...")
-    r = git.Repo(repo_dir)
-    r.remotes[origin].fetch(tags=True)
-
-    ref = r.tags[tag]
-    LOGGER.info("checking out {0}...".format(tag))
-    g = git.Git()
-    g.checkout(ref)
-
-    setup_develop(config)
-    return
-
 
 
 def main():
@@ -162,15 +113,18 @@ def main():
         raise RuntimeError(msg)
 
     if opts.branch is not None:
-        return update_to_branch(opts.branch, config)
+        update_to_branch(opts.branch, config)
+        setup_develop(config)
+        return
 
     if opts.version is not None:
         tag = opts.version
     else:
         tag = latest_release(config)
         LOGGER.info("Retrieved latest tag: {0}".format(tag))
-    return update_to_tag(tag, config)
-
+    update_to_tag(tag, config)
+    setup_develop(config)
+    return
 
 if __name__ == '__main__':
     main()
