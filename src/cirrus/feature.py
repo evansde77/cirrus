@@ -79,7 +79,16 @@ def new_pr(opts):
     Creates a pull request
     """
     repo_dir = os.getcwd()
-    pr_body = '{0} \n{1}'.format(opts.notify, opts.body)
+    #parse notify adding '@' if necessary
+    notifiees = []
+    if opts.notify is not None:
+        notify = opts.notify.split(',')
+        for user in notify:
+            if not user.startswith('@'):
+                tmp = '@{0}'.format(user)
+                notifiees.append(tmp)
+
+    pr_body = '{0} \n{1}'.format(' '.join(notifiees), opts.body)
     pr_info = {
         'title': opts.title,
         'body': pr_body}
