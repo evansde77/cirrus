@@ -7,7 +7,7 @@ import sys
 from argparse import ArgumentParser
 
 from pylint_tools import pep8_file
-from pylint_tools import pyflakes
+from pylint_tools import pyflakes_file
 from pylint_tools import pylint_file
 from cirrus.configuration import load_configuration
 from cirrus.logger import get_logger
@@ -67,9 +67,9 @@ def run_pyflakes(file=None):
     config = load_configuration()
     quality_info = ()
     if file == None:  # run on entire package
-        quality_info = pyflakes(config.package_name())
+        quality_info = pyflakes_file(config.package_name())
     else:
-        quality_info = pyflakes(file)
+        quality_info = pyflakes_file(file)
 
     LOGGER.info("Package ran: {0}, Number of Flakes: {1}".format(
         quality_info[0],
