@@ -50,7 +50,7 @@ def run_pylint(file=None):
     if file == None:  # run on entire package
         quality_info = pylint_file(
             config.package_name(),
-            config.quality_rcfile())
+            {'rcfile': config.quality_rcfile()})
     else:
         quality_info = pylint_file(file, config.quality_rcfile())
 
