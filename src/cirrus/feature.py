@@ -88,7 +88,7 @@ def new_pr(opts):
                 tmp = '@{0}'.format(user)
                 notifiees.append(tmp)
 
-    pr_body = '{0} \n{1}'.format(notifiees, opts.body)
+    pr_body = '{0} \n{1}'.format(' '.join(notifiees), opts.body)
     pr_info = {
         'title': opts.title,
         'body': pr_body}
