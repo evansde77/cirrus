@@ -27,8 +27,6 @@ from cirrus.logger import get_logger
 
 LOGGER = get_logger()
 
-# VERSIONS = {
-#     'MAJOR': 'major'}
 
 def highlander(iterable):
     """check only single True value in iterable"""
