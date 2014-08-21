@@ -57,12 +57,18 @@ def parse_version(version):
 
 def bump_version_field(version, field='major'):
     """
-    parse the version and increment the major, minor or micro
+    parse the version and update the major, minor and micro
     version specified by field
     Return the updated version string
     """
     vers_params = parse_version(version)
     vers_params[field] += 1
+    if field == 'major':
+        vers_params['minor'] = 0
+        vers_params['micro'] = 0
+    elif field == 'minor':
+        vers_params['micro'] = 0
+
     return "{major}.{minor}.{micro}".format(**vers_params)
 
 
