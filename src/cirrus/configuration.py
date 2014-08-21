@@ -91,6 +91,12 @@ class Configuration(dict):
     def venv_name(self):
         return self.get('build', {}).get('virtualenv_name', 'venv')
 
+    def quality_rcfile(self):
+        return self.get('quality', {}).get('rcfile')
+
+    def quality_threshold(self):
+        return self.get('quality', {}).get('threshold')
+
     def release_notes(self):
         """
         returns the release notes file and release

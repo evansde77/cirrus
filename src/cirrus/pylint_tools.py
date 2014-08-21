@@ -29,7 +29,7 @@ def find_modules(dirname):
             result.extend(find_modules(abspath))
         # record py files:
         if f.endswith('.py'):
-           result.append(abspath)
+            result.append(abspath)
     return result
 
 
@@ -48,7 +48,7 @@ def pylint_file(filename, **kwargs):
 
     # we use fabric to run the pylint command, hiding the normal fab
     # output and warnings
-    with hide('output','running','warnings'), settings(warn_only=True):
+    with hide('output', 'running', 'warnings'), settings(warn_only=True):
         result = local(command, capture=True)
 
     score = None
@@ -60,6 +60,27 @@ def pylint_file(filename, **kwargs):
             score = re.findall("\d+.\d\d", line)[0]
 
     return filename, score
+
+
+def pyflakes_file(filename, verbose=False):
+    """
+    _pyflakes_file_
+
+    Appyly pyflakes to file specified,
+    return (filename, score)
+    """
+    # we use fabric to run the pylint command, hiding the normal fab
+    # output and warnings
+    with hide('output', 'running', 'warnings'), settings(warn_only=True):
+        result = local(capture=True)
+
+    flakes = 0
+    for line in result.split('\n'):
+        if verbose:
+            print line
+        flakes += 1
+
+    return filename, flakes
 
 
 def pep8_file(filename, verbose=False):
