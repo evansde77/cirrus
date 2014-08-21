@@ -72,7 +72,7 @@ def pyflakes_file(filename, verbose=False):
     # we use fabric to run the pylint command, hiding the normal fab
     # output and warnings
     with hide('output', 'running', 'warnings'), settings(warn_only=True):
-        result = local(capture=True)
+        result = local(filename, capture=True)
 
     flakes = 0
     for line in result.split('\n'):
