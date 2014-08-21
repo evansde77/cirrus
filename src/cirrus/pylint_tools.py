@@ -71,7 +71,7 @@ def pyflakes_file(filename, verbose=False):
     """
     command = 'pyflakes {0}'.format(filename)
 
-    # we use fabric to run the pylint command, hiding the normal fab
+    # we use fabric to run the pyflakes command, hiding the normal fab
     # output and warnings
     with hide('output', 'running', 'warnings'), settings(warn_only=True):
         result = local(command, capture=True)
