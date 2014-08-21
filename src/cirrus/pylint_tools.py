@@ -69,18 +69,36 @@ def pyflakes_file(filename, verbose=False):
     Appyly pyflakes to file specified,
     return (filename, score)
     """
+    command = 'pyflakes {0}'.format(filename)
+
     # we use fabric to run the pylint command, hiding the normal fab
     # output and warnings
     with hide('output', 'running', 'warnings'), settings(warn_only=True):
-        result = local(filename, capture=True)
+        result = local(command, capture=True)
 
     flakes = 0
-    for line in result.split('\n'):
-        if verbose:
-            print line
-        flakes += 1
+    data = result.split('\n')
+    if len(data) != 0:
+        #We have at least one flake, find the rest
+        flakes = count_flakes(data, verbose) + 1
+    else:
+        flakes = 0
 
     return filename, flakes
+
+
+def count_flakes(data, verbose):
+    """
+    Helper function for finding additional flakes by counting
+    line returns
+    """
+    additional_flakes = 0
+    for line in data:
+        if verbose:
+            print line
+        additional_flakes += 1
+
+    return additional_flakes
 
 
 def pep8_file(filename, verbose=False):
