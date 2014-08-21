@@ -30,7 +30,7 @@ def build_parser(argslist):
         '-f',
         '--file',
         dest='file',
-        required='false',
+        required=False,
         help='specify file to run qc on')
     parser.add_argument('--pylint', action='store_true')
     parser.add_argument('--pyflakes', action='store_true')
