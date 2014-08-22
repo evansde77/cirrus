@@ -45,7 +45,7 @@ def build_parser(argslist):
     return opts
 
 
-def run_pylint(changes, file=None):
+def run_pylint(file=None):
     config = load_configuration()
     quality_info = ()
     if file == None:  # run on entire package
@@ -53,7 +53,9 @@ def run_pylint(changes, file=None):
             config.package_name(),
             **{'rcfile': config.quality_rcfile()})
     else:
-        quality_info = pylint_file(file, config.quality_rcfile())
+        quality_info = pylint_file(
+            file,
+            **{'rcfile': config.quality_rcfile()})
 
     threshold = config.quality_threshold()
     if quality_info[1] <= threshold:
