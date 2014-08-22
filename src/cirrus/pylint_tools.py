@@ -41,7 +41,7 @@ def pylint_file(filenames, **kwargs):
     """
     command = "pylint "
 
-    if 'rcfile' in kwargs:
+    if 'rcfile' in kwargs and kwargs['rcfile'] is not None:
         command += " --rcfile={0} ".format(kwargs['rcfile'])
 
     command = command + ' '.join(filenames)

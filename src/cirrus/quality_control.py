@@ -56,7 +56,7 @@ def run_pylint(files=None):
     pylint_options = {'rcfile': config.quality_rcfile()}
     if files == None:  # run on entire package
         quality_info = pylint_file(
-            config.package_name(),
+            [config.package_name()],
             **pylint_options)
     else:
         quality_info = pylint_file(
@@ -76,7 +76,7 @@ def run_pyflakes(files=None):
     config = load_configuration()
     quality_info = ()
     if files == None:  # run on entire package
-        quality_info = pyflakes_file(config.package_name())
+        quality_info = pyflakes_file([config.package_name()])
     else:
         quality_info = pyflakes_file(files)
 
@@ -89,7 +89,7 @@ def run_pep8(files=None):
     config = load_configuration()
     quality_info = ()
     if files == None:  # run on entire package
-        quality_info = pep8_file(config.package_name())
+        quality_info = pep8_file([config.package_name()])
     else:
         quality_info = pep8_file(files)
 
