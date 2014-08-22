@@ -185,3 +185,19 @@ def merge(repo_dir, source, destination):
     repo.remotes.origin.pull(ref)
 
     repo.git.merge(destination)
+
+
+def get_diff_files(repo_dir):
+    """
+    _get_diff_files_
+
+    Returns a list of paths to files that have been changed on
+    the working directory
+    """
+    repo = git.Repo(repo_dir)
+    changes = repo.index.diff(None)
+    diffs = []
+    for diff in changes:
+        diffs.append(diff.a_blob.path)
+
+    return diffs
