@@ -24,7 +24,8 @@ def build_parser(argslist):
 
     """
     parser = ArgumentParser(
-        description='git cirrus qc command'
+        description=('git cirrus qc command: runs pep8, pylint, and pyflakes'
+            'on source code and generates an acceptance code')
     )
     parser.add_argument('qc', nargs='?')
     parser.add_argument(
@@ -51,6 +52,9 @@ def build_parser(argslist):
 
 
 def run_pylint(files=None):
+    """
+    Runs pylint on a package or list of files
+    """
     config = load_configuration()
     quality_info = ()
     pylint_options = {'rcfile': config.quality_rcfile()}
@@ -73,6 +77,9 @@ def run_pylint(files=None):
 
 
 def run_pyflakes(files=None):
+    """
+    Runs pyflakes on a package or list of files
+    """
     config = load_configuration()
     quality_info = ()
     if files == None:  # run on entire package
@@ -86,6 +93,9 @@ def run_pyflakes(files=None):
 
 
 def run_pep8(files=None):
+    """
+    Runs pep8 on a package or list of files
+    """
     config = load_configuration()
     quality_info = ()
     if files == None:  # run on entire package

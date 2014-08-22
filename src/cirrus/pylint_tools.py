@@ -12,6 +12,10 @@ import re
 import sys
 from fabric.operations import local, settings, hide
 
+from cirrus.logger import get_logger
+
+LOGGER = get_logger()
+
 import pep8
 
 
@@ -55,7 +59,7 @@ def pylint_file(filenames, **kwargs):
     # parse the output from pylint for the score
     for line in result.split('\n'):
         if  re.match("E....:.", line):
-            print line
+            LOGGER.info(line)
         if "Your code has been rated at" in line:
             score = re.findall("\d+.\d\d", line)[0]
 
@@ -72,7 +76,7 @@ def pyflakes_file(filenames, verbose=False):
     """
     command = 'pyflakes ' + ' '.join(filenames)
 
-    # we use fabric to run the pylint command, hiding the normal fab
+    # we use fabric to run the pyflakes command, hiding the normal fab
     # output and warnings
     with hide('output', 'running', 'warnings'), settings(warn_only=True):
         result = local(command, capture=True)
@@ -96,7 +100,7 @@ def count_flakes(data, verbose):
     additional_flakes = 0
     for line in data:
         if verbose:
-            print line
+            LOGGER.info(line)
         additional_flakes += 1
 
     return additional_flakes
