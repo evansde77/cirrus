@@ -30,13 +30,14 @@ def build_parser(argslist):
         '-f',
         '--file',
         dest='file',
+        nargs='+',
         required=False,
         help='specify file to run qc on')
     parser.add_argument('--pylint', action='store_true')
     parser.add_argument('--pyflakes', action='store_true')
     parser.add_argument('--pep8', action='store_true')
     parser.add_argument(
-        '--changes',
+        '--only-changes',
         action='store_false',
         help='Only run quality control on packages that you are working on')
 
@@ -44,7 +45,7 @@ def build_parser(argslist):
     return opts
 
 
-def run_pylint(file=None):
+def run_pylint(changes, file=None):
     config = load_configuration()
     quality_info = ()
     if file == None:  # run on entire package

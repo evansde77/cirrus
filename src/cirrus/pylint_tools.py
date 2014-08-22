@@ -33,7 +33,7 @@ def find_modules(dirname):
     return result
 
 
-def pylint_file(filename, **kwargs):
+def pylint_file(filenames, **kwargs):
     """
     apply pylint to the file specified,
     return the filename, score
@@ -44,7 +44,7 @@ def pylint_file(filename, **kwargs):
     if 'rcfile' in kwargs:
         command += " --rcfile={0} ".format(kwargs['rcfile'])
 
-    command += filename
+    command = command + ' '.join(filenames)
 
     # we use fabric to run the pylint command, hiding the normal fab
     # output and warnings
@@ -60,17 +60,17 @@ def pylint_file(filename, **kwargs):
             score = re.findall("\d+.\d\d", line)[0]
 
     score = float(score)
-    return filename, score
+    return filenames, score
 
 
-def pyflakes_file(filename, verbose=False):
+def pyflakes_file(filenames, verbose=False):
     """
     _pyflakes_file_
 
     Appyly pyflakes to file specified,
-    return (filename, score)
+    return (filenames, score)
     """
-    command = 'pyflakes {0}'.format(filename)
+    command = 'pyflakes ' + ' '.join(filenames)
 
     # we use fabric to run the pylint command, hiding the normal fab
     # output and warnings
@@ -85,7 +85,7 @@ def pyflakes_file(filename, verbose=False):
     else:
         flakes = 0
 
-    return filename, flakes
+    return filenames, flakes
 
 
 def count_flakes(data, verbose):
@@ -102,15 +102,15 @@ def count_flakes(data, verbose):
     return additional_flakes
 
 
-def pep8_file(filename, verbose=False):
+def pep8_file(filenames, verbose=False):
     """
     _pep8_file_
 
-    Run pep8 checker on a file, returning the filename, score
+    Run pep8 checker on a file, returning the filenames, score
     as a tuple
     """
     pep8style = pep8.StyleGuide(quiet=True)
-    result = pep8style.check_files([filename])
+    result = pep8style.check_files(filenames)
     if verbose:
         result.print_statistics()
-    return filename, result.total_errors
+    return filenames, result.total_errors
