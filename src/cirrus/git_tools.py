@@ -198,6 +198,6 @@ def get_diff_files(repo_dir):
     changes = repo.index.diff(None)
     diffs = []
     for diff in changes:
-        diffs.append(changes[diff].a_blob.path)
+        diffs.append(diff.a_blob.path)
 
     return diffs

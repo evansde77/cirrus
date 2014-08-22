@@ -107,6 +107,10 @@ def main():
     opts = build_parser(sys.argv)
     if opts.only_changes:
         files = get_diff_files(None)
+        #we only want python modules
+        for item in files:
+            if not item.endswith('.py'):
+                files.remove(item)
     else:
         files = opts.files
     #run all if none specified
