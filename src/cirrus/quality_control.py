@@ -111,6 +111,9 @@ def main():
         for item in files:
             if not item.endswith('.py'):
                 files.remove(item)
+        if not files:
+            LOGGER.info("No modules have been changed.")
+            exit(0)
     else:
         files = opts.files
     #run all if none specified
