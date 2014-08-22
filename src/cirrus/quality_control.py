@@ -56,8 +56,8 @@ def run_pylint(file=None):
 
     threshold = config.quality_threshold()
     if quality_info[1] <= threshold:
-        LOGGER.info(("Failed threshold test.  "),
-            ("Your score: {0}, Threshold {1}".format(
+        LOGGER.info(("Failed threshold test.  "
+            "Your score: {0}, Threshold {1}".format(
                 quality_info[1], threshold)))
     else:
         LOGGER.info("Passed threshold test.")

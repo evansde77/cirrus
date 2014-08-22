@@ -95,7 +95,7 @@ class Configuration(dict):
         return self.get('quality', {}).get('rcfile')
 
     def quality_threshold(self):
-        return self.get('quality', {}).get('threshold')
+        return float(self.get('quality', {}).get('threshold'))
 
     def release_notes(self):
         """

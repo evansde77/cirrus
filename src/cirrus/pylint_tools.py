@@ -59,6 +59,7 @@ def pylint_file(filename, **kwargs):
         if "Your code has been rated at" in line:
             score = re.findall("\d+.\d\d", line)[0]
 
+    score = float(score)
     return filename, score
 
 
@@ -71,7 +72,7 @@ def pyflakes_file(filename, verbose=False):
     """
     command = 'pyflakes {0}'.format(filename)
 
-    # we use fabric to run the pyflakes command, hiding the normal fab
+    # we use fabric to run the pylint command, hiding the normal fab
     # output and warnings
     with hide('output', 'running', 'warnings'), settings(warn_only=True):
         result = local(command, capture=True)
@@ -113,4 +114,3 @@ def pep8_file(filename, verbose=False):
     if verbose:
         result.print_statistics()
     return filename, result.total_errors
-
