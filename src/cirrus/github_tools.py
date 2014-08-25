@@ -7,6 +7,9 @@ import requests
 
 from cirrus.configuration import get_github_auth, load_configuration
 from cirrus.git_tools import get_active_branch
+from cirrus.logger import get_logger
+
+LOGGER = get_logger()
 
 
 def create_pull_request(
@@ -47,6 +50,11 @@ def create_pull_request(
         'body': pr_info['body']}
 
     resp = requests.post(url, data=json.dumps(data), headers=headers)
+    if resp.status_code == 422:
+        LOGGER.error(("POST to GitHub api returned {0}"
+            "Have you committed your changes and pushed to remote?"
+            ).format(resp.status_code))
+
     resp.raise_for_status()
     resp_json = resp.json()
 
