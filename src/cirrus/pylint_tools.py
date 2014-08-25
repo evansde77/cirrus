@@ -19,24 +19,6 @@ LOGGER = get_logger()
 import pep8
 
 
-def find_modules(dirname):
-    """
-    _find_modules_
-
-    recursively find python modules
-    """
-    result = []
-    for f in os.listdir(dirname):
-        abspath = os.path.join(dirname, f)
-        # recurse into directories
-        if os.path.isdir(abspath):
-            result.extend(find_modules(abspath))
-        # record py files:
-        if f.endswith('.py'):
-            result.append(abspath)
-    return result
-
-
 def pylint_file(filenames, **kwargs):
     """
     apply pylint to the file specified,
@@ -55,7 +37,7 @@ def pylint_file(filenames, **kwargs):
     with hide('output', 'running', 'warnings'), settings(warn_only=True):
         result = local(command, capture=True)
 
-    score = None
+    score = 0.0
     # parse the output from pylint for the score
     for line in result.split('\n'):
         if  re.match("E....:.", line):
