@@ -128,3 +128,17 @@ Options and config:
 Must define name of virtualenv in [package] virtualenv
 Must define [test-default] where (default location for tests, optional if you choose to always include --suite)
 May define [test-SUITE_LOCATION] where
+
+
+#### cirrus qc
+Command for running quality control checks via pylint, pyflakes, pep8.
+
+Usage:
+```bash 
+git cirrus qc --files --only-changes --pylint --pyflakes --pep8
+```
+
+Options and config:
+Running with no arguments will run all checks on everything. To run only a specific checker (pylint, pyflakes, or pep8) use the corosponding argument or a combonation of them.
+Specific files may be ran using '--files' OR check only files that have not yet been commited to the repo by using the '--only-changes' argument.
+For pylint, a score threshold must be set in cirrus.conf [quality] threshold. The path to an optional rcfile (pylint configuration) may be set at [quality] rcfile.
