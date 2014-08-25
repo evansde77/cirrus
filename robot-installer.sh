@@ -9,6 +9,16 @@
 # gets token for github access & updates .gitconfig
 
 
+function latest_cirrus(){
+    # Function that checks the github latest URL redirect to get
+    # the latest version number
+    local URL
+    URL=`curl -s  -I https://github.com/evansde77/cirrus/releases/latest | grep '^Location:' | cut -d' ' -f2`
+    VERSION=`echo $URL | awk -F'/' '{print $NF}'`
+    echo $VERSION
+}
+
+
 if [ -z "$CIRRUS_INSTALL" ]; then
     INSTALL_DIR="${HOME}/.cirrus"
 else
@@ -16,9 +26,16 @@ else
     echo "CIRRUS_INSTALL is set to: {$CIRRUS_INSTALL}"
 fi
 
+
+if [ -z "$CIRRUS_VERSION" ]; then
+    CIRRUS_VERSION=`latest_cirrus`
+else
+    CIRRUS_VERSION="${CIRRUS_VERSION}"
+    echo "CIRRUS_VERSION is set to: {$CIRRUS_VERSION}"
+fi
+
 echo "Installing to: $INSTALL_DIR"
 DEFAULT_USER="${USER}"
-CIRRUS_VERSION=${2:-"0.0.7"}
 CIRRUS_TARFILE="${CIRRUS_VERSION}.tar.gz"
 CIRRUS_UNPACK_DIR="cirrus-${CIRRUS_VERSION}"
 CIRRUS_URL="https://github.com/evansde77/cirrus/archive/${CIRRUS_TARFILE}"
