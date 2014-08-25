@@ -6,6 +6,7 @@ cirrus python bootstrap script invoked by the bash installer script
 
 """
 import os
+import sys
 import json
 import getpass
 import gitconfig
@@ -91,7 +92,7 @@ def create_github_token(git_config):
     return
 
 
-def insert_pypi_credentials(git_config):
+def insert_pypi_credentials(git_config, auto_yes=False):
     """
     prompt the user to provide pypi credentials if not present
 
@@ -100,59 +101,36 @@ def insert_pypi_credentials(git_config):
     token = git_config.get('cirrus', 'pypi-token')
     key = git_config.get('cirrus', 'pypi-ssh-key')
     if user is None:
-        user = ask_question(
-            'what is your pypi username?',
-            default=os.environ['USER']
-        )
-        git_config.set('cirrus', 'pypi-user', user)
+        if auto_yes:
+            print "Please add pypi-user to the .gitconfig prior to use"
+        else:
+            user = ask_question(
+                'what is your pypi username?',
+                default=os.environ['USER']
+            )
+            git_config.set('cirrus', 'pypi-user', user)
     if token is None:
-        token = ask_question(
-            'what is your pypi token/password?',
-            default='notprovided'
-        )
-        git_config.set('cirrus', 'pypi-token', token)
+        if auto_yes:
+            print "Please add pypi-token to the .gitconfig prior to use"
+        else:
+            token = ask_question(
+                'what is your pypi token/password?',
+                default='notprovided'
+            )
+            git_config.set('cirrus', 'pypi-token', token)
     if key is None:
-        key = ask_question(
-            'what is your pypi upload ssh key?',
-            default=os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
-        )
-        git_config.set('cirrus', 'pypi-ssh-key', key)
+        if auto_yes:
+            print "Please add pypi-ssh-key to the .gitconfig prior to use"
+        else:
+            key = ask_question(
+                'what is your pypi upload ssh key?',
+                default=os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
+            )
+            git_config.set('cirrus', 'pypi-ssh-key', key)
     return
 
 
-
-def create_fogbugz_token(git_config):
-    """
-    _create_fogbugz_token_
-
-    Call out to FB to get the access token for the users
-    FB account and add it to gitconfig, which will allow us
-    to access and update ticket information as work progresses
-
-    """
-    fb_url = "https://cloudant.fogbugz.com/api.asp"
-    email = ask_question(
-        'what is your fogbugz user email?',
-        default='{0}@cloudant.com'.format(os.environ['USER'])
-    )
-    passwd = getpass.getpass('what is your fogbugz password?')
-    params = {'cmd': 'logon', 'email' : email, 'password': passwd}
-    resp = requests.get(fb_url, params=params)
-    resp.raise_for_status()
-    # response comes back as an xml snippet
-    xml_resp = resp.text
-    dom = parseString(xml_resp)
-    token_elem = dom.getElementsByTagName('token')[0]
-    token = token_elem.firstChild.wholeText
-    # add details to gitconfig
-    git_config.set('cirrus', 'fogbugz-email', email)
-    git_config.set('cirrus', 'fogbugz-url', fb_url)
-    git_config.set('cirrus', 'fogbugz-token', token)
-    del passwd
-    return
-
-
-def read_gitconfig():
+def read_gitconfig(auto_yes=False):
     """
     _read_gitconfig_
 
@@ -162,26 +140,22 @@ def read_gitconfig():
     """
     gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
     config = gitconfig.config(gitconfig_file)
-
-    github_user = config.get('cirrus', 'github-user')
     github_token = config.get('cirrus', 'github-token')
     if github_token is None:
-        print "We need to generate a github access token"
-        print "Please enter you github username and password when prompted"
-        print "(Dont worry, they arent stored just used to create the token)"
-        create_github_token(config)
+        if auto_yes:
+            print (
+                "There is no github-token in the .gitconfig file,"
+                " please update this file prior to use"
+            )
+        else:
+            print "We need to generate a github access token"
+            print "Please enter you github username and password when prompted"
+            print "(Dont worry, they arent stored just used to create the token)"
+            create_github_token(config)
     else:
         print "Looks like you already have a github token in .gitconfig..."
 
-    insert_pypi_credentials(config)
-
-    # disabling FB integration until it is actually needed/plugin
-    # fb_token = config.get('cirrus', 'fogbugz-token')
-    # if fb_token is None:
-    #     print "Generating Fogbugz Access Token"
-    #     create_fogbugz_token(config)
-    # else:
-    #     print "Looks like you already have a FB token in .gitconfig..."
+    insert_pypi_credentials(config, auto_yes)
 
     return config
 
@@ -249,7 +223,10 @@ def main():
       about people who dont use bash
 
     """
-    config = read_gitconfig()
+    auto_yes = False
+    if any('--yes' in sys.argv, '-y' in sys.argv):
+        auto_yes = True
+    config = read_gitconfig(auto_yes)
     #update_shell_profile()
     # set the git alias in gitconfig
     config.set(
@@ -260,5 +237,4 @@ def main():
 
 
 if __name__ == '__main__':
-    #main()
-    read_gitconfig()
+    main()
