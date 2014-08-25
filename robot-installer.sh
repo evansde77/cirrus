@@ -14,8 +14,9 @@ function latest_cirrus(){
     # the latest version number
     local URL
     URL=`curl -s  -I https://github.com/evansde77/cirrus/releases/latest | grep '^Location:' | cut -d' ' -f2`
+    URL=$(echo $URL|tr -d '\r')
     VERSION=`echo $URL | awk -F'/' '{print $NF}'`
-    echo $VERSION
+    echo "$VERSION"
 }
 
 
@@ -23,16 +24,17 @@ if [ -z "$CIRRUS_INSTALL" ]; then
     INSTALL_DIR="${HOME}/.cirrus"
 else
     INSTALL_DIR=$CIRRUS_INSTALL
-    echo "CIRRUS_INSTALL is set to: {$CIRRUS_INSTALL}"
+    echo "CIRRUS_INSTALL is set to: ${CIRRUS_INSTALL}"
+fi
+
+CIRRUS_VERSION=$(latest_cirrus)
+
+if [ ! -z "$CIRRUS_VERSION_OVERRIDE" ]; then
+    echo "CIRRUS_VERSION is set to: {$CIRRUS_VERSION_OVERRIDE}"
+    CIRRUS_VERSION="${CIRRUS_VERSION_OVERRIDE}"
 fi
 
 
-if [ -z "$CIRRUS_VERSION" ]; then
-    CIRRUS_VERSION=`latest_cirrus`
-else
-    CIRRUS_VERSION="${CIRRUS_VERSION}"
-    echo "CIRRUS_VERSION is set to: {$CIRRUS_VERSION}"
-fi
 
 echo "Installing to: $INSTALL_DIR"
 DEFAULT_USER="${USER}"
@@ -40,11 +42,9 @@ CIRRUS_TARFILE="${CIRRUS_VERSION}.tar.gz"
 CIRRUS_UNPACK_DIR="cirrus-${CIRRUS_VERSION}"
 CIRRUS_URL="https://github.com/evansde77/cirrus/archive/${CIRRUS_TARFILE}"
 
-echo $CIRRUS_VERSION
-echo $CIRRUS_TARFILE
-echo $CIRRUS_URL
 
 LOCATION=${2:-$INSTALL_DIR}
+
 
 if [ -f $LOCATION ]; then
     rm -rf $LOCATION
@@ -62,7 +62,7 @@ fi
 
 curl -LO $CIRRUS_URL
 tar -zxf $CIRRUS_TARFILE
-if [ -f ./cirrus ]; then
+if [ -f "./cirrus" ]; then
     rm -rf ./cirrus
 fi
 ln -s ./${CIRRUS_UNPACK_DIR} ./cirrus
