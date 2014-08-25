@@ -7,6 +7,7 @@ import unittest
 from cirrus.git_tools import branch
 from cirrus.git_tools import checkout_and_pull
 from cirrus.git_tools import get_active_branch
+from cirrus.git_tools import get_diff_files
 from cirrus.git_tools import merge
 from cirrus.git_tools import push
 
@@ -58,6 +59,16 @@ class GitToolsTest(unittest.TestCase):
         branch2 = 'branch2'
 
         merge(None, branch1, branch2)
+        self.failUnless(self.mock_git.Repo.called)
+
+    def test_get_diff_files(self):
+        path = "path/to/file/hello.py"
+        self.mock_blob = mock.Mock()
+        self.mock_blob.a_blob.path = path
+        self.mock_repo.index.diff.return_value = [self.mock_blob]
+
+        diffs = get_diff_files(None)
+        self.failUnlessEqual(diffs[0], path)
         self.failUnless(self.mock_git.Repo.called)
 
 if __name__ == "__main__":
