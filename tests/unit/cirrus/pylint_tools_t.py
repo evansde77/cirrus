@@ -9,7 +9,7 @@ from cirrus.pylint_tools import pyflakes_file
 from cirrus.pylint_tools import pylint_file
 
 
-class Test(unittest.TestCase):
+class PylintToolsTest(unittest.TestCase):
 
     def setUp(self):
         """setup mocks"""

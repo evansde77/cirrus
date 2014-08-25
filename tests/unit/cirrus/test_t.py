@@ -7,7 +7,7 @@ import unittest
 from cirrus.test import nose_test
 
 
-class Test(unittest.TestCase):
+class TestTest(unittest.TestCase):
 
     def test_nose_test(self):
         with mock.patch('cirrus.test.load_configuration') as mock_config:
