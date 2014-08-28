@@ -97,7 +97,7 @@ class GithubToolsTest(unittest.TestCase):
                         '-- Author: GITHUBUSERNAME'
                         '--- DATETIME: COMMIT MESSAGE'
                         )
-                    build_release_notes(self.owner, self.repo, self.release)
+                    build_release_notes(self.owner, self.repo, self.release, 'plaintext')
                     self.failUnless(mock_get_tags_sha.called)
                     self.failUnless(mock_get_commit.called)
                     self.failUnless(mock_format.called)

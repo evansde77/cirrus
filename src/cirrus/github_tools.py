@@ -203,7 +203,7 @@ def markdown_format(rows):
     return '\n'.join(result)
 
 
-def build_release_notes(org, repo, since_tag):
+def build_release_notes(org, repo, since_tag, format):
     """
     Given an org, repo and tag, generate release notes for all
     commits since that tag
@@ -216,5 +216,12 @@ def build_release_notes(org, repo, since_tag):
 
     sha = tags[since_tag]
     msgs = get_commit_msgs(org, repo, sha)
-    rel_notes = format_commit_messages(msgs)
+    if format == 'plaintext':
+        rel_notes = format_commit_messages(msgs)
+    elif format == 'markdown':
+        rel_notes = markdown_format(msgs)
+    else:
+        raise RuntimeError(
+            ('Invalid release notes formatting: {0} Update cirrus.conf'
+             'entry to use either: plantext, markdown'.format(format)))
     return rel_notes

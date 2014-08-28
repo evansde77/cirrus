@@ -206,7 +206,8 @@ def new_release(opts):
         relnotes += build_release_notes(
             config.organisation_name(),
             config.package_name(),
-            current_version
+            current_version,
+            config.release_notes_format()
         )
         update_file(relnotes_file, relnotes_sentinel, relnotes)
         changes.append(relnotes_file)
