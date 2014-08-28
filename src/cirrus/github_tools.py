@@ -168,6 +168,41 @@ def format_commit_messages(rows):
     return '\n'.join(result)
 
 
+def markdown_format(rows):
+    """
+    _format_commit_messages_
+
+    Consume the data produced by get_commit_msgs and
+    generate a set of release notes, broken down by author
+
+    Output looks like:
+
+    Commit History
+    ==============
+
+    Author: GITHUBUSERNAME
+    ----------------------
+
+    DATETIME: COMMIT MESSAGE
+
+    """
+
+    result = ['Commit History\n==============']
+
+    for author, commits in itertools.groupby(rows, lambda x: x['committer']):
+        result.append(
+            '\nAuthor: {0}\n--------'.format(author) + '-' * len(author))
+        sorted_commits = sorted(
+            [c for c in commits],
+            key=lambda x: x['date'],
+            reverse=True)
+        result.extend('\n{0}: {1}'.format(
+            commit['date'],
+            commit['message']) for commit in sorted_commits)
+
+    return '\n'.join(result)
+
+
 def build_release_notes(org, repo, since_tag):
     """
     Given an org, repo and tag, generate release notes for all
