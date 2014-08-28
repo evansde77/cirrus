@@ -64,7 +64,7 @@ class Configuration(dict):
         return self.get('package', {}).get('organization')
 
     def release_notes_format(self):
-        return self.get('package', {}).get('release_notes_format', 'markdown')
+        return self.get('package', {}).get('release_notes_format', 'plaintext')
 
     def pypi_url(self):
         return self.get('pypi', {}).get('pypi_url')

@@ -86,21 +86,16 @@ class GithubToolsTest(unittest.TestCase):
             'cirrus.github_tools.get_tags_with_sha') as mock_get_tags_sha:
             with mock.patch(
                 'cirrus.github_tools.get_commit_msgs') as mock_get_commit:
-                with mock.patch(
-                    'cirrus.github_tools.format_commit_messages'
-                    ) as mock_format:
 
-                    mock_get_tags_sha.return_value = tag
-                    mock_get_commit.return_value = {'sha': 'abc123'}
-                    mock_format.return_value = (
-                        '- Commit History:'
-                        '-- Author: GITHUBUSERNAME'
-                        '--- DATETIME: COMMIT MESSAGE'
-                        )
-                    build_release_notes(self.owner, self.repo, self.release, 'plaintext')
-                    self.failUnless(mock_get_tags_sha.called)
-                    self.failUnless(mock_get_commit.called)
-                    self.failUnless(mock_format.called)
+                mock_get_tags_sha.return_value = tag
+                mock_get_commit.return_value = self.commit_info
+                build_release_notes(
+                    self.owner,
+                    self.repo,
+                    self.release,
+                    'plaintext')
+                self.failUnless(mock_get_tags_sha.called)
+                self.failUnless(mock_get_commit.called)
 
     def test_commit_messages(self):
         """
