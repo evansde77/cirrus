@@ -42,6 +42,7 @@ def build_parser(argslist):
         '--only-changes',
         action='store_true',
         help='Only run quality control on packages that you are working on')
+    parser.add_argument('-v', '--verbose', action='store_true')
 
     opts = parser.parse_args(argslist)
 
@@ -76,7 +77,7 @@ def run_pylint(files=None):
         LOGGER.info("Passed threshold test.")
 
 
-def run_pyflakes(files=None):
+def run_pyflakes(verbose, files=None):
     """
     Runs pyflakes on a package or list of files
     """
@@ -92,7 +93,7 @@ def run_pyflakes(files=None):
         quality_info[1]))
 
 
-def run_pep8(files=None):
+def run_pep8(verbose, files=None):
     """
     Runs pep8 on a package or list of files
     """
@@ -128,16 +129,16 @@ def main():
         files = opts.files
     #run all if none specified
     if not opts.pylint and not opts.pep8 and not opts.pyflakes:
-        run_pep8(files)
-        run_pyflakes(files)
-        run_pylint(files)
+        run_pep8(opts.verbose, files=files)
+        run_pyflakes(opts.verbose, files=files)
+        run_pylint(files=files)
     else:
         if opts.pylint:
-            run_pylint(files)
+            run_pylint(files=files)
         if opts.pep8:
-            run_pep8(files)
+            run_pep8(opts.verbose, files=files)
         if opts.pyflakes:
-            run_pyflakes(files)
+            run_pyflakes(opts.verbose, files=files)
 
 if __name__ == '__main__':
     main()
