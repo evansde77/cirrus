@@ -84,9 +84,9 @@ def run_pyflakes(verbose, files=None):
     config = load_configuration()
     quality_info = ()
     if files == None:  # run on entire package
-        quality_info = pyflakes_file([config.package_name()])
+        quality_info = pyflakes_file([config.package_name()], verbose=verbose)
     else:
-        quality_info = pyflakes_file(files)
+        quality_info = pyflakes_file(files, verbose=verbose)
 
     LOGGER.info("Package ran: {0}, Number of Flakes: {1}".format(
         quality_info[0],
@@ -100,9 +100,9 @@ def run_pep8(verbose, files=None):
     config = load_configuration()
     quality_info = ()
     if files == None:  # run on entire package
-        quality_info = pep8_file([config.package_name()])
+        quality_info = pep8_file([config.package_name()], verbose=verbose)
     else:
-        quality_info = pep8_file(files)
+        quality_info = pep8_file(files, verbose=verbose)
 
     LOGGER.info("Package ran: {0}, Number of Errors: {1}".format(
         quality_info[0],
