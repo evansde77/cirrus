@@ -224,7 +224,7 @@ def main():
 
     """
     auto_yes = False
-    if any('--yes' in sys.argv, '-y' in sys.argv):
+    if any(('--yes' in sys.argv, '-y' in sys.argv)):
         auto_yes = True
     config = read_gitconfig(auto_yes)
     #update_shell_profile()
