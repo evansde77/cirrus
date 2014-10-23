@@ -138,12 +138,18 @@ def get_commit_msgs(owner, repo, since_sha, token=None):
         'Authorization': 'token %s' % token
     }
 
-    resp = requests.get(url, headers=headers)
+    resp = requests.get(url, headers=headers, params=params)
     resp.raise_for_status()
     result = []
     for commit in resp.json():
+        if commit.get("commiter"):
+            committer = commit['committer']['login']
+        else:
+            # Handle commits that weren't properly identified with a
+            # GitHub user.
+            committer = commit['commit']['committer']['name']
         result.append({
-            "committer" : commit['committer']['login'],
+            "committer" : committer,
             "message":  commit['commit']['message'],
             "date" : commit['commit']['committer']['date']
 
