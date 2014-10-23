@@ -138,7 +138,7 @@ def get_commit_msgs(owner, repo, since_sha, token=None):
         'Authorization': 'token %s' % token
     }
 
-    resp = requests.get(url, headers=headers)
+    resp = requests.get(url, headers=headers, params=params)
     resp.raise_for_status()
     result = []
     for commit in resp.json():
