@@ -34,13 +34,17 @@ def main():
     config = load_configuration()
     build_params = config.get('build', {})
 
-
     # we have custom build controls in the cirrus.conf
     venv_name = build_params.get('virtualenv_name', 'venv')
     reqs_name = build_params.get('requirements_file', 'requirements.txt')
     venv_path = os.path.join(working_dir, venv_name)
     venv_bin_path = os.path.join(venv_path, 'bin', 'python')
-    venv_command = os.path.join(cirrus_home(), 'cirrus', 'venv', 'bin', 'virtualenv')
+    venv_command = os.path.join(
+        cirrus_home(),
+        'cirrus',
+        'venv',
+        'bin',
+        'virtualenv')
     if not os.path.exists(venv_bin_path):
         cmd = "{0} --distribute {1}".format(venv_command, venv_path)
         print "Bootstrapping virtualenv: {0}".format(venv_path)
@@ -80,7 +84,8 @@ def main():
         print(msg)
         sys.exit(1)
 
+    #setup for development
+    local('. ./{0}/bin/activate && python setup.py develop'.format(venv_name))
 
 if __name__ == '__main__':
     main()
-
