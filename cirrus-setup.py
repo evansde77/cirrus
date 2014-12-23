@@ -9,6 +9,7 @@ import os
 import setuptools
 import ConfigParser
 from pip.req import parse_requirements
+from pip.download import PipSession
 
 
 def get_default(parser, section, option, default):
@@ -22,7 +23,7 @@ def get_default(parser, section, option, default):
 
 def install_requires(reqs_file):
     """parse requirements file, return list of reqs suitable for install_requires"""
-    result = [ str(req.req) for req in parse_requirements(reqs_file)]
+    result = [ str(req.req) for req in parse_requirements(reqs_file, session=PipSession())]
     return result
 
 
