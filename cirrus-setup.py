@@ -2,14 +2,12 @@
 _setup.py_
 
 Cirrus template setup.py that reads most of its business
-from the cirrus.conf file
+from the cirrus.conf file. This lightweight setup.py should be used by
+projects managed with cirrus.
 
 """
-import os
 import setuptools
 import ConfigParser
-from pip.req import parse_requirements
-from pip.download import PipSession
 
 
 def get_default(parser, section, option, default):
@@ -21,23 +19,32 @@ def get_default(parser, section, option, default):
     return result
 
 
-def install_requires(reqs_file):
-    """parse requirements file, return list of reqs suitable for install_requires"""
-    result = [ str(req.req) for req in parse_requirements(reqs_file, session=PipSession())]
-    return result
-
-
+# Build a parser and fetch setup options
 parser = ConfigParser.RawConfigParser()
 parser.read('cirrus.conf')
 src_dir = get_default(parser, 'package', 'find_packages', '.')
 excl_dirs = get_default(parser, 'package', 'exclude_packages', [])
-reqs_file = get_default(parser, 'build', 'requirements_file', 'requirements.txt')
+requirements_filename = get_default(
+    parser,
+    'build',
+    'requirements-file',
+    'requirements.txt'
+)
+requirements_file = open(requirements_filename)
 
+# Manually parse the requirements file. Pip 1.5.6 to 6.0 has a function
+# behavior change for pip.req.parse_requirements. You must use the setuptools
+# format when specifying requirements.
+#  - https://pythonhosted.org/setuptools/setuptools.html#declaring-dependencies
+# Furthermore, you can't use line continuations with the following:
+requirements = requirements_file.read().strip().split('\n')
 
 setup_args ={
+    'description': parser.get('package', 'description'),
+    'include_package_data': True,
+    'install_requires': requirements,
     'name': parser.get('package', 'name'),
-    'version': parser.get('package', 'version'),
-    'description':parser.get('package', 'description')
+    'version': parser.get('package', 'version')
 }
 
 if parser.has_section('console_scripts'):
@@ -51,8 +58,4 @@ if src_dir:
     setup_args['packages'] = setuptools.find_packages(src_dir, exclude=excl_dirs)
     setup_args['provides'] = setuptools.find_packages(src_dir)
 
-if os.path.exists(reqs_file):
-    setup_args['install_requires'] = install_requires(reqs_file)
-
 setuptools.setup(**setup_args)
-
