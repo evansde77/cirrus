@@ -142,7 +142,7 @@ def get_commit_msgs(owner, repo, since_sha, token=None):
     resp.raise_for_status()
     result = []
     for commit in resp.json():
-        if commit.get("commiter"):
+        if commit.get("committer"):
             committer = commit['committer']['login']
         else:
             # Handle commits that weren't properly identified with a
