@@ -172,12 +172,12 @@ def format_commit_messages(rows):
 
     """
 
-    result = [" - Commit History:"]
+    result = [u" - Commit History:"]
 
     for author, commits in itertools.groupby(rows, lambda x: x['committer']):
-        result.append(" -- Author: {0}".format(author))
+        result.append(u" -- Author: {0}".format(author))
         sorted_commits = sorted([ c for c in commits ], key=lambda x: x['date'], reverse=True)
-        result.extend( ' --- {0}: {1}'.format(commit['date'],commit['message']) for commit in sorted_commits)
+        result.extend( u' --- {0}: {1}'.format(commit['date'],commit['message']) for commit in sorted_commits)
 
     return '\n'.join(result)
 
@@ -237,8 +237,9 @@ def build_release_notes(org, repo, since_tag, formatter):
     msgs = get_commit_msgs(org, repo, sha)
     try:
         rel_notes = FORMATTERS[formatter](msgs)
-    except:
+    except Exception as ex:
+        LOGGER.exception(ex)
         raise RuntimeError(
             ('Invalid release notes formatting: {0} Update cirrus.conf'
-             'entry to use either: plaintext, markdown'.format(formatter)))
+             ' entry to use either: plaintext, markdown'.format(formatter)))
     return rel_notes
