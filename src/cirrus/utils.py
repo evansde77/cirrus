@@ -38,7 +38,7 @@ def update_file(filename, sentinel, text):
     with open(filename, 'r') as handle:
         content = handle.read()
 
-    replacement = "{0}\n\n{1}".format(sentinel, text)
+    replacement = u"{0}\n\n{1}".format(sentinel, text)
     content = content.replace(sentinel, replacement, 1)
     with open(filename, 'w') as handle:
         handle.write(content)
