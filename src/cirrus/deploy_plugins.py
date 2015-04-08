@@ -45,13 +45,14 @@ class DeployerRegistry(type):
     """
     def __init__(cls, name, bases, dct):
         pname = getattr(cls, 'plugin_name')
-        if pname is not None:
-            if pname not in _PLUGINS:
-                _PLUGINS[pname] = cls()
-            else:
-                raise RuntimeError(
-                    "Duplicate plugin name: {0}".format(pname)
-                )
+        if name != "DeployerPlugin":
+            assert (pname is not None)
+        if pname not in _PLUGINS:
+            _PLUGINS[pname] = cls()
+        else:
+            raise RuntimeError(
+                "Duplicate plugin name: {0}".format(pname)
+            )
         super(DeployerRegistry, cls).__init__(name, bases, dct)
 
 
@@ -119,6 +120,7 @@ class ChefServerDeployer(DeployerPlugin):
     This assumes your deployment process looks something like:
 
     1. Bump the package version in an env/role/node for some attribute
+       to the current version of this python package
     2. Run pre-chef-client commands on the specified nodes
     3. Run chef-client on the specified nodes
     4. Run post-chef-client commands on the specified nodes
