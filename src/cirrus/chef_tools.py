@@ -8,7 +8,92 @@ Helpers/utils for modifying chef objects on the server and in a local repo
 import os
 import git
 import json
+import chef
+
 from contextlib import contextmanager
+
+
+def get_dotted(d, key):
+    """
+    _get_dotted_
+
+    take an element1.element2.element3 style string
+    and look up the nested element from the given dictionary,
+    returning the value. Will raise KeyError if it isnt found
+
+    """
+    value = d
+    for k in key.split('.'):
+        if not isinstance(value, dict):
+            raise KeyError(key)
+        value = value[k]
+    return value
+
+
+def set_dotted(d, key, value):
+    """
+    _set_dotted_
+
+    support setting a value where the key is a . delimited
+    string representing the nested key
+
+    """
+    dest = d
+    keys = key.split('.')
+    last_key = keys.pop()
+    for k in keys:
+        if k not in dest:
+            dest[k] = {}
+        dest = dest[k]
+        if not isinstance(dest, dict):
+            raise TypeError('non-dict element in key {0} at {1}'.format(key, k))
+    dest[last_key] = value
+
+
+def edit_chef_environment(server_url, cert, username, environment, attributes):
+    """
+    _edit_chef_environment_
+
+    For a given chef server, edit the override attributes in the named
+    environment making changes for each dotted key:value pair in attributes
+
+    Eg:
+
+    attributes = {
+        'application.app_version': 'x.y.z',
+        'application.some_url': 'http://www.google.com'
+    }
+    will result in changes:
+      env.override_attributes['application']['app_version'] = 'x.y.z'
+      env.override_attributes['application']['some_url'] = 'http://www.google.com'
+
+    :param server_url: URL of your chef server
+    :param cert: Client.pem file location
+    :param username: Chef username matching the cert
+    :param environment: name of chef environment eg 'production'
+    :param attributes: dict of dotted attribute key value pairs to change
+      in the env
+
+    """
+    with chef.ChefAPI(server_url, cert,username):
+        env = chef.Environment(environment)
+        overrides = env.override_attributes
+        for attr, new_value in attributes.iteritems():
+            set_dotted(overrides, attr, new_value)
+
+def edit_chef_role(server_url, cert, username, rolename, attributes):
+    """
+    _edit_chef_role_
+
+    For a given chef server, edit the override attributes in the named role
+    making changes for each dotted key:value pair in attributes.
+
+    """
+    with chef.ChefAPI(server_url, cert,username):
+        role = chef.Role(rolename)
+        overrides = role.override_attributes
+        for attr, new_value in attributes.iteritems():
+            set_dotted(overrides, attr, new_value)
 
 
 class ChefRepo(object):
@@ -46,7 +131,7 @@ class ChefRepo(object):
             dev_branch = getattr(self.repo.heads, branch_name)
             dev_branch.checkout()
 
-        # pull branch_from from remote
+        # pull branch_name from remote
         ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_name)
         return self.repo.remotes.origin.pull(ref)
 
