@@ -40,19 +40,24 @@ class DeployerRegistry(type):
     """
     _DeployerRegistry_
 
-    metaclass to register plugin subclasses with plugins registry
+    metaclass to register plugin subclasses with plugins registry.
+
+    The name that the class will be registered under can be
+    set using the class level plugin_name attribute in the subclass,
+    otherwise it will default to the lowercased class name
 
     """
     def __init__(cls, name, bases, dct):
         pname = getattr(cls, 'plugin_name')
         if name != "DeployerPlugin":
-            assert (pname is not None)
-        if pname not in _PLUGINS:
-            _PLUGINS[pname] = cls()
-        else:
-            raise RuntimeError(
-                "Duplicate plugin name: {0}".format(pname)
-            )
+            if pname is None:
+                pname = name.lower()
+            if pname not in _PLUGINS:
+                _PLUGINS[pname] = cls()
+            else:
+                raise RuntimeError(
+                    "Duplicate plugin name: {0}".format(pname)
+                )
         super(DeployerRegistry, cls).__init__(name, bases, dct)
 
 
