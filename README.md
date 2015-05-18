@@ -103,8 +103,8 @@ There are three subcommands:
 
 Usage:
 ```bash 
+git cirrus test # Stop if things are broken
 git cirrus release new --micro 
-# test things here!!
 git cirrus release build 
 git cirrus release upload 
 ```
