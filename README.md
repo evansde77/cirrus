@@ -114,6 +114,19 @@ Options:
 1. release new requires one of --micro, --minor or --macro to indicate which semantic version field to increment
 
 
+
+*Protip:* If you don't make releases regularly, you'll want to make sure your local repo copy is up to date (cirrus should do these eventually).
+
+```
+git checkout master # get master, if you only have develop
+git fetch
+git fetch --tags
+git checkout develop # you're ready to release!
+```
+
+*Protip:* If something goes wrong during release building you may end up on a release/A.B.C branch that didn't work out. If you haven't pushed out the tag for the new version you can `git checkout develop` and `git branch -d release/A.B.C`. If you've pushed a bad version/tag the best thing to do is resolve the problem and create a new micro version -- don't modify a tag that's already remote (consult your own release workflow).
+
+
 #### cirrus test
 Command for running tests in a package.
 
