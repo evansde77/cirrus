@@ -178,7 +178,6 @@ def new_release(opts):
 
     config = load_configuration()
 
-    requirements_updated = False
     if opts.bump:
         for pkg in opts.bump:
             if '==' not in pkg:
@@ -187,7 +186,6 @@ def new_release(opts):
                 raise RuntimeError(msg)
         try:
             update_requirements('requirements.txt', opts.bump)
-            requirements_updated = True
         except Exception as ex:
             # halt on any problem updating requirements
             LOGGER.exception('Failed to update requirements.txt -- {}'.format(ex))
@@ -216,7 +214,7 @@ def new_release(opts):
     config.update_package_version(new_version)
     changes = ['cirrus.conf']
 
-    if requirements_updated:
+    if opts.bump:
         changes.append('requirements.txt')
 
     # update release notes file
