@@ -11,24 +11,50 @@ This command:
 """
 import os
 import sys
+from argparse import ArgumentParser
 
 from cirrus.environment import cirrus_home
 from cirrus.configuration import load_configuration, get_pypi_auth
+from cirrus.logger import get_logger
 from fabric.operations import local
 
+LOGGER = get_logger()
 
-def main():
+def build_parser(argslist):
     """
-    _main_
+    _build_parser_
+
+    Set up command line parser for the build command
+
+    : param list argslist: A list of command line arguments
+    """
+    parser = ArgumentParser(
+        description='git cirrus build'
+    )
+    parser.add_argument('command', nargs='?')
+    parser.add_argument(
+        '-c',
+        '--clean',
+        action='store_true',
+        help='remove existing virtual environment')
+    opts = parser.parse_args(argslist)
+    return opts
+
+
+def execute_build(opts):
+    """
+    _execute_build_
 
     Execute the build in the current package context.
 
     - reads the config to check for custom build parameters
       - defaults to ./venv for virtualenv
       - defaults to ./requirements.txt for reqs
+    - removes existing virtualenv if clean flag is set
     - builds the virtualenv
     - pip installs the requirements into it
 
+    : param argparse.Namspace opts: A Namespace of build options
     """
     working_dir = os.getcwd()
     config = load_configuration()
@@ -45,9 +71,16 @@ def main():
         'venv',
         'bin',
         'virtualenv')
+
+    # remove existing virtual env if building clean
+    if opts.clean and os.path.exists(venv_path):
+        cmd = "rm -rf {0}".format(venv_path)
+        print "Removing existing virtualenv: {0}".format(venv_path)
+        local(cmd)
+
     if not os.path.exists(venv_bin_path):
         cmd = "{0} --distribute {1}".format(venv_command, venv_path)
-        print "Bootstrapping virtualenv: {0}".format(venv_path)
+        LOGGER.info("Bootstrapping virtualenv: {0}".format(venv_path))
         local(cmd)
 
     # custom pypi server
@@ -81,11 +114,22 @@ def main():
             "Virtualenv: {3}\n"
             "Requirements: {4}\n"
             ).format(ex, cmd, working_dir, venv_path, reqs_name)
-        print(msg)
+        LOGGER.info(msg)
         sys.exit(1)
 
-    #setup for development
+    # setup for development
     local('. ./{0}/bin/activate && python setup.py develop'.format(venv_name))
+
+
+def main():
+    """
+    _main_
+
+    Execute build command
+    """
+    opts = build_parser(sys.argv)
+    execute_build(opts)
+
 
 if __name__ == '__main__':
     main()
