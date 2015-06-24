@@ -63,55 +63,56 @@ git cirrus hello
 
 
 #### cirrus build
-Builds a new virtualenv and installs the requirements for the package, setting up a development/testing/deployment environment for the package. 
+Builds a new virtualenv and installs the requirements for the package, setting up a development/testing/deployment environment for the package.
 
 Usage:
 ```bash
-git cirrus build 
+git cirrus build
 ```
 
-The virtualenv is created in ./venv. 
+The virtualenv is created in ./venv.
 Optional parameters for the build command are read from the cirrus.conf, they are;
 
 1. build Section
   1. virtualenv_name - sets the name of the virtualenv directory, defaults to venv
-  2. requirements_file - name of the requirements.txt file, defaults to requirements.txt 
+  2. requirements_file - name of the requirements.txt file, defaults to requirements.txt
 3. pypi Section
-  4. pypi_url - If present, will use the pypi server to install requirements, also requires the pypi username and token to be set in the cirrus section of your gitconfig  
+  4. pypi_url - If present, will use the pypi server to install requirements, also requires the pypi username and token to be set in the cirrus section of your gitconfig
 
 
 #### cirrus feature
 Commands related to the creatation and management of a git-flow style feature branch.
 
 1. new - Creates a new feature branch, optionally pushing the new branch upstream following a git-flow style workflow
-2. pull-request - Creates a new Pull Request in github requesting to merge the current feature branch with the develop branch, specifying the title, body and list of people to tag in the PR. 
+2. pull-request - Creates a new Pull Request in github requesting to merge the current feature branch with the develop branch, specifying the title, body and list of people to tag in the PR.
 
 Usage:
-```bash 
+```bash
 git cirrus feature new BRANCH_NAME --push
 git cirrus feature pull-request --title TITLE --body BODY --notify @AGITHUBUSER,@ANOTHERGITHUBUSER
 ```
 
 
 #### cirrus release
-Commands related to creation of a new git-flow style release branch, building the release and uploading it to a pypi server. 
+Commands related to creation of a new git-flow style release branch, building the release and uploading it to a pypi server.
 There are three subcommands:
 
-1. new - creates a new release branch, increments the package version, builds the release notes if configured. 
-2. build - Runs sdist to create a new build artifact from the release branch 
-3. upload - Pushes the build artifact to the pypi server configured in the cirrus conf. 
+1. new - creates a new release branch, increments the package version, builds the release notes if configured.
+2. build - Runs sdist to create a new build artifact from the release branch
+3. upload - Pushes the build artifact to the pypi server configured in the cirrus conf.
 
 Usage:
-```bash 
+```bash
 git cirrus test # Stop if things are broken
-git cirrus release new --micro 
-git cirrus release build 
-git cirrus release upload 
+git cirrus release new --micro
+git cirrus release build
+git cirrus release upload
 ```
 
 Options:
 
 1. release new requires one of --micro, --minor or --macro to indicate which semantic version field to increment
+2. --bump adds or updates a package==version pair in requirements.txt, e.g. `--bump foo==0.0.9 bar==1.2.3`.
 
 
 
