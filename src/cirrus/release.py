@@ -352,12 +352,12 @@ def update_requirements(path, versions):
     file.  Items without '==' are ignored.
 
     Example:
-    ['foo==0.0.9', 'bar==1.2]
+    ['foo==0.0.9', 'bar==1.2']
     """
     LOGGER.info('Updating {}'.format(path))
 
     with open(path, 'r+') as fh:
-        # original requirements.txt it its pristine order
+        # original requirements.txt in its pristine order
         reqs = OrderedDict(tuple(pkg.split('=='))
                            for pkg in fh.readlines() if '==' in pkg)
 
