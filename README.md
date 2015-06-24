@@ -112,7 +112,7 @@ git cirrus release upload
 Options:
 
 1. release new requires one of --micro, --minor or --macro to indicate which semantic version field to increment
-2. --bump adds or updates a package==version pair in requirements.txt, e.g. `--bump foo==0.0.9 bar=1.2.3`.
+2. --bump adds or updates a package==version pair in requirements.txt, e.g. `--bump foo==0.0.9 bar==1.2.3`.
 
 
 
