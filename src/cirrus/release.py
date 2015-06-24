@@ -10,6 +10,7 @@ import os
 import sys
 import datetime
 import itertools
+from collections import OrderedDict
 from fabric.operations import put, local
 
 from argparse import ArgumentParser
@@ -130,6 +131,11 @@ def build_parser(argslist):
         action='store_true',
         dest='major'
     )
+    new_command.add_argument(
+        '--bump',
+        nargs='+',
+        help='package versions (pkg==0.0.0) to update in requirements.txt'
+    )
 
     build_command = subparsers.add_parser('build')
 
@@ -172,6 +178,15 @@ def new_release(opts):
 
     config = load_configuration()
 
+    if opts.bump:
+        for pkg in opts.bump:
+            if '==' not in pkg:
+                msg = 'Malformed version expression.  Please use "pkg==0.0.0"'
+                LOGGER.error(msg)
+                raise RuntimeError(msg)
+
+        update_requirements('requirements.txt', opts.bump)
+
     # version bump:
     current_version = config.package_version()
     new_version = bump_version_field(current_version, field)
@@ -193,7 +208,7 @@ def new_release(opts):
 
     # update cirrus conf
     config.update_package_version(new_version)
-    changes = ['cirrus.conf']
+    changes = ['cirrus.conf', 'requirements.txt']
 
     # update release notes file
     relnotes_file, relnotes_sentinel = config.release_notes()
@@ -317,6 +332,36 @@ def build_release(opts):
         raise RuntimeError(msg)
     LOGGER.info("Release artifact created: {0}".format(build_artifact))
     return build_artifact
+
+
+def update_requirements(path, versions):
+    """
+    _update_requirements_
+
+    Update requirements.txt with the provided versions list, where each item in
+    such a list looks exactly like a version specifier in a requirements.txt
+    file.  Items without '==' are ignored.
+
+    Example:
+    ['foo==0.0.9', 'bar==1.2]
+    """
+    LOGGER.info('Updating {}'.format(path))
+
+    with open(path, 'r+') as fh:
+        # original requirements.txt it its pristine order
+        reqs = OrderedDict(tuple(pkg.split('=='))
+                           for pkg in fh.readlines() if '==' in pkg)
+
+        for pkg in versions:
+            new_pkg, new_version = pkg.split('==')
+            reqs[new_pkg] = '{}\n'.format(new_version)
+            LOGGER.info('{}=={}'.format(new_pkg, new_version))
+
+        # overwrite original requirements.txt with updated version
+        fh.seek(0)
+        fh.writelines(['{}=={}'.format(pkg, version)
+                      for pkg, version in reqs.iteritems()])
+        fh.truncate()
 
 
 def main():
