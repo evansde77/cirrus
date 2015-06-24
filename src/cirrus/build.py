@@ -15,8 +15,10 @@ from argparse import ArgumentParser
 
 from cirrus.environment import cirrus_home
 from cirrus.configuration import load_configuration, get_pypi_auth
+from cirrus.logger import get_logger
 from fabric.operations import local
 
+LOGGER = get_logger()
 
 def build_parser(argslist):
     """
@@ -24,11 +26,12 @@ def build_parser(argslist):
 
     Set up command line parser for the build command
 
+    : param list argslist: A list of command line arguments
     """
     parser = ArgumentParser(
-        description = 'git cirrus build'
+        description='git cirrus build'
     )
-    parser.add_argument('command',nargs='?')
+    parser.add_argument('command', nargs='?')
     parser.add_argument(
         '-c',
         '--clean',
@@ -51,6 +54,7 @@ def execute_build(opts):
     - builds the virtualenv
     - pip installs the requirements into it
 
+    : param argparse.Namspace opts: A Namespace of build options
     """
     working_dir = os.getcwd()
     config = load_configuration()
@@ -69,14 +73,14 @@ def execute_build(opts):
         'virtualenv')
 
     # remove existing virtual env if building clean
-    if opts.clean is True and os.path.exists(venv_path):
-        cmd = "rm -r {0}".format(venv_path)
+    if opts.clean and os.path.exists(venv_path):
+        cmd = "rm -rf {0}".format(venv_path)
         print "Removing existing virtualenv: {0}".format(venv_path)
         local(cmd)
 
     if not os.path.exists(venv_bin_path):
         cmd = "{0} --distribute {1}".format(venv_command, venv_path)
-        print "Bootstrapping virtualenv: {0}".format(venv_path)
+        LOGGER.info("Bootstrapping virtualenv: {0}".format(venv_path))
         local(cmd)
 
     # custom pypi server
@@ -110,10 +114,10 @@ def execute_build(opts):
             "Virtualenv: {3}\n"
             "Requirements: {4}\n"
             ).format(ex, cmd, working_dir, venv_path, reqs_name)
-        print(msg)
+        LOGGER.info(msg)
         sys.exit(1)
 
-    #setup for development
+    # setup for development
     local('. ./{0}/bin/activate && python setup.py develop'.format(venv_name))
 
 
