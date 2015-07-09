@@ -152,6 +152,19 @@ def build_parser(argslist):
         dest='no_upload',
         help="do not upload build artifact to pypi"
     )
+    upload_command.add_argument(
+        '--pypi-sudo',
+        action='store_true',
+        dest='pypi_sudo',
+        help="use sudo to upload build artifact to pypi"
+    )
+    upload_command.add_argument(
+        '--no-pypi-sudo',
+        action='store_false',
+        dest='pypi_sudo',
+        help="do not use sudo to upload build artifact to pypi"
+    )
+    upload_command.set_defaults(pypi_sudo=True)
 
     opts = parser.parse_args(argslist)
     return opts
@@ -291,7 +304,7 @@ def upload_release(opts):
                 pypi_auth['ssh_key']):
 
             # fabric put the file onto the pypi server
-            put(build_artifact, package_dir, use_sudo=True)
+            put(build_artifact, package_dir, use_sudo=opts.pypi_sudo)
 
     # merge in release branches and tag, push to remote
     tag = config.package_version()

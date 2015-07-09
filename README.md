@@ -113,7 +113,10 @@ Options:
 
 1. release new requires one of --micro, --minor or --macro to indicate which semantic version field to increment
 2. --bump adds or updates a package==version pair in requirements.txt, e.g. `--bump foo==0.0.9 bar==1.2.3`.
-
+3. upload will push the new release and upload the build artifact to pypi, but may take several non-required options:
+  * --test do not push new release or upload build artifact to pypi
+  * --no-upload do not upload the build artifact to pypi
+  * --pypi-sudo, --no-pypi-sudo use or do not use sudo to move the build artifact to the correct location in the pypi server, defaults to using sudo
 
 
 *Protip:* If you don't make releases regularly, you'll want to make sure your local repo copy is up to date (cirrus should do these eventually).
