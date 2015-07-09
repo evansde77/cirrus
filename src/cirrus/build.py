@@ -20,6 +20,7 @@ from fabric.operations import local
 
 LOGGER = get_logger()
 
+
 def build_parser(argslist):
     """
     _build_parser_
@@ -37,6 +38,13 @@ def build_parser(argslist):
         '--clean',
         action='store_true',
         help='remove existing virtual environment')
+
+    parser.add_argument(
+        '-d',
+        '--docs',
+        nargs='*',
+        help='generate documentation with Sphinx (Makefile path must be set in cirrus.conf.')
+
     opts = parser.parse_args(argslist)
     return opts
 
@@ -121,6 +129,41 @@ def execute_build(opts):
     local('. ./{0}/bin/activate && python setup.py develop'.format(venv_name))
 
 
+def build_docs(opts):
+    """
+    _build_docs_
+
+    Runs 'make' against a Sphinx makefile.
+    Requires the following cirrus.conf section:
+
+    [doc]
+    sphinx_makefile_dir = /path/to/makefile
+
+    : param argparse.Namspace opts: A Namespace of build options
+    """
+    LOGGER.info('Building docs')
+    config = load_configuration()
+
+    try:
+        docs_root = os.path.join(os.getcwd(),
+                                 config['doc']['sphinx_makefile_dir'])
+    except KeyError:
+        LOGGER.error('Did not find a complete [doc] section in cirrus.conf'
+                     '\nSee below for an example:'
+                     '\n[doc]'
+                     '\n;sphinx_makefile_dir = /path/to/sphinx')
+        sys.exit(1)
+
+    cmd = 'cd {} && make clean html'.format(docs_root)
+
+    if opts.docs:
+        # additional args were passed after --docs.  Pass these to make
+        cmd = 'cd {} && make {}'.format(docs_root, ' '.join(opts.docs))
+
+    local(cmd)
+    LOGGER.info('Build command was "{}"'.format(cmd))
+
+
 def main():
     """
     _main_
@@ -129,6 +172,9 @@ def main():
     """
     opts = build_parser(sys.argv)
     execute_build(opts)
+
+    if opts.docs is not None:
+        build_docs(opts)
 
 
 if __name__ == '__main__':
