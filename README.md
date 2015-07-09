@@ -80,7 +80,7 @@ Optional parameters for the build command are read from the cirrus.conf, they ar
   1. pypi_url - If present, will use the pypi server to install requirements, also requires the pypi username and token to be set in the cirrus section of your gitconfig
 3. Other options
   1. `-c, --clean` removes the existing ./venv before building.
-  2. `-d, --docs` generate documentation using Sphinx and its generated Makefile.  Any options make commands can be passed along (--docs clean singlehtml)
+  2. `-d, --docs` generate documentation using Sphinx and its generated Makefile.  Any optional make commands can be passed along (e.g., --docs clean singlehtml)
 
 
 #### cirrus feature
