@@ -14,19 +14,19 @@ curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/installer.sh
 bash installer.sh
 ```
 
-The installer script will set up an install of cirrus for you in your home directory 
-and prompt for some info so that it can set up some parameters in your .gitconfig 
+The installer script will set up an install of cirrus for you in your home directory
+and prompt for some info so that it can set up some parameters in your .gitconfig
 
 
 
 Installation for Development:
 =============================
 
-_Note_: This package uses GitFlow, any development work should be done off the develop branches and 
-pull requests made against develop, not master. 
+_Note_: This package uses GitFlow, any development work should be done off the develop branches and
+pull requests made against develop, not master.
 
 ```bash
-git clone https://github.com/evansde77/cirrus.git 
+git clone https://github.com/evansde77/cirrus.git
 git cirrus build
 ```
 
@@ -46,14 +46,14 @@ As cirrus works as a git extension, it will use your gitconfig file. The install
 Package Configuration Files:
 ============================
 
-The per package controls used by cirrus live in a cirrus.conf file in the top level of the repo you use with cirrus. 
+The per package controls used by cirrus live in a cirrus.conf file in the top level of the repo you use with cirrus.
 This file, coupled with the cirrus setup.py template and command line tools dictate the behaviour of the cirrus commands within the package. Details for the cirrus config are in the (TBA) Configuration.MD file
 
 
 Cirrus Commands:
-================ 
+================
 
-#### cirrus hello 
+#### cirrus hello
 A simple test command that says hello, verifies that things are working and prints out some info about your cirrus install
 
 Usage:
@@ -76,8 +76,11 @@ Optional parameters for the build command are read from the cirrus.conf, they ar
 1. build Section
   1. virtualenv_name - sets the name of the virtualenv directory, defaults to venv
   2. requirements_file - name of the requirements.txt file, defaults to requirements.txt
-3. pypi Section
-  4. pypi_url - If present, will use the pypi server to install requirements, also requires the pypi username and token to be set in the cirrus section of your gitconfig
+2. pypi Section
+  1. pypi_url - If present, will use the pypi server to install requirements, also requires the pypi username and token to be set in the cirrus section of your gitconfig
+3. Other options
+  1. `-c, --clean` removes the existing ./venv before building.
+  2. `-d, --docs` generate documentation using Sphinx and its generated Makefile.  Any options make commands can be passed along (--docs clean singlehtml)
 
 
 #### cirrus feature
@@ -132,7 +135,7 @@ git checkout develop # you're ready to release!
 Command for running tests in a package.
 
 Usage:
-```bash 
+```bash
 git cirrus test
 ```
 
@@ -148,7 +151,7 @@ May define [test-SUITE_LOCATION] where
 Command for running quality control checks via pylint, pyflakes, pep8.
 
 Usage:
-```bash 
+```bash
 git cirrus qc --files --only-changes --pylint --pyflakes --pep8
 ```
 

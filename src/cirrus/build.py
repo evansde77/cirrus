@@ -40,6 +40,7 @@ def build_parser(argslist):
         help='remove existing virtual environment')
 
     parser.add_argument(
+        '-d',
         '--docs',
         nargs='*',
         help='generate documentation with Sphinx (Makefile path must be set in cirrus.conf.')
