@@ -82,6 +82,7 @@ Optional parameters for the build command are read from the cirrus.conf, they ar
   1. `-c, --clean` removes the existing ./venv before building.
   2. `-d, --docs` generate documentation using Sphinx and its generated Makefile.  Any optional make commands can be passed along (e.g., --docs clean singlehtml)
     1.  Requires a `sphinx_makefile_dir` value set in the `docs` section of cirrus.conf.
+    2. `sphinx_makefile_dir` should point to the directory that contains Sphinx's Makefile.
 
 
 #### cirrus feature
