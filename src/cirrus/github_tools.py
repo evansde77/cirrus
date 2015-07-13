@@ -142,14 +142,18 @@ def get_commit_msgs(owner, repo, since_sha, token=None):
     resp.raise_for_status()
     result = []
     for commit in resp.json():
+
+        blame = None
         if commit.get("committer"):
-            committer = commit['committer']['login']
-        else:
+            blame = commit['committer'].get('login')
+
+        if blame is None:
             # Handle commits that weren't properly identified with a
-            # GitHub user.
-            committer = commit['commit']['committer']['name']
+            # GitHub user, or None 'login' values
+            blame = commit['commit']['committer'].get('name')
+
         result.append({
-            "committer" : committer,
+            "committer" : blame,
             "message":  commit['commit']['message'],
             "date" : commit['commit']['committer']['date']
 
