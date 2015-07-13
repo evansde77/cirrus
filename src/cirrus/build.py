@@ -162,7 +162,7 @@ def build_docs(opts):
         # additional args were passed after --docs.  Pass these to make
         cmd = 'cd {} && make {}'.format(docs_root, ' '.join(opts.docs))
 
-    local('source ./{}/bin/activate && {}'.format(venv_name, cmd))
+    local('. ./{}/bin/activate && {}'.format(venv_name, cmd))
     LOGGER.info('Build command was "{}"'.format(cmd))
 
 
