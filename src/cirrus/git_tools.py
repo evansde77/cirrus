@@ -26,8 +26,7 @@ def checkout_and_pull(repo_dir, branch_from):
     repo = git.Repo(repo_dir)
 
     if repo.active_branch != branch_from:
-        dev_branch = getattr(repo.heads, branch_from)
-        dev_branch.checkout()
+        git.Git().checkout(branch_from)
 
     # pull branch_from from remote
     ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_from)
