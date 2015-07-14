@@ -191,19 +191,6 @@ def new_release(opts):
 
     config = load_configuration()
 
-    if opts.bump:
-        for pkg in opts.bump:
-            if '==' not in pkg:
-                msg = 'Malformed version expression.  Please use "pkg==0.0.0"'
-                LOGGER.error(msg)
-                raise RuntimeError(msg)
-        try:
-            update_requirements('requirements.txt', opts.bump)
-        except Exception as ex:
-            # halt on any problem updating requirements
-            LOGGER.exception('Failed to update requirements.txt -- {}'.format(ex))
-            raise RuntimeError(ex)
-
     # version bump:
     current_version = config.package_version()
     new_version = bump_version_field(current_version, field)
@@ -228,7 +215,18 @@ def new_release(opts):
     changes = ['cirrus.conf']
 
     if opts.bump:
-        changes.append('requirements.txt')
+        for pkg in opts.bump:
+            if '==' not in pkg:
+                msg = 'Malformed version expression.  Please use "pkg==0.0.0"'
+                LOGGER.error(msg)
+                raise RuntimeError(msg)
+        try:
+            update_requirements('requirements.txt', opts.bump)
+            changes.append('requirements.txt')
+        except Exception as ex:
+            # halt on any problem updating requirements
+            LOGGER.exception('Failed to update requirements.txt -- {}'.format(ex))
+            raise RuntimeError(ex)
 
     # update release notes file
     relnotes_file, relnotes_sentinel = config.release_notes()
