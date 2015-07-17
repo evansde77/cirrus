@@ -130,6 +130,50 @@ def insert_pypi_credentials(git_config, auto_yes=False):
     return
 
 
+def insert_buildserver_credentials(git_config, auto_yes=False):
+    """
+    prompt the user to see if a buildserver is being used, and if so
+    prompt the user to provide buildserver credentials if not present
+
+    """
+    user = git_config.get('cirrus', 'buildserver-user')
+    token = git_config.get('cirrus', 'buildserver-token')
+    if user is not None and token is not None:
+        return
+    if not auto_yes:
+        buildserver = ask_question(
+            'Are you triggering releases with a remote buildserver [y/N]?',
+            default='n'
+        )
+        if 'n' in buildserver.lower():
+            return
+    if user is None:
+        if auto_yes:
+            print(
+                "If using a build server, please add buildserver-user"
+                " to the .gitconfig prior to use."
+            )
+        else:
+            user = ask_question(
+                'what is your buildserver username (skip if no buildserver)?',
+                default=os.environ['USER']
+            )
+            git_config.set('cirrus', 'buildserver-user', user)
+    if token is None:
+        if auto_yes:
+            print(
+                "If using a build server, please add buildserver-token"
+                " to the .gitconfig prior to use."
+            )
+        else:
+            token = ask_question(
+                'what is your buildserver token/password?',
+                default='notprovided'
+            )
+            git_config.set('cirrus', 'buildserver-token', token)
+    return
+
+
 def read_gitconfig(auto_yes=False):
     """
     _read_gitconfig_
@@ -156,8 +200,10 @@ def read_gitconfig(auto_yes=False):
         print "Looks like you already have a github token in .gitconfig..."
 
     insert_pypi_credentials(config, auto_yes)
+    insert_buildserver_credentials(config, auto_yes)
 
     return config
+
 
 def update_shell_profile():
     """
