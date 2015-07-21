@@ -189,5 +189,18 @@ def get_pypi_auth():
     }
 
 
+def get_buildserver_auth():
+    """
+    _buildserver_auth_
+
+    Get buildserver credentials from gitconfig
+
+    """
+    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+    config = gitconfig.config(gitconfig_file)
+    return (config.get('cirrus', 'buildserver-user'),
+            config.get('cirrus', 'buildserver-token'),)
+
+
 if __name__ == '__main__':
     load_configuration()

@@ -24,7 +24,7 @@ from cirrus.git_tools import tag_release, get_active_branch
 from cirrus.utils import update_file, update_version
 from cirrus.fabric_helpers import FabricHelper
 from cirrus.logger import get_logger
-
+from cirrus.plugins.jenkins import JenkinsClient
 
 LOGGER = get_logger()
 
@@ -137,7 +137,9 @@ def build_parser(argslist):
         help='package versions (pkg==0.0.0) to update in requirements.txt'
     )
 
-    build_command = subparsers.add_parser('build')
+    # borrow --micro/minor/major options from "new" command.
+    subparsers.add_parser('trigger', parents=[new_command], add_help=False)
+    subparsers.add_parser('build')
 
     upload_command = subparsers.add_parser('upload')
     upload_command.add_argument(
@@ -257,7 +259,69 @@ def new_release(opts):
     LOGGER.info('Committing files: {0}'.format(','.join(changes)))
     LOGGER.info(msg)
     commit_files(repo_dir, msg, *changes)
-    return
+    return (new_version, field)
+
+
+def trigger_release(opts):
+    """
+    _trigger_release_
+
+    Alias for "git cirrus release new --micro/minor/major.
+    - Run the "release new" command
+    - Capture the new version string
+    - Pass new version number to external build server
+
+    Requires the following sections and values in cirrus.conf:
+
+    [build-server]
+    name = jenkins
+
+    [jenkins]
+    url = http://localhost:8080
+    job = default
+    """
+    config = load_configuration()
+
+    try:
+        build_server = config['build-server']['name']
+        build_server_config = config[build_server]
+    except KeyError:
+        msg = (
+            '[build-server] section is incomplete or missing from cirrus.conf. '
+            'Please see below for an example.\n'
+            '\n [build-server]'
+            '\n name = jenkins'
+            '\n [jenkins]'
+            '\n url = http://localhost:8080'
+            '\n job = default'
+            )
+        raise RuntimeError(msg)
+
+    new_version, release_level = new_release(opts)
+
+    if build_server == 'jenkins':
+        _trigger_jenkins_release(build_server_config,
+                                 new_version,
+                                 release_level)
+
+
+def _trigger_jenkins_release(config, new_version, level):
+    """
+    _trigger_jenkins_release_
+
+    Performs jenkins specific steps for launching a build job
+    """
+    client = JenkinsClient(config['url'])
+    build_params = {
+        'LEVEL': level,
+        'VERSION': new_version,
+    }
+
+    response = client.start_job(config['job'], build_params)
+
+    if response.status_code != 201:
+        LOGGER.error(response.text)
+        raise RuntimeError('Jenkins HTTP API returned code {}'.format(response.status_code))
 
 
 def upload_release(opts):
@@ -386,6 +450,9 @@ def main():
     opts = build_parser(sys.argv)
     if opts.command == 'new':
         new_release(opts)
+
+    if opts.command == 'trigger':
+        trigger_release(opts)
 
     if opts.command == 'upload':
         upload_release(opts)
