@@ -122,7 +122,7 @@ Options:
   * --test do not push new release or upload build artifact to pypi
   * --no-upload do not upload the build artifact to pypi
   * --pypi-sudo, --no-pypi-sudo use or do not use sudo to move the build artifact to the correct location in the pypi server, defaults to using sudo
-
+  * --pypi-url URL override the pypi url from cirrus.conf with URL
 
 *Protip:* If you don't make releases regularly, you'll want to make sure your local repo copy is up to date (cirrus should do these eventually).
 
