@@ -146,31 +146,31 @@ def build_parser(argslist):
         '--test',
         action='store_true',
         dest='test',
-        help="test only, do not actually push or upload"
+        help='test only, do not actually push or upload'
     )
     upload_command.add_argument(
         '--no-upload',
         action='store_true',
         dest='no_upload',
-        help="do not upload build artifact to pypi"
+        help='do not upload build artifact to pypi'
     )
     upload_command.add_argument(
         '--pypi-url',
         action='store',
         dest='pypi_url',
-        help="upload to specified pypi url"
+        help='upload to specified pypi url'
     )
     upload_command.add_argument(
         '--pypi-sudo',
         action='store_true',
         dest='pypi_sudo',
-        help="use sudo to upload build artifact to pypi"
+        help='use sudo to upload build artifact to pypi'
     )
     upload_command.add_argument(
         '--no-pypi-sudo',
         action='store_false',
         dest='pypi_sudo',
-        help="do not use sudo to upload build artifact to pypi"
+        help='do not use sudo to upload build artifact to pypi'
     )
     upload_command.set_defaults(pypi_sudo=True)
 
