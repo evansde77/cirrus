@@ -16,7 +16,7 @@ from fabric.operations import put, local
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.configuration import get_pypi_auth
-from cirrus.github_tools import build_release_notes
+from cirrus.git_tools import build_release_notes
 from cirrus.git_tools import checkout_and_pull, push
 from cirrus.git_tools import branch, merge
 from cirrus.git_tools import commit_files
@@ -245,8 +245,7 @@ def new_release(opts):
             datetime.datetime.utcnow().isoformat()
         )
         relnotes += build_release_notes(
-            config.organisation_name(),
-            config.package_name(),
+            repo_dir,
             current_version,
             config.release_notes_format()
         )

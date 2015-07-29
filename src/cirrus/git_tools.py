@@ -6,7 +6,10 @@ Utils for doing git and github related business
 
 """
 import os
+import itertools
+
 import git
+import arrow
 
 from cirrus.logger import get_logger
 
@@ -200,3 +203,145 @@ def get_diff_files(repo_dir):
         diffs.append(diff.a_blob.path)
 
     return diffs
+
+
+def get_tags_with_sha(repo_dir):
+    """
+    _get_tags_with_sha_
+
+    Get list of tags for a repo and return a map of
+    tag:sha
+
+    """
+    repo = git.Repo(repo_dir)
+    return {tag.name : tag.commit.hexsha for tag in repo.tags}
+
+
+def get_tags(repo_dir):
+    """
+    _get_tags_
+
+    returns a list of tags for the given repo, ordered as
+    newest first
+
+    """
+    repo = git.Repo(repo_dir)
+    tags_with_date = {
+        tag.name : tag.commit.committed_date
+        for tag in repo.tags
+    }
+    return sorted(tags_with_date, key=tags_with_date.get, reverse=True)
+
+
+def get_commit_msgs(repo_dir, since_sha):
+    """
+    _get_commit_msgs_
+
+    Get commit message data for the repo provided since the
+    since_sha value of a commit or tag.
+
+    """
+    repo = git.Repo(repo_dir)
+    rev_range = '..'.join([since_sha,repo.head.commit.hexsha])
+    result = []
+    for commit in repo.iter_commits(rev_range):
+        row = {
+            'committer' : commit.committer.name,
+            'message' : commit.message,
+            'date' : str(arrow.get(commit.committed_date))
+        }
+        result.append(row)
+    return result
+
+
+def format_commit_messages(rows):
+    """
+    _format_commit_messages_
+
+    Consume the data produced by get_commit_msgs and
+    generate a set of release notes, broken down by author
+
+    Output looks like:
+
+    - Commit History:
+    -- Author: GITHUBUSERNAME
+    --- DATETIME: COMMIT MESSAGE
+
+    """
+    result = [u" - Commit History:"]
+
+    for author, commits in itertools.groupby(rows, lambda x: x['committer']):
+        result.append(u" -- Author: {0}".format(author))
+        sorted_commits = sorted(
+            [ c for c in commits ],
+            key=lambda x: x['date'],
+            reverse=True
+        )
+        result.extend(
+            u' --- {0}: {1}'.format(commit['date'],commit['message'])
+            for commit in sorted_commits
+        )
+
+    return '\n'.join(result)
+
+
+def markdown_format(rows):
+    """
+    _format_commit_messages_
+
+    Consume the data produced by get_commit_msgs and
+    generate a set of release notes, broken down by author
+
+    Output looks like:
+
+    Commit History
+    ==============
+
+    Author: GITHUBUSERNAME
+    ----------------------
+
+    DATETIME: COMMIT MESSAGE
+
+    """
+    result = ['Commit History\n==============']
+
+    for author, commits in itertools.groupby(rows, lambda x: x['committer']):
+        result.append(
+            '\nAuthor: {0}\n--------'.format(author) + '-' * len(author))
+        sorted_commits = sorted(
+            [c for c in commits],
+            key=lambda x: x['date'],
+            reverse=True)
+        result.extend('\n{0}: {1}'.format(
+            commit['date'],
+            commit['message']) for commit in sorted_commits)
+
+    return '\n'.join(result)
+
+FORMATTERS = {
+    'plaintext': format_commit_messages,
+    'markdown': markdown_format,
+    }
+
+
+def build_release_notes(repo_dir, since_tag, formatter):
+    """
+    Given a repo_dir and tag, generate release notes for all
+    commits since that tag
+
+    """
+    tags = get_tags_with_sha(repo_dir)
+    if since_tag not in tags:
+        msg = "Could not find tag {0} in {1}".format(since_tag, repo_dir)
+        raise RuntimeError(msg)
+
+    sha = tags[since_tag]
+    msgs = get_commit_msgs(repo_dir, sha)
+    try:
+        rel_notes = FORMATTERS[formatter](msgs)
+    except Exception as ex:
+        LOGGER.exception(ex)
+        raise RuntimeError(
+            ('Invalid release notes formatting: {0} Update cirrus.conf'
+             ' entry to use either: plaintext, markdown'.format(formatter)))
+    return rel_notes
