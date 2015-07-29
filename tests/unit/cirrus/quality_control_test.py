@@ -29,12 +29,12 @@ class QualityControlTest(unittest.TestCase):
         with mock.patch(
             'cirrus.quality_control.pyflakes_file') as mock_pyflakes:
 
-            run_pyflakes()
+            run_pyflakes(False)
             self.failUnless(mock_pyflakes.called)
 
     def test_run_pep8(self):
         with mock.patch('cirrus.quality_control.pep8_file') as mock_pep8:
-            run_pep8()
+            run_pep8(False)
             self.failUnless(mock_pep8.called)
 
 if __name__ == "__main__":
