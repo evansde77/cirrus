@@ -7,6 +7,7 @@ import sys
 
 from fabric.operations import local
 from argparse import ArgumentParser
+from nose.tools import nottest
 
 from cirrus.configuration import load_configuration
 
@@ -28,6 +29,7 @@ def build_parser(argslist):
     return opts
 
 
+@nottest
 def nose_test(location):
     """
     _nose_test_
