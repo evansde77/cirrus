@@ -170,7 +170,6 @@ class GitToolsTest(unittest.TestCase):
         _test_get_tags_with_sha_                               
         """
         result = get_tags_with_sha(None)
-	self.assertEqual(result['banana'], 'BANANA_SHA')
         self.assertEqual(result['orange'], 'ORANGE_SHA')
         self.assertEqual(result['apple'], 'APPLE_SHA')
         self.assertEqual(result['banana'], 'BANANA_SHA')

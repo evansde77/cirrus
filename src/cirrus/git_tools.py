@@ -214,7 +214,7 @@ def get_tags_with_sha(repo_dir):
 
     """
     repo = git.Repo(repo_dir)
-    return {tag.name : tag.commit.hexsha for tag in repo.tags}
+    return {tag.name: tag.commit.hexsha for tag in repo.tags}
 
 
 def get_tags(repo_dir):
@@ -227,7 +227,7 @@ def get_tags(repo_dir):
     """
     repo = git.Repo(repo_dir)
     tags_with_date = {
-        tag.name : tag.commit.committed_date
+        tag.name: tag.commit.committed_date
         for tag in repo.tags
     }
     return sorted(tags_with_date, key=tags_with_date.get, reverse=True)
@@ -246,9 +246,9 @@ def get_commit_msgs(repo_dir, since_sha):
     result = []
     for commit in repo.iter_commits(rev_range):
         row = {
-            'committer' : commit.committer.name,
-            'message' : commit.message,
-            'date' : str(arrow.get(commit.committed_date))
+            'committer': commit.committer.name,
+            'message': commit.message,
+            'date': str(arrow.get(commit.committed_date))
         }
         result.append(row)
     return result
