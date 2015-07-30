@@ -4,14 +4,8 @@ tests for github_tools
 import mock
 import unittest
 
-from cirrus.github_tools import build_release_notes
 from cirrus.github_tools import create_pull_request
-from cirrus.github_tools import format_commit_messages
-from cirrus.github_tools import get_commit_msgs
 from cirrus.github_tools import get_releases
-from cirrus.github_tools import get_tags
-from cirrus.github_tools import get_tags_with_sha
-from cirrus.github_tools import markdown_format
 
 
 class GithubToolsTest(unittest.TestCase):
@@ -76,69 +70,6 @@ class GithubToolsTest(unittest.TestCase):
                         self.failUnless(mock_dumps.called)
                         self.failUnlessEqual(result, resp_json['html_url'])
 
-    def test_build_release_notes(self):
-        """
-        _test_build_release_notes_
-        """
-        tag = {self.release: "123abc"}
-
-        with mock.patch(
-            'cirrus.github_tools.get_tags_with_sha') as mock_get_tags_sha:
-            with mock.patch(
-                'cirrus.github_tools.get_commit_msgs') as mock_get_commit:
-
-                mock_get_tags_sha.return_value = tag
-                mock_get_commit.return_value = self.commit_info
-                build_release_notes(
-                    self.owner,
-                    self.repo,
-                    self.release,
-                    'plaintext')
-                self.failUnless(mock_get_tags_sha.called)
-                self.failUnless(mock_get_commit.called)
-
-    def test_commit_messages(self):
-        """
-        _test_commit_messages_
-
-        prints plaintext release notes
-        """
-        msg = format_commit_messages(self.commit_info)
-        print "Plaintext release notes:\n{0}\n".format(msg)
-
-    def test_markdown_format(self):
-        """
-        _test_markdown_format_
-
-        prints markdown release notes
-        """
-        msg = markdown_format(self.commit_info)
-        print "Markdown release notes:\n{0}\n".format(msg)
-
-    def test_get_commit_msgs(self):
-        """
-        _test_get_commit_msgs_
-        """
-        resp_json = [
-            {
-             'committer': {'login': 'bobing_for_apples'},
-             'commit': {
-                'message': 'I made a commit',
-                'committer': {'date': '2014-08-28'}}
-             }
-                     ]
-
-        mock_req = mock.Mock()
-        mock_req.raise_for_status.return_value = False
-        mock_req.json.return_value = resp_json
-        self.mock_get.return_value = mock_req
-
-        result = get_commit_msgs(self.owner, self.repo, "abc123", 'token')
-        self.failUnless(self.mock_get.called)
-        self.failUnless('committer' in result[0])
-        self.failUnless('message' in result[0])
-        self.failUnless('date' in result[0])
-
     def test_get_releases(self):
         """
         _test_get_releases_
@@ -155,39 +86,6 @@ class GithubToolsTest(unittest.TestCase):
         result = get_releases(self.owner, self.repo, 'token')
         self.failUnless(self.mock_get.called)
         self.failUnless('tag_name' in result[0])
-
-    def test_get_tags(self):
-        """
-        _test_get_tags_
-        """
-        keys = {'banana': 2, 'apple': 3, 'orange': 1}
-        with mock.patch(
-            'cirrus.github_tools.get_tags_with_sha') as mock_get_tags_sha:
-
-            mock_get_tags_sha.return_value = keys
-            result = get_tags(self.owner, self.repo, 'token')
-            self.failUnless(mock_get_tags_sha.called)
-            self.failUnlessEqual(result, ['orange', 'banana', 'apple'])
-
-    def test_get_tags_with_sha(self):
-        """
-        _test_get_tags_with_sha_
-        """
-        resp_json = [
-            {
-             'name': self.release,
-             'commit': {'sha': 'abc123'}
-            }
-                     ]
-        mock_req = mock.Mock()
-        mock_req.raise_for_status.return_value = False
-        mock_req.json.return_value = resp_json
-        self.mock_get.return_value = mock_req
-        result = get_tags_with_sha(self.owner, self.repo, 'token')
-        self.failUnless(self.mock_get.called)
-        self.failUnlessEqual(
-            result,
-            {resp_json[0]['name']: resp_json[0]['commit']['sha']})
 
 if __name__ == "__main__":
     unittest.main()

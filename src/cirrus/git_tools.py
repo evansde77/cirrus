@@ -264,7 +264,7 @@ def format_commit_messages(rows):
     Output looks like:
 
     - Commit History:
-    -- Author: GITHUBUSERNAME
+    -- Author: USERAME
     --- DATETIME: COMMIT MESSAGE
 
     """
@@ -297,7 +297,7 @@ def markdown_format(rows):
     Commit History
     ==============
 
-    Author: GITHUBUSERNAME
+    Author: USERNAME
     ----------------------
 
     DATETIME: COMMIT MESSAGE
