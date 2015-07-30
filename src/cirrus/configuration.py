@@ -180,10 +180,12 @@ def get_pypi_auth():
     gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
     config = gitconfig.config(gitconfig_file)
     pypi_user = config.get('cirrus', 'pypi-user')
+    pypi_ssh_user = config.get('cirrus', 'pypi-ssh-user')
     pypi_key = config.get('cirrus', 'pypi-ssh-key')
     pypi_token = config.get('cirrus', 'pypi-token')
     return {
         'username': pypi_user,
+        'ssh_username': pypi_ssh_user,
         'ssh_key': pypi_key,
         'token': pypi_token
     }
