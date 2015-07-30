@@ -42,6 +42,7 @@ As cirrus works as a git extension, it will use your gitconfig file. The install
 1. *pypi-token* - Token/password to access your pypi server
 1. *pypi-ssh-key* - SSH key used for scp-like uploads to your pypi server (if HTTP upload isnt supported)
 
+*Protip:* If you require a different username for ssh access to your pypi server, you can add an optional *pypi-ssh-user* setting.
 
 Package Configuration Files:
 ============================
@@ -125,6 +126,7 @@ Options:
   * --pypi-url URL override the pypi url from cirrus.conf with URL
 
 *Protip:* If you don't make releases regularly, you'll want to make sure your local repo copy is up to date (cirrus should do these eventually).
+
 
 ```
 git checkout master # get master, if you only have develop

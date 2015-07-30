@@ -367,11 +367,15 @@ def upload_release(opts):
             pypi_url = opts.pypi_url
         else:
             pypi_url = pypi_conf['pypi_url']
+        if pypi_auth['ssh_username'] is not None:
+            pypi_user = pypi_auth['ssh_username']
+        else:
+            pypi_user = pypi_auth['username']
         package_dir = pypi_conf['pypi_upload_path']
         LOGGER.info("Uploading {0} to {1}".format(build_artifact, pypi_url))
         with FabricHelper(
                 pypi_url,
-                pypi_auth['username'],
+                pypi_user,
                 pypi_auth['ssh_key']):
 
             # fabric put the file onto the pypi server
