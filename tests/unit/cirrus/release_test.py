@@ -56,6 +56,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.micro = True
         opts.major = False
         opts.minor = False
+        opts.bump = None
 
         # should create a new minor release, editing
         # the cirrus config in the test dir
