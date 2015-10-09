@@ -5,6 +5,7 @@ _utils_
 General purpose utils
 
 """
+import codecs
 
 
 def update_file(filename, sentinel, text):
@@ -35,12 +36,12 @@ def update_file(filename, sentinel, text):
 
     """
     content = None
-    with open(filename, 'r') as handle:
+    with codecs.open(filename, 'r', encoding='utf-8') as handle:
         content = handle.read()
 
     replacement = u"{0}\n\n{1}".format(sentinel, text)
     content = content.replace(sentinel, replacement, 1)
-    with open(filename, 'w') as handle:
+    with codecs.open(filename, 'w', encoding='utf-8') as handle:
         handle.write(content)
     return
 
