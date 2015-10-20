@@ -7,9 +7,19 @@ Plugin helpers to talk to various deployment platforms
 """
 from cirrus.logger import get_logger
 from cirrus.configuration import load_configuration
-
+from pluggage.errors import FactoryError
+from pluggage.factory_plugin import PluggagePlugin
+from pluggage.registry import get_factory
 
 LOGGER = get_logger()
+
+# This dict defines which plugin class should handle an ArgumentParser
+# subcommand.  Pluggage allows for multiple plugin classes per factory name, but
+# here we want a single plugin class to handle a single factory name (or in this
+# case, a subcommand)
+_REGISTERED_PLUGINS = {'chef': 'ChefServerDeployer'}
+
+# Plugin instance storage
 _PLUGINS = {}
 
 
@@ -20,11 +30,20 @@ def bootstrap_parser(subparser):
     Util to loop through registered plugin instances
     and call their build_parser hooks to add them to
     the CLI suite
-
     """
-    for plugin, instance in _PLUGINS.iteritems():
-        deployer_command = subparser.add_parser(plugin)
+    for plugin_factory, plugin_cls in _REGISTERED_PLUGINS.iteritems():
+        factory = get_factory(plugin_factory)
+        try:
+            instance = factory(plugin_cls)
+        except FactoryError:
+            LOGGER.warn('Could not load plugin "{}"'.format(plugin_cls))
+            continue
+
+        deployer_command = subparser.add_parser(plugin_factory)
         instance.build_parser(deployer_command)
+
+        # Store the plugin instance with its command name as the key
+        _PLUGINS[plugin_factory] = instance
 
 
 def get_plugin(plugin_name):
@@ -36,55 +55,7 @@ def get_plugin(plugin_name):
     return _PLUGINS.get(plugin_name)
 
 
-class DeployerRegistry(type):
-    """
-    _DeployerRegistry_
-
-    metaclass to register plugin subclasses with plugins registry.
-
-    The name that the class will be registered under can be
-    set using the class level plugin_name attribute in the subclass,
-    otherwise it will default to the lowercased class name
-
-    """
-    def __init__(cls, name, bases, dct):
-        pname = getattr(cls, 'plugin_name')
-        if name != "DeployerPlugin":
-            if pname is None:
-                pname = name.lower()
-            if pname not in _PLUGINS:
-                _PLUGINS[pname] = cls()
-            else:
-                raise RuntimeError(
-                    "Duplicate plugin name: {0}".format(pname)
-                )
-        super(DeployerRegistry, cls).__init__(name, bases, dct)
-
-
-class DeployerPlugin(object):
-    """
-    _DeployerPlugin_
-
-    Base class for Deployer plugins.
-
-    Plugin implementations should inherit this,
-    override the plugin_name attribute (this will be exposed
-        as the command name in the CLI, for example plugin_name="womp"
-        will make the plugin available via git cirrus deploy womp )
-
-    The build_parser method sets up the CLI argparse options for the plugin
-    The deploy method consumes the options namespace from the parser
-    and then executes whatever code it needs to perform the deployment action
-
-    Registry with the plugin framework is handled via the metaclass
-
-    The base class provides some helpers to get at the package
-    and user configuration to allow for config access and customisation
-
-
-    """
-    __metaclass__ = DeployerRegistry
-    plugin_name = None
+class DeployerBase(object):
 
     def __init__(self):
         self.package_conf = load_configuration()
@@ -116,7 +87,7 @@ class DeployerPlugin(object):
         )
 
 
-class ChefServerDeployer(DeployerPlugin):
+class ChefServerDeployer(DeployerBase, PluggagePlugin):
     """
     _ChefServerDeployer_
 
@@ -135,16 +106,18 @@ class ChefServerDeployer(DeployerPlugin):
     scale deployment across many nodes
 
     """
-    plugin_name = 'chef'
 
-    def deploy(self, **kwargs):
+    PLUGGAGE_FACTORY_NAME = 'chef'
+
+    def deploy(self, opts):
         """
         _deploy_
 
         Implement deployment via chef server.
 
         """
-        pass
+        LOGGER.info('Chef deployment running...')
+        LOGGER.info(opts)
 
     def build_parser(self, command_parser):
         """
