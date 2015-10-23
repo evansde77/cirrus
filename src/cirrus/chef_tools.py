@@ -11,6 +11,9 @@ import json
 import chef
 
 from contextlib import contextmanager
+from cirrus.logger import get_logger
+
+LOGGER = get_logger()
 
 
 def get_dotted(d, key):
@@ -117,8 +120,9 @@ class ChefRepo(object):
     def __init__(self, repo_dir, **options):
         self.repo_dir = repo_dir
         self.repo = git.Repo(repo_dir)
+        self.git_api = git.Git(repo_dir)
         self.envs = options.get('environments_dir', 'environments')
-        self.roles = options.get('roles_dir', 'roles')
+        self.roles_dir = options.get('roles_dir', 'roles')
 
     def checkout_and_pull(self, branch_name='master'):
         """
@@ -237,7 +241,7 @@ class ChefRepo(object):
 
         """
         result = []
-        roles_dir = os.path.join(self.repo_dir, self.roles)
+        roles_dir = os.path.join(self.repo_dir, self.roles_dir)
         for f in os.listdir(roles_dir):
             if f.endswith('.json'):
                 result.append(f.replace('.json', ''))
@@ -251,7 +255,7 @@ class ChefRepo(object):
         """
         if role not in self.roles():
             return None
-        return self._read_json_file(self.roles, role)
+        return self._read_json_file(self.roles_dir, role)
 
     def save_role(self, role, role_data):
         """
@@ -259,8 +263,8 @@ class ChefRepo(object):
 
         Write formatted json to file
         """
-        self._write_json_file(self.roles, role, role_data)
-        return '{0}/{1}.json'.format(self.roles, role)
+        self._write_json_file(self.roles_dir, role, role_data)
+        return '{0}/{1}.json'.format(self.roles_dir, role)
 
     @contextmanager
     def edit_role(self, role, branch='master', message=None):
@@ -278,3 +282,74 @@ class ChefRepo(object):
         yield data
         edited = self.save_role(role, data)
         self.commit_files(message, edited)
+
+    def _start_feature_branch(self, feature_branch, base_branch='master'):
+        """
+        _start_feature_branch_ 
+
+        Start a new feature  branch using the branch name provided off the 
+        specified base branch. 
+        Will checkout and set as current branch
+
+        For use within feature_branch context
+
+        """
+        if str(self.repo.active_branch) != base_branch:
+            self.checkout_and_pull(base_branch)
+
+        if feature_branch in self.repo.heads:
+            msg = "Error: feature branch: {0} already exists.".format(feature_branch)
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
+           
+        self.git_api.checkout(base_branch, b=feature_branch)
+        LOGGER.info("On Feature Branch: {}".format(self.repo.active_branch))
+        
+
+    def _finish_feature_branch(self, feature_branch, base_branch='master', push=True):
+        """
+        _finish_feature_branch_ 
+
+        Complete work on the named feature branch and merge it back into 
+        the head of the base branch. If push is True, push those changes 
+        to the origin
+
+        For use within feature_branch content
+
+        """
+        if str(self.repo.active_branch) != feature_branch:
+            msg = "Not on expected feature branch: {}".format(feature_branch)
+            raise RuntimeError(msg)
+
+        self.repo.git.checkout(base_branch)
+        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(base_branch)
+        self.repo.remotes.origin.pull(ref)
+
+        self.repo.git.merge(feature_branch)
+        LOGGER.info(
+            "Merging Feature Branch {} into {}".format(
+                feature_branch, self.repo.active_branch
+            )
+        )
+
+        # push base branch to origin
+        if push:
+            result = self.repo.remotes.origin.push(self.repo.head)
+
+    @contextmanager
+    def feature_branch(self, feature_name, base_branch='master', push=True):
+        """
+        _feature_branch_ 
+
+        Start and merge edits on a feature branch. 
+        Will create a new branch called "feature/<feature_name>" off the 
+        specified base branch, allow you to make changes in the repo 
+        and then merges that branch back into the base branch and optionally 
+        push the changes to the remote
+
+        """
+        branch_name = "feature/{}".format(feature_name)
+        self.start_feature_branch(branch_name, base_branch)
+        yield self 
+        self.finish_feature_branch(branch_name, base_branch, push)
+
