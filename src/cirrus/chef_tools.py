@@ -349,7 +349,7 @@ class ChefRepo(object):
 
         """
         branch_name = "feature/{}".format(feature_name)
-        self.start_feature_branch(branch_name, base_branch)
+        self._start_feature_branch(branch_name, base_branch)
         yield self 
-        self.finish_feature_branch(branch_name, base_branch, push)
+        self._finish_feature_branch(branch_name, base_branch, push)
 
