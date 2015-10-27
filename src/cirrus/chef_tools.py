@@ -187,7 +187,6 @@ def update_chef_environment(server_url, cert, username, environment, attributes,
     # update chef server
     #
     edit_chef_environment(server_url, cert, username, environment, attributes)
-    return
 
 
 class ChefRepo(object):
