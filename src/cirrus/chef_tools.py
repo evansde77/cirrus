@@ -82,7 +82,9 @@ def edit_chef_environment(server_url, cert, username, environment, attributes):
     with chef.ChefAPI(server_url, cert, username):
         env = chef.Environment(environment)
         overrides = env.override_attributes
+        LOGGER.info("Editing Chef Server Environment: {} as {}".format(environment, username))
         for attr, new_value in attributes.iteritems():
+            LOGGER.info(" => Setting {}={}".format(attr, new_value))
             set_dotted(overrides, attr, new_value)
 
 
@@ -96,8 +98,10 @@ def edit_chef_role(server_url, cert, username, rolename, attributes):
     """
     with chef.ChefAPI(server_url, cert, username):
         role = chef.Role(rolename)
+        LOGGER.info("Editing Chef Server Role: {} as {}".format(rolename, username))
         overrides = role.override_attributes
         for attr, new_value in attributes.iteritems():
+            LOGGER.info(" => Setting {}={}".format(attr, new_value))
             set_dotted(overrides, attr, new_value)
 
 
@@ -143,6 +147,7 @@ def list_nodes(server_url, cert, username, query, attribute='name', format_str=N
             if format_str is not None:
                 attr = format_str.format(attr)
             result.append(attr)
+            LOGGER.info("Node Found:{}".format(attr))
     return result
 
 
@@ -157,11 +162,13 @@ def update_chef_environment(server_url, cert, username, environment, attributes,
     # update chef_repo
     #
     if chef_repo is not None:
+        LOGGER.info("Updating chef repo: {}".format(chef_repo))
         if not os.path.exists(chef_repo):
             msg = (
                 "chef_repo not found: {} please clone to a "
                 "valid path"
             ).format(chef_repo)
+            LOGGER.error(msg)
             raise RuntimeError(msg)
         r = ChefRepo(chef_repo)
         feature_name = kwargs.get(
@@ -171,7 +178,9 @@ def update_chef_environment(server_url, cert, username, environment, attributes,
         )
         with r.feature_branch(feature_name, push=kwargs.get('push', False)):
             with r.edit_environment(environment, branch=r.current_branch_name) as env:
+                LOGGER.info("Updating Chef Environment: {}".format(environment))
                 for x, y in attributes.iteritems():
+                    LOGGER.info(" => Setting {}={}".format(x, y))
                     set_dotted(env, x, y)
 
     #
@@ -395,7 +404,13 @@ class ChefRepo(object):
         self.git_api.checkout(base_branch, b=feature_branch)
         LOGGER.info("On Feature Branch: {}".format(self.repo.active_branch))
 
-    def _finish_feature_branch(self, feature_branch, base_branch='master', push=True):
+    def _finish_feature_branch(
+            self,
+            feature_branch,
+            base_branch='master',
+            push_feature=True,
+            merge=True,
+            push=True):
         """
         _finish_feature_branch_
 
@@ -410,20 +425,23 @@ class ChefRepo(object):
             msg = "Not on expected feature branch: {}".format(feature_branch)
             raise RuntimeError(msg)
 
-        self.repo.git.checkout(base_branch)
-        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(base_branch)
-        self.repo.remotes.origin.pull(ref)
-
-        self.repo.git.merge(feature_branch)
-        LOGGER.info(
-            "Merging Feature Branch {} into {}".format(
-                feature_branch, self.repo.active_branch
-            )
-        )
-
-        # push base branch to origin
-        if push:
+        if push_feature:
             self.repo.remotes.origin.push(self.repo.head)
+
+        if merge:
+            self.repo.git.checkout(base_branch)
+            ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(base_branch)
+            self.repo.remotes.origin.pull(ref)
+            self.repo.git.merge(feature_branch)
+            LOGGER.info(
+                "Merging Feature Branch {} into {}".format(
+                    feature_branch, self.repo.active_branch
+                )
+            )
+
+            # push base branch to origin
+            if push:
+                self.repo.remotes.origin.push(self.repo.head)
 
     @contextmanager
     def feature_branch(self, feature_name, base_branch='master', push=True):
