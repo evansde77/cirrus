@@ -9,6 +9,7 @@ import os
 import git
 import json
 import chef
+import arrow
 
 from contextlib import contextmanager
 from cirrus.logger import get_logger
@@ -78,11 +79,14 @@ def edit_chef_environment(server_url, cert, username, environment, attributes):
       in the env
 
     """
-    with chef.ChefAPI(server_url, cert,username):
+    with chef.ChefAPI(server_url, cert, username):
         env = chef.Environment(environment)
         overrides = env.override_attributes
+        LOGGER.info("Editing Chef Server Environment: {} as {}".format(environment, username))
         for attr, new_value in attributes.iteritems():
+            LOGGER.info(" => Setting {}={}".format(attr, new_value))
             set_dotted(overrides, attr, new_value)
+
 
 def edit_chef_role(server_url, cert, username, rolename, attributes):
     """
@@ -92,11 +96,97 @@ def edit_chef_role(server_url, cert, username, rolename, attributes):
     making changes for each dotted key:value pair in attributes.
 
     """
-    with chef.ChefAPI(server_url, cert,username):
+    with chef.ChefAPI(server_url, cert, username):
         role = chef.Role(rolename)
+        LOGGER.info("Editing Chef Server Role: {} as {}".format(rolename, username))
         overrides = role.override_attributes
         for attr, new_value in attributes.iteritems():
+            LOGGER.info(" => Setting {}={}".format(attr, new_value))
             set_dotted(overrides, attr, new_value)
+
+
+def list_nodes(server_url, cert, username, query, attribute='name', format_str=None):
+    """
+    _list_nodes_
+
+    Get a list of chef nodes using a chef node seach query.
+    Use attribute to select the attribute from the matching nodes
+    and optionally provide a format string to drop the result into
+    to create well formatted node names
+
+    Example:
+    list_nodes(server_url , cert, 'server_user',
+        "role:some_role AND environment:prod",
+        attribute='automatic.ip.public'
+    )
+
+    Will list all nodes with some_role in the prod environment
+      and return the node['automatic']['ip']['public'] attribute for each node
+
+    list_nodes(server_url, cert, 'server_url',
+        "role:some_role AND environment:prod",
+        attribute='name', format_str='{}.cloudant.com')
+
+    Will extract the name attribute for each node and return that value expanded
+    in the format_str
+
+    :param server_url: Chef Server URL
+    :param cert: path to PEM cert for chef server auth
+    :param username: Chef Server username
+    :param query: chef node search query string
+    :param attribute: Attribute name to be extracted from node data,
+       can be a dot.delimited.style name
+    :param format_str: optional format string to apply to each result
+      for each node.
+
+    """
+    result = []
+    with chef.ChefAPI(server_url, cert, username):
+        for row in chef.search.Search('node', query):
+            attr = get_dotted(row, attribute)
+            if format_str is not None:
+                attr = format_str.format(attr)
+            result.append(attr)
+            LOGGER.info("Node Found:{}".format(attr))
+    return result
+
+
+def update_chef_environment(server_url, cert, username, environment, attributes, chef_repo=None, **kwargs):
+    """
+    _update_chef_environment_
+
+    Update chef environment on server and also in chef repo if provided
+
+    """
+    #
+    # update chef_repo
+    #
+    if chef_repo is not None:
+        LOGGER.info("Updating chef repo: {}".format(chef_repo))
+        if not os.path.exists(chef_repo):
+            msg = (
+                "chef_repo not found: {} please clone to a "
+                "valid path"
+            ).format(chef_repo)
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
+        r = ChefRepo(chef_repo)
+        feature_name = kwargs.get(
+            "feature_name", "cirrus_{}_{}".format(
+                environment, str(arrow.utcnow())
+            )
+        )
+        with r.feature_branch(feature_name, push=kwargs.get('push', False)):
+            with r.edit_environment(environment, branch=r.current_branch_name) as env:
+                LOGGER.info("Updating Chef Environment: {}".format(environment))
+                for x, y in attributes.iteritems():
+                    LOGGER.info(" => Setting {}={}".format(x, y))
+                    set_dotted(env, x, y)
+
+    #
+    # update chef server
+    #
+    edit_chef_environment(server_url, cert, username, environment, attributes)
 
 
 class ChefRepo(object):
@@ -124,6 +214,10 @@ class ChefRepo(object):
         self.envs = options.get('environments_dir', 'environments')
         self.roles_dir = options.get('roles_dir', 'roles')
 
+    @property
+    def current_branch_name(self):
+        return str(self.repo.active_branch)
+
     def checkout_and_pull(self, branch_name='master'):
         """
         _checkout_and_pull_
@@ -150,7 +244,7 @@ class ChefRepo(object):
         """
         self.repo.index.add(filenames)
         # commits with message
-        new_commit = self.repo.index.commit(commit_msg)
+        self.repo.index.commit(commit_msg)
         # push branch to origin
         result = self.repo.remotes.origin.push(self.repo.head)
         return result
@@ -179,7 +273,7 @@ class ChefRepo(object):
             filename = '{0}.json'.format(filename)
         j_file = os.path.join(self.repo_dir, dirname, filename)
         with open(j_file, 'w') as handle:
-            data = json.dump(data, handle, indent=2)
+            json.dump(data, handle, indent=2)
         return j_file
 
     def environments(self):
@@ -217,13 +311,17 @@ class ChefRepo(object):
         return '{0}/{1}.json'.format(self.envs, env_name)
 
     @contextmanager
-    def edit_environment(self, environment, branch='master', message=None):
+    def edit_environment(self, environment, branch=None, message=None):
         """
         context manager that allows you to edit,
         save and commit an environment
 
         """
-        self.checkout_and_pull(branch)
+        if branch is not None:
+            if self.repo.active_branch != branch:
+                dev_branch = getattr(self.repo.heads, branch)
+                dev_branch.checkout()
+
         if message is None:
             message = "cirrus.ChefRepo.edit_environment({0}, {1})".format(
                 environment, branch
@@ -285,10 +383,10 @@ class ChefRepo(object):
 
     def _start_feature_branch(self, feature_branch, base_branch='master'):
         """
-        _start_feature_branch_ 
+        _start_feature_branch_
 
-        Start a new feature  branch using the branch name provided off the 
-        specified base branch. 
+        Start a new feature  branch using the branch name provided off the
+        specified base branch.
         Will checkout and set as current branch
 
         For use within feature_branch context
@@ -301,17 +399,22 @@ class ChefRepo(object):
             msg = "Error: feature branch: {0} already exists.".format(feature_branch)
             LOGGER.error(msg)
             raise RuntimeError(msg)
-           
+
         self.git_api.checkout(base_branch, b=feature_branch)
         LOGGER.info("On Feature Branch: {}".format(self.repo.active_branch))
-        
 
-    def _finish_feature_branch(self, feature_branch, base_branch='master', push=True):
+    def _finish_feature_branch(
+            self,
+            feature_branch,
+            base_branch='master',
+            push_feature=True,
+            merge=True,
+            push=True):
         """
-        _finish_feature_branch_ 
+        _finish_feature_branch_
 
-        Complete work on the named feature branch and merge it back into 
-        the head of the base branch. If push is True, push those changes 
+        Complete work on the named feature branch and merge it back into
+        the head of the base branch. If push is True, push those changes
         to the origin
 
         For use within feature_branch content
@@ -321,35 +424,37 @@ class ChefRepo(object):
             msg = "Not on expected feature branch: {}".format(feature_branch)
             raise RuntimeError(msg)
 
-        self.repo.git.checkout(base_branch)
-        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(base_branch)
-        self.repo.remotes.origin.pull(ref)
+        if push_feature:
+            self.repo.remotes.origin.push(self.repo.head)
 
-        self.repo.git.merge(feature_branch)
-        LOGGER.info(
-            "Merging Feature Branch {} into {}".format(
-                feature_branch, self.repo.active_branch
+        if merge:
+            self.repo.git.checkout(base_branch)
+            ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(base_branch)
+            self.repo.remotes.origin.pull(ref)
+            self.repo.git.merge(feature_branch)
+            LOGGER.info(
+                "Merging Feature Branch {} into {}".format(
+                    feature_branch, self.repo.active_branch
+                )
             )
-        )
 
-        # push base branch to origin
-        if push:
-            result = self.repo.remotes.origin.push(self.repo.head)
+            # push base branch to origin
+            if push:
+                self.repo.remotes.origin.push(self.repo.head)
 
     @contextmanager
     def feature_branch(self, feature_name, base_branch='master', push=True):
         """
-        _feature_branch_ 
+        _feature_branch_
 
-        Start and merge edits on a feature branch. 
-        Will create a new branch called "feature/<feature_name>" off the 
-        specified base branch, allow you to make changes in the repo 
-        and then merges that branch back into the base branch and optionally 
+        Start and merge edits on a feature branch.
+        Will create a new branch called "feature/<feature_name>" off the
+        specified base branch, allow you to make changes in the repo
+        and then merges that branch back into the base branch and optionally
         push the changes to the remote
 
         """
         branch_name = "feature/{}".format(feature_name)
-        self.start_feature_branch(branch_name, base_branch)
-        yield self 
-        self.finish_feature_branch(branch_name, base_branch, push)
-
+        self._start_feature_branch(branch_name, base_branch)
+        yield self
+        self._finish_feature_branch(branch_name, base_branch, push)
