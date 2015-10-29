@@ -66,7 +66,9 @@ class ChefServerDeployer(Deployer):
         args['version'] = self.package_conf.package_version()
         self._validate_args(args)
 
-        attributes = {x:args['version'] for a in args['attributes']}
+        attributes = {
+            a: args['version'] for a in args['attributes']
+        }
 
         if args['environment'] is not None:
             ct.update_chef_environment(
