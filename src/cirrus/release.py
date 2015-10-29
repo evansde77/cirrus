@@ -180,6 +180,13 @@ def build_parser(argslist):
         dest='wait_on_ci',
         help='Wait for GH CI status to be success before uploading'
     )
+    upload_command.add_argument(
+        '--wait-on-ci-timeout',
+        type=int,
+        default=600,
+        dest='wait_on_ci_timeout',
+        help='Seconds to wait on CI before abandoning upload'
+    )
     upload_command.set_defaults(pypi_sudo=True)
 
     opts = parser.parse_args(argslist)
@@ -365,6 +372,17 @@ def upload_release(opts):
     """
     LOGGER.info("Uploading release...")
     config = load_configuration()
+    release_config = {
+        'wait_on_ci': False,
+        'wait_on_ci_timeout': 600
+    }
+    if 'release' in config:
+        release_config['wait_on_ci'] = config.get_param(
+            'release', 'wait_on_ci', False
+        )
+        release_config['wait_on_ci_timeout'] = config.get_param(
+            'release', 'wait_on_ci_timeout', 600
+        )
     build_artifact = artifact_name(config)
     LOGGER.info("Uploading artifact: {0}".format(build_artifact))
     repo_dir = os.getcwd()
@@ -387,15 +405,12 @@ def upload_release(opts):
         LOGGER.error(msg)
         raise RuntimeError(msg)
 
-    wait_on_status = False
-    if 'release' in config:
-        if config.get_param('release', 'wait_on_ci', False):
-            wait_on_status = True
-        if opts.wait_on_ci:
-            wait_on_status = True
+    if opts.wait_on_ci:
+        release_config['wait_on_ci'] = True
+        release_config['wait_on_ci_timeout'] = opts.wait_on_ci_timeout
 
-    if wait_on_status:
-        wait_on_gh_status(curr_branch)
+    if release_config['wait_on_ci']:
+        wait_on_gh_status(curr_branch, timeout=release_config['wait_on_ci_timeout'])
 
     # upload to pypi via fabric over ssh
     if opts.no_upload or opts.test:
