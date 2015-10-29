@@ -344,21 +344,27 @@ def _trigger_jenkins_release(config, new_version, level):
         raise RuntimeError('Jenkins HTTP API returned code {}'.format(response.status_code))
 
 
-def wait_on_gh_status(branch_name, timeout=600):
+def wait_on_gh_status(branch_name, timeout=600, interval=2):
     """
     _wait_on_gh_status_
 
     Wait for CI checks to complete for the branch named
+
+    :param branch_name: name of branch to watch
+    :param timeout: max wait time in seconds
+    :param interval: pause between checks interval in seconds
+
     """
     time_spent = 0
     status = branch_status(branch_name)
+    LOGGER.info("Waiting on CI status of {}...".format(branch_name))
     while status == 'pending':
         if time_spent > timeout:
             LOGGER.error("Exceeded timeout for branch status {}".format(branch_name))
             break
         status = branch_status(branch_name)
-        time.sleep(2)
-        time_spent += 2
+        time.sleep(interval)
+        time_spent += interval
 
     if status != 'success':
         msg = "CI Test status is not success: {} is {}".format(branch_name, status)
@@ -374,7 +380,8 @@ def upload_release(opts):
     config = load_configuration()
     release_config = {
         'wait_on_ci': False,
-        'wait_on_ci_timeout': 600
+        'wait_on_ci_timeout': 600,
+        'wait_on_ci_interval': 2
     }
     if 'release' in config:
         release_config['wait_on_ci'] = config.get_param(
@@ -382,6 +389,9 @@ def upload_release(opts):
         )
         release_config['wait_on_ci_timeout'] = config.get_param(
             'release', 'wait_on_ci_timeout', 600
+        )
+        release_config['wait_on_ci_interval'] = config.get_param(
+            'release', 'wait_on_ci_interval', 2
         )
     build_artifact = artifact_name(config)
     LOGGER.info("Uploading artifact: {0}".format(build_artifact))
@@ -410,7 +420,11 @@ def upload_release(opts):
         release_config['wait_on_ci_timeout'] = opts.wait_on_ci_timeout
 
     if release_config['wait_on_ci']:
-        wait_on_gh_status(curr_branch, timeout=release_config['wait_on_ci_timeout'])
+        wait_on_gh_status(
+            curr_branch,
+            timeout=release_config['wait_on_ci_timeout'],
+            interval=release_config['wait_on_ci_interval']
+        )
 
     # upload to pypi via fabric over ssh
     if opts.no_upload or opts.test:
