@@ -32,7 +32,6 @@ def branch_status(branch_name):
         repo=config.package_name(),
         branch=branch_name
     )
-    print url
     headers = {
         'Authorization': 'token {0}'.format(token),
         'Content-Type': 'application/json'
