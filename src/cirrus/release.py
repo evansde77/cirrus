@@ -387,11 +387,11 @@ def upload_release(opts):
         release_config['wait_on_ci'] = config.get_param(
             'release', 'wait_on_ci', False
         )
-        release_config['wait_on_ci_timeout'] = config.get_param(
-            'release', 'wait_on_ci_timeout', 600
+        release_config['wait_on_ci_timeout'] = int(config.get_param(
+            'release', 'wait_on_ci_timeout', 600)
         )
-        release_config['wait_on_ci_interval'] = config.get_param(
-            'release', 'wait_on_ci_interval', 2
+        release_config['wait_on_ci_interval'] = int(config.get_param(
+            'release', 'wait_on_ci_interval', 2)
         )
     build_artifact = artifact_name(config)
     LOGGER.info("Uploading artifact: {0}".format(build_artifact))
