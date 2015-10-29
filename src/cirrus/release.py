@@ -176,7 +176,7 @@ def build_parser(argslist):
     )
     upload_command.add_argument(
         '--wait-on-ci',
-        action='store_false',
+        action='store_true',
         dest='wait_on_ci',
         help='Wait for GH CI status to be success before uploading'
     )
