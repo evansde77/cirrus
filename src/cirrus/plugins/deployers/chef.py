@@ -22,6 +22,7 @@ attributes=thing.application.version
 from cirrus.logger import get_logger
 from cirrus.deploy_plugins import Deployer
 import cirrus.chef_tools as ct
+from cirrus.configuration import get_chef_auth
 
 
 LOGGER = get_logger()
@@ -87,7 +88,6 @@ class ChefServerDeployer(Deployer):
         if nodes:
             self.run_chef_client(nodes)
 
-
     def run_chef_client(self, nodes):
         """
         _run_chef_client_
@@ -121,6 +121,7 @@ class ChefServerDeployer(Deployer):
         extract the cirrus conf section for this plugin
         and reconcile against the opts provided.
         """
+        chef_auth = get_chef_auth()
         params = [
             'environment'
             'role'
@@ -135,13 +136,17 @@ class ChefServerDeployer(Deployer):
             'attributes'
         ]
         if 'chef' not in self.package_conf:
-            return {
+            result = {
                 x: None for x in params
             }
-        return {
+            result.update(chef_auth)
+            return result
+        result = {
             param: self.package_conf.get_param('chef', param, None)
             for param in params
         }
+        result.update(chef_auth)
+        return result
 
     def _validate_args(self, args):
         """
