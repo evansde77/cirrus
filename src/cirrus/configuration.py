@@ -204,5 +204,19 @@ def get_buildserver_auth():
             config.get('cirrus', 'buildserver-token'),)
 
 
+def get_chef_auth():
+    """
+    get chef auth info from gitconfig
+
+    """
+    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+    config = gitconfig.config(gitconfig_file)
+    return {
+        'chef_server': config.get('cirrus', 'chef-server'),
+        'chef_username': config.get('cirrus', 'chef-username'),
+        'chef_keyfile': config.get('cirrus', 'chef-keyfile')
+    }
+
+
 if __name__ == '__main__':
     load_configuration()
