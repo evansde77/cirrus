@@ -10,7 +10,37 @@ from cirrus.git_tools import get_tags_with_sha
 from cirrus.git_tools import get_commit_msgs
 from cirrus.logger import get_logger
 
+
 LOGGER = get_logger()
+
+
+def branch_status(branch_name):
+    """
+    _branch_status_
+
+    Get the branch status which should include details of CI builds/hooks etc
+    See:
+    https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
+
+    returns a state which is one of 'failure', 'pending', 'success'
+
+    """
+    config = load_configuration()
+    token = get_github_auth()[1]
+    url = "https://api.github.com/repos/{org}/{repo}/commits/{branch}/status".format(
+        org=config.organisation_name(),
+        repo=config.package_name(),
+        branch=branch_name
+    )
+    print url
+    headers = {
+        'Authorization': 'token {0}'.format(token),
+        'Content-Type': 'application/json'
+    }
+    resp = requests.get(url, headers=headers)
+    resp.raise_for_status()
+    state = resp.json()['state']
+    return state
 
 
 def create_pull_request(

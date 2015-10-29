@@ -8,6 +8,7 @@ Implement git cirrus release command
 """
 import os
 import sys
+import time
 import datetime
 import itertools
 from collections import OrderedDict
@@ -21,6 +22,7 @@ from cirrus.git_tools import checkout_and_pull, push
 from cirrus.git_tools import branch, merge
 from cirrus.git_tools import commit_files
 from cirrus.git_tools import tag_release, get_active_branch
+from cirrus.github_tools import branch_status
 from cirrus.utils import update_file, update_version
 from cirrus.fabric_helpers import FabricHelper
 from cirrus.logger import get_logger
@@ -171,6 +173,12 @@ def build_parser(argslist):
         action='store_false',
         dest='pypi_sudo',
         help='do not use sudo to upload build artifact to pypi'
+    )
+    upload_command.add_argument(
+        '--wait-on-ci',
+        action='store_false',
+        dest='wait_on_ci',
+        help='Wait for GH CI status to be success before uploading'
     )
     upload_command.set_defaults(pypi_sudo=True)
 
@@ -329,6 +337,28 @@ def _trigger_jenkins_release(config, new_version, level):
         raise RuntimeError('Jenkins HTTP API returned code {}'.format(response.status_code))
 
 
+def wait_on_gh_status(branch_name, timeout=600):
+    """
+    _wait_on_gh_status_
+
+    Wait for CI checks to complete for the branch named
+    """
+    time_spent = 0
+    status = branch_status(branch_name)
+    while status == 'pending':
+        if time_spent > timeout:
+            LOGGER.error("Exceeded timeout for branch status {}".format(branch_name))
+            break
+        status = branch_status(branch_name)
+        time.sleep(2)
+        time_spent += 2
+
+    if status != 'success':
+        msg = "CI Test status is not success: {} is {}".format(branch_name, status)
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+
+
 def upload_release(opts):
     """
     _upload_release_
@@ -356,6 +386,16 @@ def upload_release(opts):
         ).format(build_artifact)
         LOGGER.error(msg)
         raise RuntimeError(msg)
+
+    wait_on_status = False
+    if 'release' in config:
+        if config.get_param('release', 'wait_on_ci', False):
+            wait_on_status = True
+        if opts.wait_on_ci:
+            wait_on_status = True
+
+    if wait_on_status:
+        wait_on_gh_status(curr_branch)
 
     # upload to pypi via fabric over ssh
     if opts.no_upload or opts.test:
