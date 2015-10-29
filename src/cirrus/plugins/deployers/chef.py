@@ -28,6 +28,16 @@ from cirrus.configuration import get_chef_auth
 LOGGER = get_logger()
 
 
+def attr_list(x):
+    """
+    parser for attribute lists on cli
+    """
+    if ',' in x:
+        return [y for y in x.split(',') if len(y.strip())]
+    else:
+        return [x]
+
+
 class ChefServerDeployer(Deployer):
     """
     _ChefServerDeployer_
@@ -60,10 +70,10 @@ class ChefServerDeployer(Deployer):
         LOGGER.info('Chef deployment running...')
         LOGGER.info(opts)
 
-        args = self._read_cirrus_conf()
+        args = self._read_cirrus_conf(opts)
         for opt in vars(opts):
-            if (opt in args) and (getattr(opts, arg, None) is not None):
-                args[opt] = opts[opt]
+            if (opt in args) and (getattr(opts, opt, None) is not None):
+                args[opt] = getattr(opts, opt)
         args['version'] = self.package_conf.package_version()
         self._validate_args(args)
 
@@ -193,7 +203,8 @@ class ChefServerDeployer(Deployer):
         self.parser.add_argument(
             '--attribute', '-a',
             dest='attributes',
-            required=True,
+            default=None,
+            type=attr_list,
             help=(
                 'Version attribute to be bumped as '
                 'name1.name2.attribute style'
