@@ -9,12 +9,15 @@ import os
 import git
 import json
 import chef
-import arrow
+import uuid
 
 from contextlib import contextmanager
 from cirrus.logger import get_logger
 
 LOGGER = get_logger()
+
+
+short_uuid = lambda: str(uuid.uuid4()).rsplit('-', 1)[1]
 
 
 def get_dotted(d, key):
@@ -86,7 +89,7 @@ def edit_chef_environment(server_url, cert, username, environment, attributes):
         for attr, new_value in attributes.iteritems():
             LOGGER.info(" => Setting {}={}".format(attr, new_value))
             set_dotted(overrides, attr, new_value)
-
+        env.save()
 
 def edit_chef_role(server_url, cert, username, rolename, attributes):
     """
@@ -103,6 +106,7 @@ def edit_chef_role(server_url, cert, username, rolename, attributes):
         for attr, new_value in attributes.iteritems():
             LOGGER.info(" => Setting {}={}".format(attr, new_value))
             set_dotted(overrides, attr, new_value)
+        role.save()
 
 
 def list_nodes(server_url, cert, username, query, attribute='name', format_str=None):
@@ -173,15 +177,22 @@ def update_chef_environment(server_url, cert, username, environment, attributes,
         r = ChefRepo(chef_repo)
         feature_name = kwargs.get(
             "feature_name", "cirrus_{}_{}".format(
-                environment, str(arrow.utcnow())
+                environment, short_uuid()
             )
         )
+        if environment not in r.environments():
+            msg = (
+                "Unable to find environment {} in repo {} "
+                "Known Environments are: {}"
+            ).format(environment, chef_repo, r.environments())
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
         with r.feature_branch(feature_name, push=kwargs.get('push', False)):
             with r.edit_environment(environment, branch=r.current_branch_name) as env:
                 LOGGER.info("Updating Chef Environment: {}".format(environment))
                 for x, y in attributes.iteritems():
                     LOGGER.info(" => Setting {}={}".format(x, y))
-                    set_dotted(env, x, y)
+                    set_dotted(env['override_attributes'], x, y)
 
     #
     # update chef server
