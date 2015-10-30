@@ -113,6 +113,7 @@ class ChefServerDeployer(Deployer):
                 "No chef client user provided, please update your gitconfig"
                 " to include  chef_client_user and chef_client_keyfile"
                 " in the cirrus section"
+            )
             LOGGER.error(msg)
             raise RuntimeError(msg)
 
