@@ -19,6 +19,7 @@ chef_keyfile=/path/to/steve.pem
 attributes=thing.application.version
 
 """
+import os
 from cirrus.logger import get_logger
 from cirrus.deploy_plugins import Deployer
 import cirrus.chef_tools as ct
@@ -80,7 +81,6 @@ class ChefServerDeployer(Deployer):
         attributes = {
             a: args['version'] for a in args['attributes']
         }
-
         if args['environment'] is not None:
             ct.update_chef_environment(
                 args['chef_server'],
@@ -166,6 +166,12 @@ class ChefServerDeployer(Deployer):
             msg = "Must provide role or environment to edit"
             LOGGER.error(msg)
             raise RuntimeError(msg)
+
+        if args['chef_repo'] is not None:
+            if not os.path.exists(args['chef_repo']):
+                msg = "Chef Repo does not exist: {}".format(args['chef_repo'])
+                LOGGER.error(msg)
+                raise RuntimeError(msg)
 
         not_none = [
             'chef_server',
