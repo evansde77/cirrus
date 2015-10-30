@@ -20,6 +20,9 @@ attributes=thing.application.version
 
 """
 import os
+
+from fabric.operations import run
+from cirrus.fabric_helpers import FabricHelper
 from cirrus.logger import get_logger
 from cirrus.deploy_plugins import Deployer
 import cirrus.chef_tools as ct
@@ -96,16 +99,27 @@ class ChefServerDeployer(Deployer):
 
         nodes = self._find_nodes(args)
         if nodes:
-            self.run_chef_client(nodes)
+            self.run_chef_client(args, nodes)
 
-    def run_chef_client(self, nodes):
+    def run_chef_client(self, opts, nodes):
         """
         _run_chef_client_
 
         Trigger a chef client run on each of the specified nodes
 
         """
-        pass
+        if opts['chef_client_user'] is None:
+            msg = (
+                "No chef client user provided, please update your gitconfig"
+                " to include  chef_client_user and chef_client_keyfile"
+                " in the cirrus section"
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
+
+        for node in nodes:
+            LOGGER.info("Running chef-client on {}".format(node))
+            with FabricHelper(node, opts['chef_client_user'], opts['chef_client_keyfile']):
+                run('sudo chef-client')
 
     def _find_nodes(self, args):
         """
