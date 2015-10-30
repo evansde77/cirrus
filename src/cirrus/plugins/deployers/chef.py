@@ -133,9 +133,9 @@ class ChefServerDeployer(Deployer):
         """
         chef_auth = get_chef_auth()
         params = [
-            'environment'
-            'role'
-            'node_list'
+            'environment',
+            'role',
+            'node_list',
             'query',
             'query_attribute',
             'query_format_str',
