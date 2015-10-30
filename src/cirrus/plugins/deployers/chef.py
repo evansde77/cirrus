@@ -34,7 +34,7 @@ def attr_list(x):
     parser for attribute lists on cli
     """
     if ',' in x:
-        return [y for y in x.split(',') if len(y.strip())]
+        return [y for y in x.split(',') if y.strip()]
     else:
         return [x]
 
