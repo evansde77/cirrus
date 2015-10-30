@@ -86,7 +86,7 @@ def edit_chef_environment(server_url, cert, username, environment, attributes):
         for attr, new_value in attributes.iteritems():
             LOGGER.info(" => Setting {}={}".format(attr, new_value))
             set_dotted(overrides, attr, new_value)
-
+        env.save()
 
 def edit_chef_role(server_url, cert, username, rolename, attributes):
     """

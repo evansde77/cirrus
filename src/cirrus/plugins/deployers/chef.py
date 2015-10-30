@@ -207,7 +207,10 @@ class ChefServerDeployer(Deployer):
             type=attr_list,
             help=(
                 'Version attribute to be bumped as '
-                'name1.name2.attribute style'
+                'name1.name2.attribute style, use comma separation '
+                'for multiple attrs'
+                'Edits are made to override_attributes, '
+                'do not prefix with override_attributes'
             )
         )
         self.parser.add_argument(
