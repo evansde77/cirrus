@@ -19,6 +19,7 @@ chef_keyfile=/path/to/steve.pem
 attributes=thing.application.version
 
 """
+import os
 from cirrus.logger import get_logger
 from cirrus.deploy_plugins import Deployer
 import cirrus.chef_tools as ct
@@ -26,6 +27,16 @@ from cirrus.configuration import get_chef_auth
 
 
 LOGGER = get_logger()
+
+
+def attr_list(x):
+    """
+    parser for attribute lists on cli
+    """
+    if ',' in x:
+        return [y for y in x.split(',') if y.strip()]
+    else:
+        return [x]
 
 
 class ChefServerDeployer(Deployer):
@@ -60,17 +71,16 @@ class ChefServerDeployer(Deployer):
         LOGGER.info('Chef deployment running...')
         LOGGER.info(opts)
 
-        args = self._read_cirrus_conf()
+        args = self._read_cirrus_conf(opts)
         for opt in vars(opts):
-            if (opt in args) and (getattr(opts, arg, None) is not None):
-                args[opt] = opts[opt]
+            if (opt in args) and (getattr(opts, opt, None) is not None):
+                args[opt] = getattr(opts, opt)
         args['version'] = self.package_conf.package_version()
         self._validate_args(args)
 
         attributes = {
             a: args['version'] for a in args['attributes']
         }
-
         if args['environment'] is not None:
             ct.update_chef_environment(
                 args['chef_server'],
@@ -123,9 +133,9 @@ class ChefServerDeployer(Deployer):
         """
         chef_auth = get_chef_auth()
         params = [
-            'environment'
-            'role'
-            'node_list'
+            'environment',
+            'role',
+            'node_list',
             'query',
             'query_attribute',
             'query_format_str',
@@ -156,6 +166,12 @@ class ChefServerDeployer(Deployer):
             msg = "Must provide role or environment to edit"
             LOGGER.error(msg)
             raise RuntimeError(msg)
+
+        if args['chef_repo'] is not None:
+            if not os.path.exists(args['chef_repo']):
+                msg = "Chef Repo does not exist: {}".format(args['chef_repo'])
+                LOGGER.error(msg)
+                raise RuntimeError(msg)
 
         not_none = [
             'chef_server',
@@ -193,10 +209,14 @@ class ChefServerDeployer(Deployer):
         self.parser.add_argument(
             '--attribute', '-a',
             dest='attributes',
-            required=True,
+            default=None,
+            type=attr_list,
             help=(
                 'Version attribute to be bumped as '
-                'name1.name2.attribute style'
+                'name1.name2.attribute style, use comma separation '
+                'for multiple attrs'
+                'Edits are made to override_attributes, '
+                'do not prefix with override_attributes'
             )
         )
         self.parser.add_argument(
