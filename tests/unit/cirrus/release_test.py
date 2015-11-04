@@ -155,12 +155,14 @@ class ReleaseUploadCommandTest(unittest.TestCase):
         self.patch_put.stop()
 
 
+    @mock.patch('cirrus.release.current_branch_mark_status')
+    @mock.patch('cirrus.release.wait_on_gh_status')
     @mock.patch('cirrus.release.get_active_branch')
     @mock.patch('cirrus.release.checkout_and_pull')
     @mock.patch('cirrus.release.merge')
     @mock.patch('cirrus.release.push')
     @mock.patch('cirrus.release.tag_release')
-    def test_release_upload(self, m_tag_release, m_push, m_merge, m_checkout_and_pull, m_get_active_branch ):
+    def test_release_upload(self, m_tag_release, m_push, m_merge, m_checkout_and_pull, m_get_active_branch, m_wait_on_gh_status, m_current_branch_mark_status):
         """test upload command, mocking out fabric put"""
         mock_branch = mock.Mock()
         mock_branch.name = "release/1.2.3"
@@ -190,6 +192,8 @@ class ReleaseUploadCommandTest(unittest.TestCase):
             self.failUnless(m_push.called)
             self.assertEqual(m_push.call_count, 2)
             self.failUnless(m_checkout_and_pull.called)
+
+            self.failUnless(m_current_branch_mark_status.called)
 
 
 if __name__ == '__main__':

@@ -23,6 +23,7 @@ from cirrus.git_tools import branch, merge
 from cirrus.git_tools import commit_files
 from cirrus.git_tools import tag_release, get_active_branch
 from cirrus.github_tools import branch_status
+from cirrus.github_tools import current_branch_mark_status
 from cirrus.utils import update_file, update_version
 from cirrus.fabric_helpers import FabricHelper
 from cirrus.logger import get_logger
@@ -461,6 +462,11 @@ def upload_release(opts):
     merge(repo_dir, master, expected_branch)
 
     if not opts.test:
+        if release_config['wait_on_ci']:
+            # if wait_on_ci is set and we have gotten to this point,
+            # tests pass on the release branch.
+            LOGGER.info("setting remote status...")
+            current_branch_mark_status(repo_dir, 'success')
         LOGGER.info("pushing to remote...")
         push(repo_dir)
     do_push = not opts.test
@@ -472,6 +478,11 @@ def upload_release(opts):
     checkout_and_pull(repo_dir, develop)
     merge(repo_dir, develop, expected_branch)
     if not opts.test:
+        if release_config['wait_on_ci']:
+            # if wait_on_ci is set and we have gotten to this point,
+            # tests pass on the release branch.
+            LOGGER.info("setting remote status...")
+            current_branch_mark_status(repo_dir, 'success')
         LOGGER.info("pushing to remote...")
         push(repo_dir)
     LOGGER.info("Release {0} has been tagged and uploaded".format(tag))
