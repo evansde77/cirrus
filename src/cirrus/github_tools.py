@@ -57,7 +57,7 @@ def current_branch_mark_status(repo_dir, state):
     token = get_github_auth()[1]
     sha = git.Repo(repo_dir).head.commit.hexsha
     
-    url = "https://api.github.com/repos/{org}/{repo}/commits/{sha}".format(
+    url = "https://api.github.com/repos/{org}/{repo}/statuses/{sha}".format(
         org=config.organisation_name(),
         repo=config.package_name(),
         sha=sha
