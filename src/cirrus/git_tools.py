@@ -137,7 +137,12 @@ def push(repo_dir):
     Push local branch to remote
     """
     repo = git.Repo(repo_dir)
-    return repo.remotes.origin.push(repo.head)
+    ret = repo.remotes.origin.push(repo.head)
+    # Check to make sure that we haven't errored out.
+    for r in ret:
+        if r.flags >= r.ERROR:
+            raise RuntimeError(unicode(r.summary))
+    return ret
 
 
 def tag_release(repo_dir, tag, master='master', push=True):

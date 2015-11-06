@@ -1,10 +1,12 @@
 '''
 tests for github_tools
 '''
+import json
 import mock
 import unittest
 
 from cirrus.github_tools import create_pull_request
+from cirrus.github_tools import current_branch_mark_status
 from cirrus.github_tools import get_releases
 
 
@@ -86,6 +88,30 @@ class GithubToolsTest(unittest.TestCase):
         result = get_releases(self.owner, self.repo, 'token')
         self.failUnless(self.mock_get.called)
         self.failUnless('tag_name' in result[0])
+
+    @mock.patch('cirrus.github_tools.load_configuration')
+    @mock.patch("cirrus.github_tools.requests.post")
+    def test_current_branch_mark_status(self, mock_post, mock_config_load):
+        """
+        _test_current_branch_mark_status_
+
+        """
+        def check_post(url, headers, data):
+            self.assertTrue(url.startswith("https://api.github.com/repos/"))
+            data = json.loads(data)
+            self.assertEqual(data.get("state"), "success")
+            self.assertTrue(data.get("description"))
+            self.assertTrue(data.get("context"))
+            return mock.Mock()
+
+        mock_post.side_effect = check_post
+
+        mock_config_load.organisation_name.return_value = self.owner
+        mock_config_load.package_name.return_value = self.repo
+
+        current_branch_mark_status(".", "success")
+
+        self.failUnless(mock_post.called)
 
 if __name__ == "__main__":
     unittest.main()
