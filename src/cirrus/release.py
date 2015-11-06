@@ -427,6 +427,55 @@ def upload_release(opts):
             interval=release_config['wait_on_ci_interval']
         )
 
+    # merge in release branches and tag, push to remote
+    tag = config.package_version()
+    master = config.gitflow_master_name()
+    develop = config.gitflow_branch_name()
+
+    # merge release branch into master
+    LOGGER.info("Tagging and pushing {0}".format(tag))
+    checkout_and_pull(repo_dir, master)
+    merge(repo_dir, master, expected_branch)
+
+    if not opts.test:
+        LOGGER.info("pushing to remote...")
+        if release_config['wait_on_ci']:
+            # if wait_on_ci is set and we have gotten to this point,
+            # tests pass on the release branch, so we can tell the
+            # remote the good news.
+            current_branch_mark_status(repo_dir, 'success')
+        push(repo_dir)
+    do_push = not opts.test
+    tag_release(repo_dir, tag, master, push=do_push)
+
+    # Merge release branch back to develop
+    # push to develop
+    LOGGER.info("Merging back to develop...")
+    checkout_and_pull(repo_dir, develop)
+    if release_config['wait_on_ci']:
+        # @HACK If we are doing CI, our branch will be "out of date",
+        # so we update it by merging from master (not gitflow, I
+        # know), and then waiting for CI status on the remote.
+        merge(repo_dir, develop, master)
+        wait_on_gh_status(
+            develop,
+            timeout=release_config['wait_on_ci_timeout'],
+            interval=release_config['wait_on_ci_interval']
+        )
+    else:
+        merge(repo_dir, develop, expected_branch)
+
+    if not opts.test:
+        LOGGER.info("pushing to remote...")
+        if release_config['wait_on_ci']:
+            # if wait_on_ci is set and we have gotten to this point,
+            # tests pass on the release branch, so we can tell the
+            # remote the good news.
+            current_branch_mark_status(repo_dir, 'success')
+        push(repo_dir)
+    LOGGER.info("Release {0} has been tagged and uploaded".format(tag))
+    # TODO: clean up release branch
+
     # upload to pypi via fabric over ssh
     if opts.no_upload or opts.test:
         LOGGER.info("Uploading to pypi disabled by test or no-upload option...")
@@ -451,42 +500,6 @@ def upload_release(opts):
             # fabric put the file onto the pypi server
             put(build_artifact, package_dir, use_sudo=opts.pypi_sudo)
 
-    # merge in release branches and tag, push to remote
-    tag = config.package_version()
-    master = config.gitflow_master_name()
-    develop = config.gitflow_branch_name()
-
-    # merge release branch into master
-    LOGGER.info("Tagging and pushing {0}".format(tag))
-    checkout_and_pull(repo_dir, master)
-    merge(repo_dir, master, expected_branch)
-
-    if not opts.test:
-        if release_config['wait_on_ci']:
-            # if wait_on_ci is set and we have gotten to this point,
-            # tests pass on the release branch.
-            LOGGER.info("setting remote status...")
-            current_branch_mark_status(repo_dir, 'success')
-        LOGGER.info("pushing to remote...")
-        push(repo_dir)
-    do_push = not opts.test
-    tag_release(repo_dir, tag, master, push=do_push)
-
-    # Merge release branch back to develop
-    # push to develop
-    LOGGER.info("Merging back to develop...")
-    checkout_and_pull(repo_dir, develop)
-    merge(repo_dir, develop, expected_branch)
-    if not opts.test:
-        if release_config['wait_on_ci']:
-            # if wait_on_ci is set and we have gotten to this point,
-            # tests pass on the release branch.
-            LOGGER.info("setting remote status...")
-            current_branch_mark_status(repo_dir, 'success')
-        LOGGER.info("pushing to remote...")
-        push(repo_dir)
-    LOGGER.info("Release {0} has been tagged and uploaded".format(tag))
-    # TODO: clean up release branch
     return
 
 

@@ -9,6 +9,7 @@ from cirrus.configuration import get_github_auth, load_configuration
 from cirrus.git_tools import get_active_branch
 from cirrus.git_tools import get_tags_with_sha
 from cirrus.git_tools import get_commit_msgs
+from cirrus.git_tools import push
 from cirrus.logger import get_logger
 
 
@@ -53,10 +54,21 @@ def current_branch_mark_status(repo_dir, state):
 
     """
 
+    LOGGER.info(u"Setting CI status for current branch to {}".format(state))
+
     config = load_configuration()
     token = get_github_auth()[1]
     sha = git.Repo(repo_dir).head.commit.hexsha
-    
+
+    try:
+        # @HACK: Do a push that we expect will fail -- we just want to
+        # tell the server about our sha. A more elegant solution would
+        # probably be to push a detached head.
+        push(repo_dir)
+    except RuntimeError as ex:
+        if "rejected" not in unicode(ex):
+            raise
+
     url = "https://api.github.com/repos/{org}/{repo}/statuses/{sha}".format(
         org=config.organisation_name(),
         repo=config.package_name(),
@@ -72,7 +84,11 @@ def current_branch_mark_status(repo_dir, state):
         {
             "state": state,
             "description": "State after cirrus check.",
-            "context": "cirrus"
+            # @HACK: use the travis context, which is technically
+            # true, because we wait for Travis tests to pass before
+            # cutting a release. In the future, we need to setup a
+            # "cirrus" context, for clarity.
+            "context": "continuous-integration/travis-ci"
         }
     )
 
