@@ -24,6 +24,7 @@ from cirrus.git_tools import commit_files
 from cirrus.git_tools import tag_release, get_active_branch
 from cirrus.github_tools import branch_status
 from cirrus.github_tools import current_branch_mark_status
+from cirrus.github_tools import comment_on_sha
 from cirrus.utils import update_file, update_version
 from cirrus.fabric_helpers import FabricHelper
 from cirrus.logger import get_logger
@@ -143,6 +144,40 @@ def build_parser(argslist):
     # borrow --micro/minor/major options from "new" command.
     subparsers.add_parser('trigger', parents=[new_command], add_help=False)
     subparsers.add_parser('build')
+
+    merge_command = subparsers.add_parser('merge')
+    merge_command.add_argument(
+        '--test',
+        action='store_true',
+        dest='test',
+        help='test only, do not actually merge or push'
+    )
+    merge_command.add_argument(
+        '--wait-on-ci',
+        action='store_true',
+        dest='wait_on_ci',
+        help='Wait for GH CI status to be success before uploading'
+    )
+    merge_command.add_argument(
+        '--wait-on-ci-timeout',
+        type=int,
+        default=600,
+        dest='wait_on_ci_timeout',
+        help='Seconds to wait on CI before abandoning upload'
+    )
+    merge_command.add_argument(
+        '--merge-comment',
+        type=str,
+        default=None,
+        dest='merge_comment',
+        help='Comment to include on the merges'
+    )
+    merge_command.add_argument(
+        '--cleanup',
+        action='store_true',
+        dest='cleanup',
+        help='Clean up release branch after merging'
+    )
 
     upload_command = subparsers.add_parser('upload')
     upload_command.add_argument(
@@ -503,6 +538,117 @@ def upload_release(opts):
     return
 
 
+def merge_release(opts):
+    """
+    _merge_release_
+
+    Merge a release branch git flow style into master and develop
+    branches (or those configured for this package) and tag
+    master.
+
+    """
+    config = load_configuration()
+    release_config = {
+        'wait_on_ci': False,
+        'wait_on_ci_timeout': 600,
+        'wait_on_ci_interval': 2
+    }
+    if 'release' in config:
+        release_config['wait_on_ci'] = config.get_param(
+            'release', 'wait_on_ci', False
+        )
+        release_config['wait_on_ci_timeout'] = int(config.get_param(
+            'release', 'wait_on_ci_timeout', 600)
+        )
+        release_config['wait_on_ci_interval'] = int(config.get_param(
+            'release', 'wait_on_ci_interval', 2)
+        )
+
+    repo_dir = os.getcwd()
+    curr_branch = get_active_branch(repo_dir)
+    expected_branch = release_branch_name(config)
+
+    if curr_branch.name != expected_branch:
+        msg = (
+            "Not on the expected release branch according "
+            "to cirrus.conf\n Expected:{0} but on {1}"
+        ).format(expected_branch, curr_branch)
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+    # merge in release branches and tag, push to remote
+    tag = config.package_version()
+    master = config.gitflow_master_name()
+    develop = config.gitflow_branch_name()
+
+    # merge release branch into master
+    LOGGER.info("Tagging and pushing {0}".format(tag))
+    checkout_and_pull(repo_dir, master)
+    master_merge_sha = merge(repo_dir, master, expected_branch)
+
+    if not opts.test:
+        LOGGER.info("pushing to remote...")
+        if release_config['wait_on_ci']:
+            # if wait_on_ci is set and we have gotten to this point,
+            # tests pass on the release branch, so we can tell the
+            # remote the good news.
+            current_branch_mark_status(repo_dir, 'success')
+        push(repo_dir)
+    do_push = not opts.test
+    tag_release(repo_dir, tag, master, push=do_push)
+    if opts.merge_comment is not None:
+        #
+        # add the provided comment to the last commit on master
+        #
+        path = 'cirrus.conf'  # TODO, make this configurable
+        comment_on_sha(
+            config.organization_name(),
+            config.package_name(),
+            opts.merge_comment,
+            master_merge_sha,
+            path)
+
+    # Merge release branch back to develop
+    # push to develop
+    LOGGER.info("Merging back to develop...")
+    checkout_and_pull(repo_dir, develop)
+    if release_config['wait_on_ci']:
+        # @HACK If we are doing CI, our branch will be "out of date",
+        # so we update it by merging from master (not gitflow, I
+        # know), and then waiting for CI status on the remote.
+        develop_merge_sha = merge(repo_dir, develop, master)
+        wait_on_gh_status(
+            develop,
+            timeout=release_config['wait_on_ci_timeout'],
+            interval=release_config['wait_on_ci_interval']
+        )
+    else:
+        develop_merge_sha = merge(repo_dir, develop, expected_branch)
+
+    if not opts.test:
+        LOGGER.info("pushing to remote...")
+        if release_config['wait_on_ci']:
+            # if wait_on_ci is set and we have gotten to this point,
+            # tests pass on the release branch, so we can tell the
+            # remote the good news.
+            current_branch_mark_status(repo_dir, 'success')
+        push(repo_dir)
+
+    if opts.merge_comment is not None:
+        #
+        # add the provided comment to the last commit on develop
+        #
+        path = 'cirrus.conf'  # TODO, make this configurable
+        comment_on_sha(
+            config.organization_name(),
+            config.package_name(),
+            opts.merge_comment,
+            develop_merge_sha,
+            path)
+
+    LOGGER.info("Release {0} has been tagged and uploaded".format(tag))
+    # TODO: clean up release branch
+
+
 def build_release(opts):
     """
     _build_release_
@@ -559,6 +705,9 @@ def main():
 
     if opts.command == 'trigger':
         trigger_release(opts)
+
+    if opts.command == 'merge':
+        merge_release(opts)
 
     if opts.command == 'upload':
         upload_release(opts)

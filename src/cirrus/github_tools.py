@@ -144,6 +144,29 @@ def create_pull_request(
     return resp_json['html_url']
 
 
+def comment_on_sha(owner, repo, comment, sha, path, token=None):
+    """
+    add a comment to the commit/sha provided
+    """
+    url = "https://api.github.com/repos/{owner}/{repo}/commits/{sha}/comments".format(
+        owner=owner, repo=repo, sha=sha
+    )
+    if token is None:
+        token = get_github_auth()[1]
+
+    headers = {
+        'Authorization': 'token {}'.format(token),
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        "body": comment,
+        "path": path,
+        "position": 0,
+    }
+    resp = requests.get(url, headers=headers, data=payload)
+    resp.raise_for_status()
+
+
 def get_releases(owner, repo, token=None):
 
     url = "https://api.github.com/repos/{owner}/{repo}/releases".format(

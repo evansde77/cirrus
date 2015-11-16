@@ -184,14 +184,18 @@ def merge(repo_dir, source, destination):
     _merge_
 
     Merge source branch into destination branch
+
+    :returns: sha of the last commit from the merged branch
+
     """
     repo = git.Repo(repo_dir)
     repo.git.checkout(source)
 
     ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(source)
     repo.remotes.origin.pull(ref)
-
     repo.git.merge(destination)
+    latest = repo.head.ref.commit.hexsha
+    return latest
 
 
 def get_diff_files(repo_dir):
