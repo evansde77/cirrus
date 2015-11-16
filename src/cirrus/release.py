@@ -624,15 +624,6 @@ def merge_release(opts):
     else:
         develop_merge_sha = merge(repo_dir, develop, expected_branch)
 
-    if not opts.test:
-        LOGGER.info("pushing to remote...")
-        if release_config['wait_on_ci']:
-            # if wait_on_ci is set and we have gotten to this point,
-            # tests pass on the release branch, so we can tell the
-            # remote the good news.
-            current_branch_mark_status(repo_dir, 'success')
-        push(repo_dir)
-
     if opts.merge_comment is not None:
         #
         # add the provided comment to the last commit on develop
@@ -644,6 +635,15 @@ def merge_release(opts):
             opts.merge_comment,
             develop_merge_sha,
             path)
+
+    if not opts.test:
+        LOGGER.info("pushing to remote...")
+        if release_config['wait_on_ci']:
+            # if wait_on_ci is set and we have gotten to this point,
+            # tests pass on the release branch, so we can tell the
+            # remote the good news.
+            current_branch_mark_status(repo_dir, 'success')
+        push(repo_dir)
 
     LOGGER.info("Release {0} has been tagged and uploaded".format(tag))
     # TODO: clean up release branch
