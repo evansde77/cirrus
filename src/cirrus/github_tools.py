@@ -225,7 +225,6 @@ def current_branch_mark_status(repo_dir, state):
             "context": "continuous-integration/travis-ci"
         }
     )
-    print ">>>>", url
     resp = requests.post(url, headers=headers, data=data)
     resp.raise_for_status()
 
