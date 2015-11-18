@@ -101,6 +101,17 @@ def release_branch_name(config):
     return branch_name
 
 
+def convert_bool(value):
+    """helper to make sure bools are bools"""
+    if value in (True, False):
+        return value
+    if value is None:
+        return False
+    if str(value).lower() in ('true', '1'):
+        return True
+    return False
+
+
 def release_config(config, opts):
     """
     _release_config_
@@ -110,6 +121,8 @@ def release_config(config, opts):
     """
     release_config_defaults = {
         'wait_on_ci': False,
+        'wait_on_ci_develop': False,
+        'wait_on_ci_master': False,
         'wait_on_ci_timeout': 600,
         'wait_on_ci_interval': 2,
         'github_context_string': None,
@@ -122,6 +135,14 @@ def release_config(config, opts):
     else:
         for key, val in release_config_defaults.iteritems():
             release_config[key] = config.get_param('release', key, val)
+
+    release_config['wait_on_ci'] = convert_bool(release_config['wait_on_ci'])
+    release_config['wait_on_ci_develop'] = convert_bool(
+        release_config['wait_on_ci_develop']
+    )
+    release_config['wait_on_ci_master'] = convert_bool(
+        release_config['wait_on_ci_master']
+    )
 
     if opts.wait_on_ci:
         release_config['wait_on_ci'] = True
@@ -136,7 +157,7 @@ def release_config(config, opts):
     release_config['wait_on_ci_interval'] = int(
         release_config['wait_on_ci_interval']
     )
-    release_config['update_github_context'] = bool(
+    release_config['update_github_context'] = convert_bool(
         release_config['update_github_context']
     )
 
@@ -477,8 +498,8 @@ def merge_release(opts):
             LOGGER.info("Waiting on CI build for {0}".format(release_branch))
             ghc.wait_on_gh_status(
                 sha,
-                timeout=release_config['wait_on_ci_timeout'],
-                interval=release_config['wait_on_ci_interval']
+                timeout=rel_conf['wait_on_ci_timeout'],
+                interval=rel_conf['wait_on_ci_interval']
             )
 
         if rel_conf['update_github_context']:
@@ -495,6 +516,27 @@ def merge_release(opts):
         LOGGER.info("Merging {} into {}".format(release_branch, master))
         ghc.pull_branch(master)
         ghc.merge_branch(release_branch)
+        sha = ghc.repo.head.ref.commit.hexsha
+        if rel_conf['wait_on_ci_master']:
+            #
+            # wait on release branch CI success
+            #
+            LOGGER.info("Waiting on CI build for {0}".format(master))
+            ghc.wait_on_gh_status(
+                sha,
+                timeout=rel_conf['wait_on_ci_timeout'],
+                interval=rel_conf['wait_on_ci_interval']
+            )
+        if rel_conf['update_github_context']:
+            LOGGER.info("Setting {} for {}".format(
+                rel_conf['github_context_string'],
+                sha)
+            )
+            ghc.set_branch_state(
+                'success',
+                rel_conf['github_context_string'],
+                branch=sha
+            )
         ghc.push_branch()
         LOGGER.info("Tagging {} as {}".format(master, tag))
         ghc.tag_release(tag, master)
@@ -503,15 +545,15 @@ def merge_release(opts):
         ghc.pull_branch(develop)
         ghc.merge_branch(release_branch)
         sha = ghc.repo.head.ref.commit.hexsha
-        if rel_conf['wait_on_ci']:
+        if rel_conf['wait_on_ci_develop']:
             #
             # wait on release branch CI success
             #
             LOGGER.info("Waiting on CI build for {0}".format(develop))
             ghc.wait_on_gh_status(
                 sha,
-                timeout=release_config['wait_on_ci_timeout'],
-                interval=release_config['wait_on_ci_interval']
+                timeout=rel_conf['wait_on_ci_timeout'],
+                interval=rel_conf['wait_on_ci_interval']
             )
         if rel_conf['update_github_context']:
             LOGGER.info("Setting {} for {}".format(
