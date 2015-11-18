@@ -221,12 +221,6 @@ def build_parser(argslist):
         help='test only, do not actually push or upload'
     )
     upload_command.add_argument(
-        '--no-upload',
-        action='store_true',
-        dest='no_upload',
-        help='do not upload build artifact to pypi'
-    )
-    upload_command.add_argument(
         '--pypi-url',
         action='store',
         dest='pypi_url',
@@ -243,19 +237,6 @@ def build_parser(argslist):
         action='store_false',
         dest='pypi_sudo',
         help='do not use sudo to upload build artifact to pypi'
-    )
-    upload_command.add_argument(
-        '--wait-on-ci',
-        action='store_true',
-        dest='wait_on_ci',
-        help='Wait for GH CI status to be success before uploading'
-    )
-    upload_command.add_argument(
-        '--wait-on-ci-timeout',
-        type=int,
-        default=600,
-        dest='wait_on_ci_timeout',
-        help='Seconds to wait on CI before abandoning upload'
     )
     upload_command.set_defaults(pypi_sudo=True)
 
@@ -423,17 +404,6 @@ def upload_release(opts):
 
     build_artifact = artifact_name(config)
     LOGGER.info("Uploading artifact: {0}".format(build_artifact))
-    repo_dir = os.getcwd()
-    curr_branch = get_active_branch(repo_dir)
-    expected_branch = release_branch_name(config)
-
-    if curr_branch.name != expected_branch:
-        msg = (
-            "Not on the expected release branch according "
-            "to cirrus.conf\n Expected:{0} but on {1}"
-        ).format(expected_branch, curr_branch)
-        LOGGER.error(msg)
-        raise RuntimeError(msg)
 
     if not os.path.exists(build_artifact):
         msg = (
@@ -447,7 +417,7 @@ def upload_release(opts):
     tag = config.package_version()
 
     # upload to pypi via fabric over ssh
-    if opts.no_upload or opts.test:
+    if opts.test:
         LOGGER.info("Uploading {} to pypi disabled by test or no-upload option...".format(tag))
     else:
         pypi_conf = config.pypi_config()
