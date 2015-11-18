@@ -3,17 +3,219 @@ Contains class for handling the creation of pull requests
 '''
 import git
 import json
+import time
 import requests
 
 from cirrus.configuration import get_github_auth, load_configuration
 from cirrus.git_tools import get_active_branch
-from cirrus.git_tools import get_tags_with_sha
-from cirrus.git_tools import get_commit_msgs
 from cirrus.git_tools import push
 from cirrus.logger import get_logger
 
 
 LOGGER = get_logger()
+
+
+class GitHubContext(object):
+    """
+    _GitHubContext_
+
+    Util that establishes a GH session and pulls together
+    useful GH commands
+
+    """
+    def __init__(self, repo_dir, package_dir=None):
+        self.repo_dir = repo_dir
+        self.repo = git.Repo(repo_dir)
+        self.config = load_configuration(package_dir)
+        self.token = get_github_auth()[1]
+        self.auth_headers = {
+            'Authorization': 'token {0}'.format(self.token),
+            'Content-Type': 'application/json'
+        }
+
+    @property
+    def active_branch_name(self):
+        """return the current branch name"""
+        return self.repo.active_branch.name
+
+    def __enter__(self):
+        """start context, establish session"""
+        self.session = requests.Session()
+        self.session.headers.update(self.auth_headers)
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+    def branch_state(self, branch=None):
+        """
+        _branch_state_
+
+        Get the branch status which should include details of CI builds/hooks etc
+        See:
+        https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
+
+        returns a state which is one of 'failure', 'pending', 'success'
+
+        """
+        if branch is None:
+            branch = self.active_branch_name
+        url = "https://api.github.com/repos/{org}/{repo}/commits/{branch}/status".format(
+            org=self.config.organisation_name(),
+            repo=self.config.package_name(),
+            branch=branch
+        )
+        resp = self.session.get(url)
+        resp.raise_for_status()
+        state = resp.json()['state']
+        return state
+
+    def set_branch_state(self, state, context, branch=None):
+        """
+        _current_branch_mark_status_
+
+        Mark the CI status of the current branch.
+
+        :param state: state of the last test run, such as "success" or "failure"
+        :param context: The GH context string to use for the state, eg
+           "continuous-integration/travis-ci"
+
+        :param branch: Optional branch name or sha to set state on,
+           defaults to current active branch
+
+        """
+        if branch is None:
+            branch = self.repo.active_branch.name
+
+        LOGGER.info(u"Setting CI status for branch {} to {}".format(branch, state))
+
+        sha = self.repo.head.commit.hexsha
+
+        try:
+            # @HACK: Do a push that we expect will fail -- we just want to
+            # tell the server about our sha. A more elegant solution would
+            # probably be to push a detached head.
+            push(self.repo_dir)
+        except RuntimeError as ex:
+            if "rejected" not in unicode(ex):
+                raise
+
+        url = "https://api.github.com/repos/{org}/{repo}/statuses/{sha}".format(
+            org=self.config.organisation_name(),
+            repo=self.config.package_name(),
+            sha=sha
+        )
+        data = json.dumps(
+            {
+                "state": state,
+                "description": "State after cirrus check.",
+                "context": context
+            }
+        )
+        resp = self.session.post(url, data=data)
+        resp.raise_for_status()
+
+    def wait_on_gh_status(self, branch_name=None, timeout=600, interval=2):
+        """
+        _wait_on_gh_status_
+
+        Wait for CI checks to complete for the branch named
+
+        :param branch_name: name of branch to watch
+        :param timeout: max wait time in seconds
+        :param interval: pause between checks interval in seconds
+
+        """
+        if branch_name is None:
+            branch_name = self.active_branch_name
+
+        time_spent = 0
+        status = self.branch_state(branch_name)
+        LOGGER.info("Waiting on CI status of {}...".format(branch_name))
+        while status == 'pending':
+            if time_spent > timeout:
+                LOGGER.error("Exceeded timeout for branch status {}".format(branch_name))
+                break
+            status = branch_status(branch_name)
+            time.sleep(interval)
+            time_spent += interval
+
+        if status != 'success':
+            msg = "CI Test status is not success: {} is {}".format(branch_name, status)
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
+
+    def pull_branch(self, branch_name=None):
+        """
+        _pull_branch_
+
+        Pull the named branch from origin, if it isnt
+        the current active branch, it will be checked out
+        """
+        if branch_name is not None:
+            self.repo.git.checkout(branch_name)
+        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_name)
+        return self.repo.remotes.origin.pull(ref)
+
+    def push_branch(self, branch_name=None):
+        """
+        _push_branch_
+
+        Push the named branch to remote, if branch_name isnt provided
+        the current active branch is pushed
+        """
+        if branch_name is not None:
+            self.repo.git.checkout(branch_name)
+        ret = self.repo.remotes.origin.push(self.repo.head)
+        # Check to make sure that we haven't errored out.
+        for r in ret:
+            if r.flags >= r.ERROR:
+                raise RuntimeError(unicode(r.summary))
+        return ret
+
+    def merge_branch(self, branch_name):
+        """
+        _merge_branch_
+
+        merge branch_name into current branch using no-ff option
+        """
+        result = self.repo.git.merge('--no-ff', branch_name)
+        return result
+
+    def tag_release(self, tag, master='master', push=True):
+        """
+        _tag_release_
+
+        Tag the release on the master branch and, if push is True
+        push the tag to the remote
+        """
+        if self.active_branch_name != master:
+            self.repo.git.checkout(master)
+
+        exists = any(existing_tag.name == tag for existing_tag in self.repo.tags)
+        if exists:
+            # tag already exists
+            msg = (
+                "Attempting to create tag {0} on "
+                "{1} but tag exists already"
+            ).format(tag, master)
+            raise RuntimeError(msg)
+        self.repo.create_tag(tag)
+        if push:
+            self.repo.remotes.origin.push(self.repo.head, tags=True)
+
+    def delete_branch(self, branch_name, remote=True):
+        """
+        _delete_branch_
+
+        Delete the local and (if remote is True) branch
+        """
+        if self.active_branch_name == branch_name:
+            msg = "Cant delete branch {} because it is active".format(branch_name)
+            raise RuntimeError(msg)
+        self.repo.git.branch('-D', branch_name)
+        if remote:
+            self.repo.git.push('origin', '--delete', branch_name)
 
 
 def branch_status(branch_name):
@@ -42,6 +244,7 @@ def branch_status(branch_name):
     resp.raise_for_status()
     state = resp.json()['state']
     return state
+
 
 def current_branch_mark_status(repo_dir, state):
     """
@@ -91,14 +294,14 @@ def current_branch_mark_status(repo_dir, state):
             "context": "continuous-integration/travis-ci"
         }
     )
-
     resp = requests.post(url, headers=headers, data=data)
     resp.raise_for_status()
 
+
 def create_pull_request(
-            repo_dir,
-            pr_info,
-            token=None):
+        repo_dir,
+        pr_info,
+        token=None):
     """
     Creates a pull_request on GitHub and returns the html url of the
     pull request created
@@ -107,7 +310,7 @@ def create_pull_request(
     :param pr_info: dictionary containing title and body of pull request
     :param token: auth token
     """
-    if repo_dir == None:
+    if repo_dir is None:
         raise RuntimeError('repo_dir is None')
     if 'title' not in pr_info:
         raise RuntimeError('title is None')
@@ -134,14 +337,40 @@ def create_pull_request(
 
     resp = requests.post(url, data=json.dumps(data), headers=headers)
     if resp.status_code == 422:
-        LOGGER.error(("POST to GitHub api returned {0}"
-            "Have you committed your changes and pushed to remote?"
-            ).format(resp.status_code))
+        LOGGER.error(
+            (
+                "POST to GitHub api returned {0}"
+                "Have you committed your changes and pushed to remote?"
+            ).format(resp.status_code)
+        )
 
     resp.raise_for_status()
     resp_json = resp.json()
 
     return resp_json['html_url']
+
+
+def comment_on_sha(owner, repo, comment, sha, path, token=None):
+    """
+    add a comment to the commit/sha provided
+    """
+    url = "https://api.github.com/repos/{owner}/{repo}/commits/{sha}/comments".format(
+        owner=owner, repo=repo, sha=sha
+    )
+    if token is None:
+        token = get_github_auth()[1]
+
+    headers = {
+        'Authorization': 'token {}'.format(token),
+        'Content-Type': 'application/json'
+    }
+    payload = {
+        "body": comment,
+        "path": path,
+        "position": 0,
+    }
+    resp = requests.get(url, headers=headers, data=payload)
+    resp.raise_for_status()
 
 
 def get_releases(owner, repo, token=None):
@@ -159,5 +388,5 @@ def get_releases(owner, repo, token=None):
     resp = requests.get(url, headers=headers)
     resp.raise_for_status()
 
-    releases = [ release for release in resp.json() ]
+    releases = [release for release in resp.json()]
     return releases
