@@ -107,6 +107,52 @@ def release_branch_name(config):
     return branch_name
 
 
+def release_config(config, opts):
+    """
+    _release_config_
+
+    Extract and validate the release config parameters
+    from the cirrus config for the package
+    """
+    release_config = {
+        'wait_on_ci': False,
+        'wait_on_ci_timeout': 600,
+        'wait_on_ci_interval': 2,
+        'github_context_string': None,
+        'update_github_context': False,
+    }
+
+    if 'release' in config:
+        release_config['wait_on_ci'] = config.get_param(
+            'release', 'wait_on_ci', False
+        )
+        release_config['wait_on_ci_timeout'] = int(config.get_param(
+            'release', 'wait_on_ci_timeout', 600)
+        )
+        release_config['wait_on_ci_interval'] = int(config.get_param(
+            'release', 'wait_on_ci_interval', 2)
+        )
+        release_config['update_github_context'] = bool(config.get_param(
+            'release', 'update_github_context', False
+        ))
+        release_config['github_context_string'] = config.get_param(
+            'release', 'github_context_string', None
+        )
+
+    if opts.wait_on_ci:
+        release_config['wait_on_ci'] = True
+    if opts.github_context_string:
+        release_config['update_github_context'] = True
+        release_config['github_context_string'] = opts.github_context_string
+
+    if release_config['update_github_context']:
+        # require context string
+        if release_config['github_context_string'] is None:
+            msg = "if using update_github_context you must provide a github_context_string"
+            raise RuntimeError(msg)
+    return release_config
+
+
 def build_parser(argslist):
     """
     _build_parser_
@@ -148,31 +194,18 @@ def build_parser(argslist):
 
     merge_command = subparsers.add_parser('merge')
     merge_command.add_argument(
-        '--test',
-        action='store_true',
-        dest='test',
-        help='test only, do not actually merge or push'
-    )
-    merge_command.add_argument(
         '--wait-on-ci',
         action='store_true',
         dest='wait_on_ci',
         help='Wait for GH CI status to be success before uploading'
     )
     merge_command.add_argument(
-        '--wait-on-ci-timeout',
-        type=int,
-        default=600,
-        dest='wait_on_ci_timeout',
-        help='Seconds to wait on CI before abandoning upload'
-    )
-    merge_command.add_argument(
-        '--merge-comment',
-        type=str,
+        '--context-string',
         default=None,
-        dest='merge_comment',
-        help='Comment to include on the merges'
+        dest='github_context_string',
+        help='Update the github context string provided when pushed'
     )
+
     merge_command.add_argument(
         '--cleanup',
         action='store_true',
@@ -549,86 +582,85 @@ def merge_release(opts):
 
     """
     config = load_configuration()
-    release_config = {
-        'wait_on_ci': False,
-        'wait_on_ci_timeout': 600,
-        'wait_on_ci_interval': 2
-    }
-    if 'release' in config:
-        release_config['wait_on_ci'] = config.get_param(
-            'release', 'wait_on_ci', False
-        )
-        release_config['wait_on_ci_timeout'] = int(config.get_param(
-            'release', 'wait_on_ci_timeout', 600)
-        )
-        release_config['wait_on_ci_interval'] = int(config.get_param(
-            'release', 'wait_on_ci_interval', 2)
-        )
-
-
-
+    rel_conf = release_config(config, opts)
     repo_dir = os.getcwd()
+    tag = config.package_version()
+    master = config.gitflow_master_name()
+    develop = config.gitflow_branch_name()
+
     with GitHubContext(repo_dir) as ghc:
 
-        curr_branch = ghc.active_branch_name
+        release_branch = ghc.active_branch_name
         expected_branch = release_branch_name(config)
-
-        if curr_branch.name != expected_branch:
+        if release_branch.name != expected_branch:
             msg = (
                 "Not on the expected release branch according "
                 "to cirrus.conf\n Expected:{0} but on {1}"
-            ).format(expected_branch, curr_branch)
+            ).format(expected_branch, release_branch)
             LOGGER.error(msg)
             raise RuntimeError(msg)
-        # merge in release branches and tag, push to remote
-        tag = config.package_version()
-        master = config.gitflow_master_name()
-        develop = config.gitflow_branch_name()
 
         # merge release branch into master
         LOGGER.info("Tagging and pushing {0}".format(tag))
-        checkout_and_pull(repo_dir, master)
-        merge(repo_dir, master, expected_branch)
 
-        if not opts.test:
-            LOGGER.info("pushing to remote...")
-            if release_config['wait_on_ci']:
-                # if wait_on_ci is set and we have gotten to this point,
-                # tests pass on the release branch, so we can tell the
-                # remote the good news.
-                ghc.set_branch_state('success')
-            push(repo_dir)
-        do_push = not opts.test
-        tag_release(repo_dir, tag, master, push=do_push)
-
-        # Merge release branch back to develop
-        # push to develop
-        LOGGER.info("Merging back to develop...")
-        checkout_and_pull(repo_dir, develop)
-        if release_config['wait_on_ci']:
-            # @HACK If we are doing CI, our branch will be "out of date",
-            # so we update it by merging from master (not gitflow, I
-            # know), and then waiting for CI status on the remote.
-            merge(repo_dir, develop, master)
+        sha = ghc.repo.head.ref.commit.hexsha
+        if rel_conf['wait_on_ci']:
+            #
+            # wait on release branch CI success
+            #
+            LOGGER.info("Waiting on CI build for {0}".format(release_branch))
             ghc.wait_on_gh_status(
-                develop,
+                sha,
                 timeout=release_config['wait_on_ci_timeout'],
                 interval=release_config['wait_on_ci_interval']
             )
-        else:
-            merge(repo_dir, develop, expected_branch)
 
-        if not opts.test:
-            LOGGER.info("pushing to remote...")
-            if release_config['wait_on_ci']:
-                # if wait_on_ci is set and we have gotten to this point,
-                # tests pass on the release branch, so we can tell the
-                # remote the good news.
-                ghc.set_branch_state('success')
-            push(repo_dir)
+        if rel_conf['update_github_context']:
+            LOGGER.info("Setting {} for {}".format(
+                rel_conf['github_context_string'],
+                sha)
+            )
+            ghc.set_branch_state(
+                'success',
+                rel_conf['github_context_string'],
+                branch=sha
+            )
 
-        LOGGER.info("Release {0} has been tagged and uploaded".format(tag))
-        # TODO: clean up release branch
+        LOGGER.info("Merging {} into {}".format(release_branch, master))
+        ghc.pull_branch(master)
+        ghc.merge_branch(release_branch)
+        ghc.push_branch()
+        LOGGER.info("Tagging {} as {}".format(master, tag))
+        ghc.tag_release(tag, master)
+
+        LOGGER.info("Merging {} into {}".format(release_branch, develop))
+        ghc.pull_branch(develop)
+        ghc.merge_branch(release_branch)
+        sha = ghc.repo.head.ref.commit.hexsha
+        if rel_conf['wait_on_ci']:
+            #
+            # wait on release branch CI success
+            #
+            LOGGER.info("Waiting on CI build for {0}".format(develop))
+            ghc.wait_on_gh_status(
+                sha,
+                timeout=release_config['wait_on_ci_timeout'],
+                interval=release_config['wait_on_ci_interval']
+            )
+        if rel_conf['update_github_context']:
+            LOGGER.info("Setting {} for {}".format(
+                rel_conf['github_context_string'],
+                sha)
+            )
+            ghc.set_branch_state(
+                'success',
+                rel_conf['github_context_string'],
+                branch=sha
+            )
+        ghc.push_branch()
+
+        if opts.cleanup:
+            ghc.delete_branch(release_branch)
 
 
 def build_release(opts):

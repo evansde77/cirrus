@@ -72,7 +72,7 @@ class GitHubContext(object):
         state = resp.json()['state']
         return state
 
-    def set_branch_state(self, state, branch=None):
+    def set_branch_state(self, state, context, branch=None):
         """
         _current_branch_mark_status_
 
@@ -80,6 +80,11 @@ class GitHubContext(object):
 
         :param repo_dir: directory of git repository
         :param state: state of the last test run, such as "success" or "failure"
+        :param context: The GH context string to use for the state, eg
+           "continuous-integration/travis-ci"
+
+        :param branch: Optional branch name or sha to set state on,
+           defaults to current active branch
 
         """
         if branch is None:
@@ -103,16 +108,12 @@ class GitHubContext(object):
             repo=self.config.package_name(),
             sha=sha
         )
-
+        # TODO: context should be a list of possible values from cirrus conf
         data = json.dumps(
             {
                 "state": state,
                 "description": "State after cirrus check.",
-                #  @HACK: use the travis context, which is technically
-                #  true, because we wait for Travis tests to pass before
-                #  cutting a release. In the future, we need to setup a
-                #  "cirrus" context, for clarity.
-                "context": "continuous-integration/travis-ci"
+                "context": context
             }
         )
         resp = self.session.post(url, data=data)
@@ -147,6 +148,78 @@ class GitHubContext(object):
             msg = "CI Test status is not success: {} is {}".format(branch_name, status)
             LOGGER.error(msg)
             raise RuntimeError(msg)
+
+    def pull_branch(self, branch_name=None):
+        """
+        _pull_branch_
+
+        Pull the named branch from origin, if it isnt
+        the current active branch, it will be checked out
+        """
+        if branch_name is not None:
+            self.repo.git.checkout(branch_name)
+        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_name)
+        return self.repo.remotes.origin.pull(ref)
+
+    def push_branch(self, branch_name=None):
+        """
+        _push_branch_
+
+        Push the named branch to remote, if branch_name isnt provided
+        the current active branch is pushed
+        """
+        if branch_name is not None:
+            self.repo.git.checkout(branch_name)
+        ret = self.repo.remotes.origin.push(self.repo.head)
+        # Check to make sure that we haven't errored out.
+        for r in ret:
+            if r.flags >= r.ERROR:
+                raise RuntimeError(unicode(r.summary))
+        return ret
+
+    def merge_branch(self, branch_name):
+        """
+        _merge_branch_
+
+        merge branch_name into current branch using no-ff option
+        """
+        result = self.repo.git.merge('--no-ff', branch_name)
+        return result
+
+    def tag_release(self, tag, master='master', push=True):
+        """
+        _tag_release_
+
+        Tag the release on the master branch and, if push is True
+        push the tag to the remote
+        """
+        if self.active_branch_name != master:
+            self.repo.git.checkout(master)
+
+        exists = any(existing_tag.name == tag for existing_tag in self.repo.tags)
+        if exists:
+            # tag already exists
+            msg = (
+                "Attempting to create tag {0} on "
+                "{1} but tag exists already"
+            ).format(tag, master)
+            raise RuntimeError(msg)
+        self.repo.create_tag(tag)
+        if push:
+            self.repo.remotes.origin.push(self.repo.head, tags=True)
+
+    def delete_branch(self, branch_name, remote=True):
+        """
+        _delete_branch_
+
+        Delete the local and (if remote is True) branch
+        """
+        if self.active_branch_name == branch_name:
+            msg = "Cant delete branch {} because it is active".format(branch_name)
+            raise RuntimeError(msg)
+        self.repo.git.branch('-D', branch_name)
+        if remote:
+            self.repo.git.push('origin', '--delete', branch_name)
 
 
 def branch_status(branch_name):
