@@ -8,7 +8,6 @@ Implement git cirrus release command
 """
 import os
 import sys
-import time
 import datetime
 import itertools
 from collections import OrderedDict
@@ -18,13 +17,8 @@ from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.configuration import get_pypi_auth
 from cirrus.git_tools import build_release_notes
-from cirrus.git_tools import checkout_and_pull, push
-from cirrus.git_tools import branch, merge
+from cirrus.git_tools import branch, checkout_and_pull
 from cirrus.git_tools import commit_files
-from cirrus.git_tools import tag_release, get_active_branch
-from cirrus.github_tools import branch_status
-from cirrus.github_tools import current_branch_mark_status
-from cirrus.github_tools import comment_on_sha
 from cirrus.github_tools import GitHubContext
 from cirrus.utils import update_file, update_version
 from cirrus.fabric_helpers import FabricHelper

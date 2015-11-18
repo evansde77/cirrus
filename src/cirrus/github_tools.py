@@ -8,8 +8,6 @@ import requests
 
 from cirrus.configuration import get_github_auth, load_configuration
 from cirrus.git_tools import get_active_branch
-from cirrus.git_tools import get_tags_with_sha
-from cirrus.git_tools import get_commit_msgs
 from cirrus.git_tools import push
 from cirrus.logger import get_logger
 
@@ -78,7 +76,6 @@ class GitHubContext(object):
 
         Mark the CI status of the current branch.
 
-        :param repo_dir: directory of git repository
         :param state: state of the last test run, such as "success" or "failure"
         :param context: The GH context string to use for the state, eg
            "continuous-integration/travis-ci"
@@ -108,7 +105,6 @@ class GitHubContext(object):
             repo=self.config.package_name(),
             sha=sha
         )
-        # TODO: context should be a list of possible values from cirrus conf
         data = json.dumps(
             {
                 "state": state,
@@ -303,9 +299,9 @@ def current_branch_mark_status(repo_dir, state):
 
 
 def create_pull_request(
-            repo_dir,
-            pr_info,
-            token=None):
+        repo_dir,
+        pr_info,
+        token=None):
     """
     Creates a pull_request on GitHub and returns the html url of the
     pull request created
@@ -314,7 +310,7 @@ def create_pull_request(
     :param pr_info: dictionary containing title and body of pull request
     :param token: auth token
     """
-    if repo_dir == None:
+    if repo_dir is None:
         raise RuntimeError('repo_dir is None')
     if 'title' not in pr_info:
         raise RuntimeError('title is None')
@@ -341,9 +337,12 @@ def create_pull_request(
 
     resp = requests.post(url, data=json.dumps(data), headers=headers)
     if resp.status_code == 422:
-        LOGGER.error(("POST to GitHub api returned {0}"
-            "Have you committed your changes and pushed to remote?"
-            ).format(resp.status_code))
+        LOGGER.error(
+            (
+                "POST to GitHub api returned {0}"
+                "Have you committed your changes and pushed to remote?"
+            ).format(resp.status_code)
+        )
 
     resp.raise_for_status()
     resp_json = resp.json()
@@ -389,5 +388,5 @@ def get_releases(owner, repo, token=None):
     resp = requests.get(url, headers=headers)
     resp.raise_for_status()
 
-    releases = [ release for release in resp.json() ]
+    releases = [release for release in resp.json()]
     return releases
