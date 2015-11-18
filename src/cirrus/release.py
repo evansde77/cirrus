@@ -414,55 +414,13 @@ def _trigger_jenkins_release(config, new_version, level):
         raise RuntimeError('Jenkins HTTP API returned code {}'.format(response.status_code))
 
 
-def wait_on_gh_status(branch_name, timeout=600, interval=2):
-    """
-    _wait_on_gh_status_
-
-    Wait for CI checks to complete for the branch named
-
-    :param branch_name: name of branch to watch
-    :param timeout: max wait time in seconds
-    :param interval: pause between checks interval in seconds
-
-    """
-    time_spent = 0
-    status = branch_status(branch_name)
-    LOGGER.info("Waiting on CI status of {}...".format(branch_name))
-    while status == 'pending':
-        if time_spent > timeout:
-            LOGGER.error("Exceeded timeout for branch status {}".format(branch_name))
-            break
-        status = branch_status(branch_name)
-        time.sleep(interval)
-        time_spent += interval
-
-    if status != 'success':
-        msg = "CI Test status is not success: {} is {}".format(branch_name, status)
-        LOGGER.error(msg)
-        raise RuntimeError(msg)
-
-
 def upload_release(opts):
     """
     _upload_release_
     """
     LOGGER.info("Uploading release...")
     config = load_configuration()
-    release_config = {
-        'wait_on_ci': False,
-        'wait_on_ci_timeout': 600,
-        'wait_on_ci_interval': 2
-    }
-    if 'release' in config:
-        release_config['wait_on_ci'] = config.get_param(
-            'release', 'wait_on_ci', False
-        )
-        release_config['wait_on_ci_timeout'] = int(config.get_param(
-            'release', 'wait_on_ci_timeout', 600)
-        )
-        release_config['wait_on_ci_interval'] = int(config.get_param(
-            'release', 'wait_on_ci_interval', 2)
-        )
+
     build_artifact = artifact_name(config)
     LOGGER.info("Uploading artifact: {0}".format(build_artifact))
     repo_dir = os.getcwd()
@@ -485,69 +443,12 @@ def upload_release(opts):
         LOGGER.error(msg)
         raise RuntimeError(msg)
 
-    if opts.wait_on_ci:
-        release_config['wait_on_ci'] = True
-        release_config['wait_on_ci_timeout'] = opts.wait_on_ci_timeout
-
-    if release_config['wait_on_ci']:
-        wait_on_gh_status(
-            curr_branch,
-            timeout=release_config['wait_on_ci_timeout'],
-            interval=release_config['wait_on_ci_interval']
-        )
-
     # merge in release branches and tag, push to remote
     tag = config.package_version()
-    master = config.gitflow_master_name()
-    develop = config.gitflow_branch_name()
-
-    # merge release branch into master
-    LOGGER.info("Tagging and pushing {0}".format(tag))
-    checkout_and_pull(repo_dir, master)
-    merge(repo_dir, master, expected_branch)
-
-    if not opts.test:
-        LOGGER.info("pushing to remote...")
-        if release_config['wait_on_ci']:
-            # if wait_on_ci is set and we have gotten to this point,
-            # tests pass on the release branch, so we can tell the
-            # remote the good news.
-            current_branch_mark_status(repo_dir, 'success')
-        push(repo_dir)
-    do_push = not opts.test
-    tag_release(repo_dir, tag, master, push=do_push)
-
-    # Merge release branch back to develop
-    # push to develop
-    LOGGER.info("Merging back to develop...")
-    checkout_and_pull(repo_dir, develop)
-    if release_config['wait_on_ci']:
-        # @HACK If we are doing CI, our branch will be "out of date",
-        # so we update it by merging from master (not gitflow, I
-        # know), and then waiting for CI status on the remote.
-        merge(repo_dir, develop, master)
-        wait_on_gh_status(
-            develop,
-            timeout=release_config['wait_on_ci_timeout'],
-            interval=release_config['wait_on_ci_interval']
-        )
-    else:
-        merge(repo_dir, develop, expected_branch)
-
-    if not opts.test:
-        LOGGER.info("pushing to remote...")
-        if release_config['wait_on_ci']:
-            # if wait_on_ci is set and we have gotten to this point,
-            # tests pass on the release branch, so we can tell the
-            # remote the good news.
-            current_branch_mark_status(repo_dir, 'success')
-        push(repo_dir)
-    LOGGER.info("Release {0} has been tagged and uploaded".format(tag))
-    # TODO: clean up release branch
 
     # upload to pypi via fabric over ssh
     if opts.no_upload or opts.test:
-        LOGGER.info("Uploading to pypi disabled by test or no-upload option...")
+        LOGGER.info("Uploading {} to pypi disabled by test or no-upload option...".format(tag))
     else:
         pypi_conf = config.pypi_config()
         pypi_auth = get_pypi_auth()
@@ -592,7 +493,7 @@ def merge_release(opts):
 
         release_branch = ghc.active_branch_name
         expected_branch = release_branch_name(config)
-        if release_branch.name != expected_branch:
+        if release_branch != expected_branch:
             msg = (
                 "Not on the expected release branch according "
                 "to cirrus.conf\n Expected:{0} but on {1}"
