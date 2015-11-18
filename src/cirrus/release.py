@@ -108,7 +108,7 @@ def release_config(config, opts):
     Extract and validate the release config parameters
     from the cirrus config for the package
     """
-    release_config = {
+    release_config_defaults = {
         'wait_on_ci': False,
         'wait_on_ci_timeout': 600,
         'wait_on_ci_interval': 2,
@@ -116,28 +116,29 @@ def release_config(config, opts):
         'update_github_context': False,
     }
 
-    if 'release' in config:
-        release_config['wait_on_ci'] = config.get_param(
-            'release', 'wait_on_ci', False
-        )
-        release_config['wait_on_ci_timeout'] = int(config.get_param(
-            'release', 'wait_on_ci_timeout', 600)
-        )
-        release_config['wait_on_ci_interval'] = int(config.get_param(
-            'release', 'wait_on_ci_interval', 2)
-        )
-        release_config['update_github_context'] = bool(config.get_param(
-            'release', 'update_github_context', False
-        ))
-        release_config['github_context_string'] = config.get_param(
-            'release', 'github_context_string', None
-        )
+    release_config = {}
+    if 'release' not in config:
+        release_config = release_config_defaults
+    else:
+        for key, val in release_config_defaults.iteritems():
+            release_config[key] = config.get_param('release', key, val)
 
     if opts.wait_on_ci:
         release_config['wait_on_ci'] = True
     if opts.github_context_string:
         release_config['update_github_context'] = True
         release_config['github_context_string'] = opts.github_context_string
+
+    # validate argument types
+    release_config['wait_on_ci_timeout'] = int(
+        release_config['wait_on_ci_timeout']
+    )
+    release_config['wait_on_ci_interval'] = int(
+        release_config['wait_on_ci_interval']
+    )
+    release_config['update_github_context'] = bool(
+        release_config['update_github_context']
+    )
 
     if release_config['update_github_context']:
         # require context string
