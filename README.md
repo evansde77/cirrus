@@ -105,13 +105,15 @@ There are three subcommands:
 
 1. new - creates a new release branch, increments the package version, builds the release notes if configured.
 2. build - Runs sdist to create a new build artifact from the release branch
-3. upload - Pushes the build artifact to the pypi server configured in the cirrus conf.
+3. merge - Runs git-flow style branch merges back to master and develop, optionally waiting on CI or setting flags for GH build contexts if needed
+4. upload - Pushes the build artifact to the pypi server configured in the cirrus conf.
 
 Usage:
 ```bash
 git cirrus test # Stop if things are broken
 git cirrus release new --micro
 git cirrus release build
+git cirrus release merge --cleanup
 git cirrus release upload
 ```
 
@@ -119,11 +121,40 @@ Options:
 
 1. release new requires one of --micro, --minor or --macro to indicate which semantic version field to increment
 2. --bump adds or updates a package==version pair in requirements.txt, e.g. `--bump foo==0.0.9 bar==1.2.3`.
-3. upload will push the new release and upload the build artifact to pypi, but may take several non-required options:
+3. release merge supports the following options:
+  * --cleanup - removes the remote and local release branch on successful merge 
+  * --context-string - Update the github context string provided when pushed
+  * --wait-on-ci - Wait for GitHub CI status to be success before uploading
+4. upload will push the new release and upload the build artifact to pypi, but may take several non-required options:
   * --test do not push new release or upload build artifact to pypi
-  * --no-upload do not upload the build artifact to pypi
   * --pypi-sudo, --no-pypi-sudo use or do not use sudo to move the build artifact to the correct location in the pypi server, defaults to using sudo
   * --pypi-url URL override the pypi url from cirrus.conf with URL
+
+
+Release Options in cirrus.conf
+
+You can customise the release merge workflow for each package via the cirrus config with the following settings:
+
+ * wait_on_ci - Set true to enable waiting on CI builds for the release branch, defaults to False, this will make the merge command poll the GH status API for the commit and wait for it to become success
+ * wait_on_ci_develop - Set true to enable waiting on CI builds for the develop branch, defaults to False
+ * wait_on_ci_master - Set true to enable waiting on CI builds for the master branch, defaults to False
+ * wait_on_ci_timeout - Timeout in seconds to give up on waiting on CI, defaults to 600s (10 mins) 
+ * wait_on_ci_interval - Interval to poll status in seconds, defaults to 2 seconds
+ * github_context_string - The github context to update status for if update_github_context is True  Eg: continuous-integration/travis-ci
+ * update_github_context - An alternative to waiting on CI, you can simply flip the status for a context to success if eg you have protected branches without a CI build to wait for. Requires a context to be provided via the github_context_string setting
+
+Example:
+
+```ini 
+[release]
+wait_on_ci = False
+wait_on_ci_develop = False
+wait_on_ci_master = False
+wait_on_ci_timeout = 600
+wait_on_ci_interval = 2
+github_context_string = continuous-integration/travis-ci
+update_github_context = True
+```
 
 *Protip:* If you don't make releases regularly, you'll want to make sure your local repo copy is up to date (cirrus should do these eventually).
 
