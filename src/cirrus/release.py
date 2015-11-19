@@ -11,17 +11,16 @@ import sys
 import datetime
 import itertools
 from collections import OrderedDict
-from fabric.operations import put, local
+from fabric.operations import local
+import pluggage.registry
 
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
-from cirrus.configuration import get_pypi_auth
 from cirrus.git_tools import build_release_notes
 from cirrus.git_tools import branch, checkout_and_pull
 from cirrus.git_tools import commit_files, remote_branch_exists
 from cirrus.github_tools import GitHubContext
 from cirrus.utils import update_file, update_version
-from cirrus.fabric_helpers import FabricHelper
 from cirrus.logger import get_logger
 from cirrus.plugins.jenkins import JenkinsClient
 
@@ -110,6 +109,19 @@ def convert_bool(value):
     if str(value).lower() in ('true', '1'):
         return True
     return False
+
+
+def get_plugin(plugin_name):
+    """
+    _get_plugin_
+
+    Get the deploy plugin requested from the factory
+    """
+    factory = pluggage.registry.get_factory(
+        'upload',
+        load_modules=['cirrus.plugins.uploaders']
+    )
+    return factory(plugin_name)
 
 
 def release_config(config, opts):
@@ -235,6 +247,12 @@ def build_parser(argslist):
         action='store_true',
         dest='test',
         help='test only, do not actually push or upload'
+    )
+    upload_command.add_argument(
+        '--plugin',
+        dest='plugin',
+        required=True,
+        help='Uploader plugin to use'
     )
     upload_command.add_argument(
         '--pypi-url',
@@ -440,31 +458,14 @@ def upload_release(opts):
 
     # merge in release branches and tag, push to remote
     tag = config.package_version()
+    LOGGER.info("Loading plugin {}".format(opts.plugin))
+    plugin = get_plugin(opts.plugin)
 
-    # upload to pypi via fabric over ssh
     if opts.test:
-        LOGGER.info("Uploading {} to pypi disabled by test or no-upload option...".format(tag))
-    else:
-        pypi_conf = config.pypi_config()
-        pypi_auth = get_pypi_auth()
-        if opts.pypi_url:
-            pypi_url = opts.pypi_url
-        else:
-            pypi_url = pypi_conf['pypi_url']
-        if pypi_auth['ssh_username'] is not None:
-            pypi_user = pypi_auth['ssh_username']
-        else:
-            pypi_user = pypi_auth['username']
-        package_dir = pypi_conf['pypi_upload_path']
-        LOGGER.info("Uploading {0} to {1}".format(build_artifact, pypi_url))
-        with FabricHelper(
-                pypi_url,
-                pypi_user,
-                pypi_auth['ssh_key']):
+        LOGGER.info("Uploading {} to pypi disabled by test or option...".format(tag))
+        return
 
-            # fabric put the file onto the pypi server
-            put(build_artifact, package_dir, use_sudo=opts.pypi_sudo)
-
+    plugin.upload(opts, build_artifact)
     return
 
 
