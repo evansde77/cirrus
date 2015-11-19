@@ -18,7 +18,7 @@ from cirrus.configuration import load_configuration
 from cirrus.configuration import get_pypi_auth
 from cirrus.git_tools import build_release_notes
 from cirrus.git_tools import branch, checkout_and_pull
-from cirrus.git_tools import commit_files
+from cirrus.git_tools import commit_files, remote_branch_exists
 from cirrus.github_tools import GitHubContext
 from cirrus.utils import update_file, update_version
 from cirrus.fabric_helpers import FabricHelper
@@ -294,6 +294,15 @@ def new_release(opts):
 
     # need to be on the latest develop
     repo_dir = os.getcwd()
+    # make sure the branch doesnt already exist on remote
+    if remote_branch_exists(repo_dir, branch_name):
+        msg = (
+            "Error: branch {} already exists on the remote repo "
+            "Please clean up that branch before proceeding"
+            ).format(branch_name)
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+
     main_branch = config.gitflow_branch_name()
     checkout_and_pull(repo_dir,  main_branch)
 

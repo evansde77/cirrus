@@ -64,6 +64,23 @@ def branch(repo_dir, branchname, branch_from):
         raise RuntimeError(msg)
 
 
+def remote_branch_exists(repo_dir, branchname):
+    """
+    _remote_branch_exists_
+
+    Check to see if the named branch exists on the
+    origin remote. returns True/False
+
+    """
+    match = branchname
+    if not match.startswith('origin/'):
+        match = "origin/{}".format(branchname)
+    repo = git.Repo(repo_dir)
+    repo.git.branch('-r')
+    remote_branches = [y for y in x.split() if y.startswith('origin/')]
+    return match in remote_branches
+
+
 def update_to_branch(branch, config, origin='origin'):
     """
     checkout specified branch, updating to pull in latest remotes
