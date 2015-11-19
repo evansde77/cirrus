@@ -17,6 +17,7 @@ import pluggage.registry
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.git_tools import build_release_notes
+from cirrus.git_tools import has_unstaged_changes
 from cirrus.git_tools import branch, checkout_and_pull
 from cirrus.git_tools import commit_files, remote_branch_exists
 from cirrus.github_tools import GitHubContext
@@ -318,6 +319,15 @@ def new_release(opts):
             "Error: branch {} already exists on the remote repo "
             "Please clean up that branch before proceeding"
             ).format(branch_name)
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+
+    # make sure repo is clean
+    if has_unstaged_changes(repo_dir):
+        msg = (
+            "Error: Unstaged changes are present on the branch "
+            "Please commit them or clean up before proceeding"
+        )
         LOGGER.error(msg)
         raise RuntimeError(msg)
 
