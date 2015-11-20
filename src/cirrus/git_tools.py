@@ -81,6 +81,22 @@ def remote_branch_exists(repo_dir, branchname):
     return match in remote_branches
 
 
+def has_unstaged_changes(repo_dir):
+    """
+    _has_unstaged_changes_
+
+    Are there changes to tracked files in the repo?
+    Return True if so, False if it is clean
+    """
+    repo = git.Repo(repo_dir)
+    output = repo.git.status(
+        '--untracked-files=no',  '--porcelain'
+    ).split()
+    if output:
+        return True
+    return False
+
+
 def update_to_branch(branch, config, origin='origin'):
     """
     checkout specified branch, updating to pull in latest remotes
