@@ -175,6 +175,16 @@ github_context_string = continuous-integration/travis-ci
 update_github_context = True
 ```
 
+##### Working with GitHub protected branches 
+
+The release command works with two possible mode of [https://github.com/blog/2051-protected-branches-and-required-status-checks](GitHub branch protection) one in which you wait for the CI tests to run and update the status, and one in which there are no checks, so that you have to set status to merge branches in a git flow style. 
+
+For the waiting mode, simply flip the boolean wait_on_ci flag to True to wait on CI to run on the release branch. Likewise, the wait_on_ci_develop and wait_on_ci_master params will wait on CI status for the develop and master branches you have configured before merging. You can adjust the total timeout in seconds and the poll interval via the cirrus config file. 
+
+For the non-waiting mode, you provide the github context string you want to set and then when the merges back to develop and master occur, that state value is set to success. This mode of operation is useful when your CI system runs release tests in a way not connected to github, but you still have protected branches. 
+
+##### release tips
+
 *Protip:* If you don't make releases regularly, you'll want to make sure your local repo copy is up to date (cirrus should do these eventually).
 
 
