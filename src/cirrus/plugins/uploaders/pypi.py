@@ -20,7 +20,7 @@ class Pypi(Uploader):
     def upload(self, opts, build_artifact):
         """
         upload to pypi using sdist.
-        This will use settings from the ~./pypirc file.
+        This will use settings from the ~/.pypirc file.
         The pypi-url CLI option can be used to give a pypi
         server url or an alias specified in the pypirc
         """
