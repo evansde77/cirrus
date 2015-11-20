@@ -98,6 +98,24 @@ git cirrus feature new BRANCH_NAME --push
 git cirrus feature pull-request --title TITLE --body BODY --notify @AGITHUBUSER,@ANOTHERGITHUBUSER
 ```
 
+#### cirrus review 
+The cirrus review command provides some utilities for dealing with GitHub pull requests from the cirrus command line. 
+Available commands are:
+
+ * git cirrus review list - list all open PRs for the repo, accepts -u or --user to filter for requests from a specific user
+ * git cirrus review details - Get details for a specific PR, specified by --id 
+ * git cirrus review plusone - Set a Github context for the PR to indicate that the PR has been approved 
+ * git cirrus review review - Add a review comment to a PR, optionally adding the plusone flag to it as well 
+
+
+Examples:
+
+```bash 
+git cirrus review list --user evansde77 # list open PRs by user evansde77 
+git cirrus review list                  # list all open PRs
+git cirrus review plusone --id 500 -c "+1"      # adds the +1 context to the feature via a status update and sets it to success 
+git cirrus review reviee --id 500 -m "great work, LGTM"  --plus-one -c "+1" # adds a comment to the PR and sets the +1 context status to success
+```
 
 #### cirrus release
 Commands related to creation of a new git-flow style release branch, building the release and uploading it to a pypi server.
@@ -106,7 +124,7 @@ There are three subcommands:
 1. new - creates a new release branch, increments the package version, builds the release notes if configured.
 2. build - Runs sdist to create a new build artifact from the release branch
 3. merge - Runs git-flow style branch merges back to master and develop, optionally waiting on CI or setting flags for GH build contexts if needed
-4. upload - Pushes the build artifact to the pypi server configured in the cirrus conf.
+4. upload - Pushes the build artifact to the pypi server configured in the cirrus conf, using a plugin system to allow for customisation. 
 
 Usage:
 ```bash
@@ -114,7 +132,7 @@ git cirrus test # Stop if things are broken
 git cirrus release new --micro
 git cirrus release build
 git cirrus release merge --cleanup
-git cirrus release upload
+git cirrus release upload --plugin pypi 
 ```
 
 Options:
@@ -126,10 +144,11 @@ Options:
   * --context-string - Update the github context string provided when pushed
   * --wait-on-ci - Wait for GitHub CI status to be success before uploading
 4. upload will push the new release and upload the build artifact to pypi, but may take several non-required options:
+  * --plugin - Name of the upload plugin module. Options are found in [https://github.com/evansde77/cirrus/tree/develop/src/cirrus/plugins/uploaders](cirrus/plugins/uploaders) and can be used to customise the upload process. The pypi plugin does a standard sdist upload to the pypi server configured in your pypirc. The fabric plugin uses fabric to scp the artifact to a custom pypi server. 
   * --test do not push new release or upload build artifact to pypi
   * --pypi-sudo, --no-pypi-sudo use or do not use sudo to move the build artifact to the correct location in the pypi server, defaults to using sudo
-  * --pypi-url URL override the pypi url from cirrus.conf with URL
-
+  * --pypi-url URL override the pypi url from cirrus.conf with URL, equivalent to the -r option for pypi.python.org uploads, can specify a url or a shorthand name from your pypirc. 
+  
 
 Release Options in cirrus.conf
 
@@ -155,6 +174,16 @@ wait_on_ci_interval = 2
 github_context_string = continuous-integration/travis-ci
 update_github_context = True
 ```
+
+##### Working with GitHub protected branches 
+
+The release command works with two possible mode of [https://github.com/blog/2051-protected-branches-and-required-status-checks](GitHub branch protection) one in which you wait for the CI tests to run and update the status, and one in which there are no checks, so that you have to set status to merge branches in a git flow style. 
+
+For the waiting mode, simply flip the boolean wait_on_ci flag to True to wait on CI to run on the release branch. Likewise, the wait_on_ci_develop and wait_on_ci_master params will wait on CI status for the develop and master branches you have configured before merging. You can adjust the total timeout in seconds and the poll interval via the cirrus config file. 
+
+For the non-waiting mode, you provide the github context string you want to set and then when the merges back to develop and master occur, that state value is set to success. This mode of operation is useful when your CI system runs release tests in a way not connected to github, but you still have protected branches. 
+
+##### release tips
 
 *Protip:* If you don't make releases regularly, you'll want to make sure your local repo copy is up to date (cirrus should do these eventually).
 
