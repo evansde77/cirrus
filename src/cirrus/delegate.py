@@ -88,7 +88,7 @@ def main():
                 msg = "Unknown command: {}".format(args[0])
                 print msg
                 print format_help(commands)
-                exit_code = 1
+                exit_code = 127
             else:
                 exit_code = run_command([command_path, ] + args[1:])
     finally:
