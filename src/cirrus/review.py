@@ -19,7 +19,7 @@ def build_parser(argslist):
     """
     _build_parser_
 
-    Set up command line parser for the release command
+    Set up command line parser for the review command
 
     """
     parser = ArgumentParser(
