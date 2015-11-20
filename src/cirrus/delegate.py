@@ -38,7 +38,7 @@ def run_command(cmd):
     return subprocess.call(cmd, shell=False)
 
 
-HELP=\
+HELP = \
 """
 Cirrus commands available are:
 
@@ -50,10 +50,11 @@ particular command
 
 
 def format_help(command_list):
-    subs =  '\n'.join(
+    subs = '\n'.join(
         [c for c in command_list if c != 'cirrus']
     )
     return HELP.format(subs)
+
 
 def main():
     """
@@ -83,7 +84,13 @@ def main():
             exit_code = 0
         else:
             command_path = "{0}/bin/{1}".format(home, args[0])
-            exit_code = run_command([command_path, ] + args[1:])
+            if not os.path.exists(command_path):
+                msg = "Unknown command: {}".format(args[0])
+                print msg
+                print format_help(commands)
+                exit_code = 1
+            else:
+                exit_code = run_command([command_path, ] + args[1:])
     finally:
         # always return to previous dir
         os.chdir(old_dir)
