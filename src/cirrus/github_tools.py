@@ -5,6 +5,7 @@ import git
 import json
 import time
 import requests
+import itertools
 
 from cirrus.configuration import get_github_auth, load_configuration
 from cirrus.git_tools import get_active_branch
@@ -27,7 +28,7 @@ class GitHubContext(object):
         self.repo_dir = repo_dir
         self.repo = git.Repo(repo_dir)
         self.config = load_configuration(package_dir)
-        self.token = get_github_auth()[1]
+        self.gh_user, self.token = get_github_auth()
         self.auth_headers = {
             'Authorization': 'token {0}'.format(self.token),
             'Content-Type': 'application/json'
@@ -216,6 +217,102 @@ class GitHubContext(object):
         self.repo.git.branch('-D', branch_name)
         if remote:
             self.repo.git.push('origin', '--delete', branch_name)
+
+    def pull_requests(self, user=None):
+        """
+        _pull_requests_
+
+        Iterate over the open pull requests for this repo,
+        optionally filtering by username
+
+        :param user: GH username to filter on
+        :returns: yields json structures for each matched PR
+
+        """
+        url = "https://api.github.com/repos/{org}/{repo}/pulls".format(
+            org=self.config.organisation_name(),
+            repo=self.config.package_name()
+        )
+        params = {
+            'state': 'open',
+        }
+
+        resp = self.session.get(url, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+        gen = iter(data)
+        if user:
+            gen = itertools.ifilter(lambda x: x['user']['login'] == user, gen)
+        for row in gen:
+            yield row
+
+    def pull_request_details(self, pr):
+        """
+        _pull_request_details_
+
+        Get the json data for an individual pr, specified by the
+        provided PR id
+
+        :param pr: int, id of pull request
+        :returns: json structure (see GH API)
+
+        """
+        url = "https://api.github.com/repos/{org}/{repo}/pulls/{number}".format(
+            org=self.config.organisation_name(),
+            repo=self.config.package_name(),
+            number=pr
+        )
+
+        resp = self.session.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+        return data
+
+    def plus_one_pull_request(self, pr_id=None, pr_data=None, context='+1'):
+        """
+        _plus_one_pull_request_
+
+        """
+        if pr_data is None:
+            pr_data = self.pull_request_details(pr_id)
+
+        pr_status_url = pr_data["statuses_url"]
+        created_by = pr_data["user"]["login"]
+        if created_by == self.gh_user:
+            msg = "Reviewing your own Pull Requests is not allowed"
+            raise RuntimeError(msg)
+
+        status = {
+            'state': 'success',
+            'description': 'Reviewed by {0}'.format(self.gh_user),
+            'context': context,
+        }
+        resp = self.session.post(pr_status_url, data=json.dumps(status))
+        resp.raise_for_status()
+
+    def review_pull_request(
+            self,
+            pr,
+            comment,
+            plusone=False,
+            plusonecontext='+1'):
+        """
+        _review_pull_request_
+
+        Add a comment to the numbered PR and optionally set the
+        +1 status context for it
+
+        """
+        pr_data = self.pull_request_details(pr)
+        comment_url = "{}/comments".format(pr_data['issue_url'])
+
+        comment_data = {
+            "body": comment,
+        }
+        resp = self.session.post(comment_url, data=json.dumps(comment_data))
+        resp.raise_for_status()
+        if plusone:
+            self.plus_one_pull_request(pr_data=pr_data, context=plusonecontext)
 
 
 def branch_status(branch_name):

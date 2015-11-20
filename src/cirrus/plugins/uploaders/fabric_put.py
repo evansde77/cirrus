@@ -36,10 +36,6 @@ class Pypi(Uploader):
 
         package_dir = pypi_conf['pypi_upload_path']
         LOGGER.info("Uploading {0} to {1}".format(build_artifact, pypi_url))
-        with FabricHelper(
-                pypi_url,
-                pypi_user,
-                pypi_auth['ssh_key']):
-
+        with FabricHelper(pypi_url, pypi_user, pypi_auth['ssh_key']):
             # fabric put the file onto the pypi server
             put(build_artifact, package_dir, use_sudo=opts.pypi_sudo)
