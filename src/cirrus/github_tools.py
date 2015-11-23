@@ -5,6 +5,7 @@ import git
 import json
 import time
 import requests
+import itertools
 
 from cirrus.configuration import get_github_auth, load_configuration
 from cirrus.git_tools import get_active_branch
@@ -216,6 +217,65 @@ class GitHubContext(object):
         self.repo.git.branch('-D', branch_name)
         if remote:
             self.repo.git.push('origin', '--delete', branch_name)
+
+    def iter_github_branches(self):
+        """
+        iterate over branch names using the GH API.
+
+        Warning: This is subject to rate limiting
+        for repos with lots of branches
+
+        """
+        url = "https://api.github.com/repos/{org}/{repo}/branches".format(
+            org=self.config.organisation_name(),
+            repo=self.config.package_name()
+        )
+        params = {'per_page': 100}
+        resp = self.session.get(url, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+        for row in data:
+            yield row['name']
+        next_page = resp.links['next']
+        while next_page:
+            resp = self.session.get(next_page['url'], params=params)
+            resp.raise_for_status()
+            data = resp.json()
+            for row in data:
+                yield row['name']
+            next_page = resp.links.get('next')
+            if next_page is None:
+                break
+
+    def iter_git_branches(self, merged=False):
+        """
+        iterate over all git branches, remote and local,
+        using git branch -a.
+
+        Optionally filter for only branches that have been merged
+        using passing merged=True
+
+        """
+        args = ['-a']
+        if not merged:
+            args.append('--no-merged')
+        branch_data = self.repo.git.branch(*args)
+        branches = (x.strip() for x in branch_data.split() if x.strip())
+        for b in branches:
+            yield b
+
+    def iter_git_feature_branches(self, merged=False):
+        """
+        iterate over unmerged feature branches
+        using the branch prefix to find feature branches
+
+        toggle the merged boolean to include previously merged branches
+
+        """
+        feature_pfix = "remotes/origin/{}".format(self.config.gitflow_feature_prefix())
+        branches = self.iter_git_branches(merged)
+        branches = itertools.ifilter(lambda x: x.startswith(feature_pfix), branches)
+        return branches
 
 
 def branch_status(branch_name):
