@@ -566,8 +566,8 @@ def merge_release(opts):
                 branch=sha
             )
         ghc.push_branch_with_retry(
-            attempts=release_config['push_retry_attempts'],
-            cooloff=release_config['push_retry_cooloff']
+            attempts=rel_conf['push_retry_attempts'],
+            cooloff=rel_conf['push_retry_cooloff']
         )
         LOGGER.info("Tagging {} as {}".format(master, tag))
         ghc.tag_release(tag, master)
@@ -597,8 +597,8 @@ def merge_release(opts):
                 branch=sha
             )
         ghc.push_branch_with_retry(
-            attempts=release_config['push_retry_attempts'],
-            cooloff=release_config['push_retry_cooloff']
+            attempts=rel_conf['push_retry_attempts'],
+            cooloff=rel_conf['push_retry_cooloff']
         )
         if opts.cleanup:
             ghc.delete_branch(release_branch)
