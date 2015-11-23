@@ -6,4 +6,4 @@ Release uploader plugins
 
 """
 import fabric_put
-import pypi_upload
+import pypi
