@@ -174,6 +174,30 @@ class GitHubContext(object):
                 raise RuntimeError(unicode(r.summary))
         return ret
 
+    def push_branch_with_retry(self, branch_name=None, attempts=300, cooloff=2):
+        """
+        _push_branch_with_retry_
+
+        Work around intermittent push failures with a dumb exception retry loop
+
+        """
+        count = 0
+        error_flag = None
+        while count < attempts:
+            try:
+                error_flag = None
+                self.push_branch(branch_name=branch_name)
+                break
+            except RuntimeError as ex:
+                count += 1
+                error_flag = ex
+                time.sleep(cooloff)
+        if error_flag is not None:
+            msg = "Unable to push branch {} due to repeated failures: {}".format(
+                self.active_branch_name, str(ex)
+            )
+            raise RuntimeError(msg)
+
     def merge_branch(self, branch_name):
         """
         _merge_branch_

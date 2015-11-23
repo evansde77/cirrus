@@ -138,6 +138,8 @@ def release_config(config, opts):
         'wait_on_ci_master': False,
         'wait_on_ci_timeout': 600,
         'wait_on_ci_interval': 2,
+        'push_retry_attempts': 1,
+        'push_retry_cooloff': 0,
         'github_context_string': None,
         'update_github_context': False,
     }
@@ -172,6 +174,12 @@ def release_config(config, opts):
     )
     release_config['update_github_context'] = convert_bool(
         release_config['update_github_context']
+    )
+    release_config['push_retry_attempts'] = int(
+        release_config['push_retry_attempts']
+    )
+    release_config['push_retry_cooloff'] = int(
+        release_config['push_retry_cooloff']
     )
 
     if release_config['update_github_context']:
@@ -557,7 +565,10 @@ def merge_release(opts):
                 rel_conf['github_context_string'],
                 branch=sha
             )
-        ghc.push_branch()
+        ghc.push_branch_with_retry(
+            attempts=release_config['push_retry_attempts'],
+            cooloff=release_config['push_retry_cooloff']
+        )
         LOGGER.info("Tagging {} as {}".format(master, tag))
         ghc.tag_release(tag, master)
 
@@ -585,8 +596,10 @@ def merge_release(opts):
                 rel_conf['github_context_string'],
                 branch=sha
             )
-        ghc.push_branch()
-
+        ghc.push_branch_with_retry(
+            attempts=release_config['push_retry_attempts'],
+            cooloff=release_config['push_retry_cooloff']
+        )
         if opts.cleanup:
             ghc.delete_branch(release_branch)
 
