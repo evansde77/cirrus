@@ -174,6 +174,30 @@ class GitHubContext(object):
                 raise RuntimeError(unicode(r.summary))
         return ret
 
+    def push_branch_with_retry(self, branch_name=None, attempts=300, cooloff=2):
+        """
+        _push_branch_with_retry_
+
+        Work around intermittent push failures with a dumb exception retry loop
+
+        """
+        count = 0
+        error_flag = None
+        while count < attempts:
+            try:
+                error_flag = None
+                self.push_branch(branch_name=branch_name)
+                break
+            except RuntimeError as ex:
+                count += 1
+                error_flag = ex
+                time.sleep(cooloff)
+        if error_flag is not None:
+            msg = "Unable to push branch {} due to repeated failures: {}".format(
+                self.active_branch_name, str(ex)
+            )
+            raise RuntimeError(msg)
+
     def merge_branch(self, branch_name):
         """
         _merge_branch_
@@ -217,6 +241,63 @@ class GitHubContext(object):
         self.repo.git.branch('-D', branch_name)
         if remote:
             self.repo.git.push('origin', '--delete', branch_name)
+
+    def iter_github_branches(self):
+        """
+        iterate over branch names using the GH API.
+
+        Warning: This is subject to rate limiting
+        for repos with lots of branches
+
+        """
+        url = "https://api.github.com/repos/{org}/{repo}/branches".format(
+            org=self.config.organisation_name(),
+            repo=self.config.package_name()
+        )
+        params = {'per_page': 100}
+        resp = self.session.get(url, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+        for row in data:
+            yield row['name']
+        next_page = resp.links.get('next')
+        while next_page is not None:
+            resp = self.session.get(next_page['url'], params=params)
+            resp.raise_for_status()
+            data = resp.json()
+            for row in data:
+                yield row['name']
+            next_page = resp.links.get('next')
+
+    def iter_git_branches(self, merged=False):
+        """
+        iterate over all git branches, remote and local,
+        using git branch -a.
+
+        Optionally filter for only branches that have been merged
+        using passing merged=True
+
+        """
+        args = ['-a']
+        if not merged:
+            args.append('--no-merged')
+        branch_data = self.repo.git.branch(*args)
+        branches = (x.strip() for x in branch_data.split() if x.strip())
+        for b in branches:
+            yield b
+
+    def iter_git_feature_branches(self, merged=False):
+        """
+        iterate over unmerged feature branches
+        using the branch prefix to find feature branches
+
+        toggle the merged boolean to include previously merged branches
+
+        """
+        feature_pfix = "remotes/origin/{}".format(self.config.gitflow_feature_prefix())
+        branches = self.iter_git_branches(merged)
+        branches = itertools.ifilter(lambda x: x.startswith(feature_pfix), branches)
+        return branches
 
     def pull_requests(self, user=None):
         """
