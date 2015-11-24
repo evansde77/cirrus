@@ -46,8 +46,8 @@ The following config example instructs the deploy plugin to do the following:
 - Edit the testing environment on the chef server
   - Set override_attributes.thing.application.version to the current package version   
 - Runs a chef search for all nodes in the environment named testing
-  - Extracts the host attribute for each returned node 
-  - formats it into a <host>.cloudant.com format 
+  - Extracts the *host* attribute for each returned node 
+  - formats it into a *host*.cloudant.com format 
   - runs chef-client on each hostname
   
   
