@@ -248,7 +248,7 @@ Deployer plugins live in [cirrus.plugins.deployers](https://github.com/evansde77
 
 Plugins:
 
- * [chef](https://github.com/evansde77/cirrus/blob/develop/src/cirrus/plugins/deployers/chef.py)
+ * [chef](https://github.com/evansde77/cirrus/blob/develop/src/cirrus/plugins/deployers/chef.py) - [docs](https://github.com/evansde77/cirrus/blob/develop/src/cirrus/plugins/deployers/chef.md)
  
  
 
