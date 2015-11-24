@@ -244,11 +244,11 @@ Usage:
 git cirrus deploy --plugin=<plugin_name>  <options for plugin>
 ```
 
-Deployer plugins live in [https://github.com/evansde77/cirrus/tree/develop/src/cirrus/plugins/deployers](cirrus.plugins.deployers) and individual docs for each plugin can be found there. 
+Deployer plugins live in [cirrus.plugins.deployers](https://github.com/evansde77/cirrus/tree/develop/src/cirrus/plugins/deployers) and individual docs for each plugin can be found there. 
 
 Plugins:
 
- * [https://github.com/evansde77/cirrus/blob/develop/src/cirrus/plugins/deployers/chef.py](chef)
+ * [chef](https://github.com/evansde77/cirrus/blob/develop/src/cirrus/plugins/deployers/chef.py)
  
  
 
