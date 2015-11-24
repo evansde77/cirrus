@@ -91,6 +91,8 @@ Commands related to the creatation and management of a git-flow style feature br
 
 1. new - Creates a new feature branch, optionally pushing the new branch upstream following a git-flow style workflow
 2. pull-request - Creates a new Pull Request in github requesting to merge the current feature branch with the develop branch, specifying the title, body and list of people to tag in the PR.
+3. pr - shorthand for pull-request
+4. list - lists all open unmerged feature branches in the repo
 
 Usage:
 ```bash
@@ -161,6 +163,8 @@ You can customise the release merge workflow for each package via the cirrus con
  * wait_on_ci_interval - Interval to poll status in seconds, defaults to 2 seconds
  * github_context_string - The github context to update status for if update_github_context is True  Eg: continuous-integration/travis-ci
  * update_github_context - An alternative to waiting on CI, you can simply flip the status for a context to success if eg you have protected branches without a CI build to wait for. Requires a context to be provided via the github_context_string setting
+ * push_retry_attempts - Optional number of attempts to try to push during merge 
+ * push_retry_cooloff - Optional time to wait between retries in seconds
 
 Example:
 
@@ -173,6 +177,8 @@ wait_on_ci_timeout = 600
 wait_on_ci_interval = 2
 github_context_string = continuous-integration/travis-ci
 update_github_context = True
+push_retry_attempts = 10
+push_retry_cooloff = 2
 ```
 
 ##### Working with GitHub protected branches 
@@ -226,3 +232,24 @@ Options and config:
 Running with no arguments will run all checks on everything. To run only a specific checker (pylint, pyflakes, or pep8) use the corosponding argument or a combonation of them.
 Specific files may be ran using '--files' OR check only files that have not yet been commited to the repo by using the '--only-changes' argument.
 For pylint, a score threshold must be set in cirrus.conf [quality] threshold. The path to an optional rcfile (pylint configuration) may be set at [quality] rcfile.
+
+
+#### cirrus deploy 
+
+The deploy command provides a plugin driven way to hook into deployment systems like chef and puppet. 
+Since deployment is heavily customisable based on what system is in use, the command supports selecting a plugin and then delegates all CLI options to that plugin. 
+
+Usage:
+```bash 
+git cirrus deploy --plugin=<plugin_name>  <options for plugin>
+```
+
+Deployer plugins live in [https://github.com/evansde77/cirrus/tree/develop/src/cirrus/plugins/deployers](cirrus.plugins.deployers) and individual docs for each plugin can be found there. 
+
+Plugins:
+
+ * [https://github.com/evansde77/cirrus/blob/develop/src/cirrus/plugins/deployers/chef.py](chef)
+ 
+ 
+
+
