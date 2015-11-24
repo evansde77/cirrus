@@ -260,16 +260,14 @@ class GitHubContext(object):
         data = resp.json()
         for row in data:
             yield row['name']
-        next_page = resp.links['next']
-        while next_page:
+        next_page = resp.links.get('next')
+        while next_page is not None:
             resp = self.session.get(next_page['url'], params=params)
             resp.raise_for_status()
             data = resp.json()
             for row in data:
                 yield row['name']
             next_page = resp.links.get('next')
-            if next_page is None:
-                break
 
     def iter_git_branches(self, merged=False):
         """
