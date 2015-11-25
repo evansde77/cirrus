@@ -123,7 +123,7 @@ def main():
     GitHub plusone tool using status and PR API
 
     """
-    opts = build_parser(sys.argv)
+    opts = build_parser()
     gh = GitHubHelper()
     pr = gh.get_pr(opts.org, opts.repo, int(opts.id))
     sha = pr['head']['sha']
