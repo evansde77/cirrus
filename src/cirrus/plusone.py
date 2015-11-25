@@ -60,7 +60,9 @@ class GitHubHelper(object):
         data = json.dumps(
             {
                 "state": 'success',
-                "description": "+1 by {}".format(self.user),
+                "description": "{} set to success by {}".format(
+                    context, self.user
+                ),
                 "context": context
             }
         )
