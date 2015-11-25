@@ -45,7 +45,7 @@ class GitHubHelper(object):
         data = resp.json()
         return data
 
-    def plus_one(self, org, repo, sha, context):
+    def plus_one(self, org, repo, sha, context, issue_url):
         """
         _plus_one_
 
@@ -65,6 +65,14 @@ class GitHubHelper(object):
             }
         )
         resp = self.session.post(url, data=data)
+        resp.raise_for_status()
+
+        comment = "+1 added by {}".format(self.user)
+        comment_url = "{}/comments".format(issue_url)
+        comment_data = {
+            "body": comment,
+        }
+        resp = self.session.post(comment_url, data=json.dumps(comment_data))
         resp.raise_for_status()
 
 
@@ -117,12 +125,13 @@ def main():
     gh = GitHubHelper()
     pr = gh.get_pr(opts.org, opts.repo, int(opts.id))
     sha = pr['head']['sha']
+    issue_url = pr['issue_url']
     created_by = pr["user"]["login"]
     if created_by == gh.user:
             msg = "Reviewing your own Pull Requests is not allowed"
             raise RuntimeError(msg)
 
-    gh.plus_one(opts.org, opts.repo, sha, opts.plus_one_context)
+    gh.plus_one(opts.org, opts.repo, sha, opts.plus_one_context, issue_url)
 
 
 if __name__ == '__main__':
