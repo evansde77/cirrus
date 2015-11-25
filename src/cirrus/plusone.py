@@ -78,7 +78,7 @@ class GitHubHelper(object):
         resp.raise_for_status()
 
 
-def build_parser(argslist):
+def build_parser():
     """
     construct a CLI parser and process args
 
@@ -112,7 +112,7 @@ def build_parser(argslist):
         dest='org',
         help='Github Organisation name'
     )
-    opts = parser.parse_args(argslist)
+    opts = parser.parse_args()
     return opts
 
 
