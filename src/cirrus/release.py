@@ -249,6 +249,18 @@ def build_parser(argslist):
         dest='cleanup',
         help='Clean up release branch after merging'
     )
+    merge_command.add_argument(
+        '--skip-master',
+        action='store_true',
+        dest='skip_master',
+        help='Skip the master merge and push'
+    )
+    merge_command.add_argument(
+        '--skip-develop',
+        action='store_true',
+        dest='skip_develop',
+        help='Skip the develop merge and push'
+    )
 
     upload_command = subparsers.add_parser('upload')
     upload_command.add_argument(
@@ -517,91 +529,97 @@ def merge_release(opts):
 
         # merge release branch into master
         LOGGER.info("Tagging and pushing {0}".format(tag))
+        if opts.skip_master:
+            LOGGER.info('Skipping merging to {}'.format(master))
+        if opts.skip_develop:
+            LOGGER.info('Skipping merging to {}'.format(develop))
 
-        sha = ghc.repo.head.ref.commit.hexsha
+        if not opts.skip_master:
+            sha = ghc.repo.head.ref.commit.hexsha
 
-        if rel_conf['update_github_context']:
-            LOGGER.info("Setting {} for {}".format(
-                rel_conf['github_context_string'],
-                sha)
-            )
-            ghc.set_branch_state(
-                'success',
-                rel_conf['github_context_string'],
-                branch=sha
-            )
-        if rel_conf['wait_on_ci']:
-            #
-            # wait on release branch CI success
-            #
-            LOGGER.info("Waiting on CI build for {0}".format(release_branch))
-            ghc.wait_on_gh_status(
-                sha,
-                timeout=rel_conf['wait_on_ci_timeout'],
-                interval=rel_conf['wait_on_ci_interval']
-            )
+            if rel_conf['update_github_context']:
+                LOGGER.info("Setting {} for {}".format(
+                    rel_conf['github_context_string'],
+                    sha)
+                )
+                ghc.set_branch_state(
+                    'success',
+                    rel_conf['github_context_string'],
+                    branch=sha
+                )
+            if rel_conf['wait_on_ci']:
+                #
+                # wait on release branch CI success
+                #
+                LOGGER.info("Waiting on CI build for {0}".format(release_branch))
+                ghc.wait_on_gh_status(
+                    sha,
+                    timeout=rel_conf['wait_on_ci_timeout'],
+                    interval=rel_conf['wait_on_ci_interval']
+                )
 
-        LOGGER.info("Merging {} into {}".format(release_branch, master))
-        ghc.pull_branch(master)
-        ghc.merge_branch(release_branch)
-        sha = ghc.repo.head.ref.commit.hexsha
+            LOGGER.info("Merging {} into {}".format(release_branch, master))
+            ghc.pull_branch(master)
+            ghc.merge_branch(release_branch)
+            sha = ghc.repo.head.ref.commit.hexsha
 
-        if rel_conf['update_github_context']:
-            LOGGER.info("Setting {} for {}".format(
-                rel_conf['github_context_string'],
-                sha)
+            if rel_conf['update_github_context']:
+                LOGGER.info("Setting {} for {}".format(
+                    rel_conf['github_context_string'],
+                    sha)
+                )
+                ghc.set_branch_state(
+                    'success',
+                    rel_conf['github_context_string'],
+                    branch=sha
+                )
+            if rel_conf['wait_on_ci_master']:
+                #
+                # wait on release branch CI success
+                #
+                LOGGER.info("Waiting on CI build for {0}".format(master))
+                ghc.wait_on_gh_status(
+                    sha,
+                    timeout=rel_conf['wait_on_ci_timeout'],
+                    interval=rel_conf['wait_on_ci_interval']
+                )
+            ghc.push_branch_with_retry(
+                attempts=rel_conf['push_retry_attempts'],
+                cooloff=rel_conf['push_retry_cooloff']
             )
-            ghc.set_branch_state(
-                'success',
-                rel_conf['github_context_string'],
-                branch=sha
-            )
-        if rel_conf['wait_on_ci_master']:
-            #
-            # wait on release branch CI success
-            #
-            LOGGER.info("Waiting on CI build for {0}".format(master))
-            ghc.wait_on_gh_status(
-                sha,
-                timeout=rel_conf['wait_on_ci_timeout'],
-                interval=rel_conf['wait_on_ci_interval']
-            )
-        ghc.push_branch_with_retry(
-            attempts=rel_conf['push_retry_attempts'],
-            cooloff=rel_conf['push_retry_cooloff']
-        )
-        LOGGER.info("Tagging {} as {}".format(master, tag))
-        ghc.tag_release(tag, master)
+            LOGGER.info("Tagging {} as {}".format(master, tag))
+            ghc.tag_release(tag, master)
 
         LOGGER.info("Merging {} into {}".format(release_branch, develop))
-        ghc.pull_branch(develop)
-        ghc.merge_branch(release_branch)
-        sha = ghc.repo.head.ref.commit.hexsha
+        if not opts.skip_develop:
+            ghc.pull_branch(develop)
+            ghc.merge_branch(release_branch)
+            sha = ghc.repo.head.ref.commit.hexsha
 
-        if rel_conf['update_github_context']:
-            LOGGER.info("Setting {} for {}".format(
-                rel_conf['github_context_string'],
-                sha)
+            if rel_conf['update_github_context']:
+                LOGGER.info("Setting {} for {}".format(
+                    rel_conf['github_context_string'],
+                    sha)
+                )
+                ghc.set_branch_state(
+                    'success',
+                    rel_conf['github_context_string'],
+                    branch=sha
+                )
+            if rel_conf['wait_on_ci_develop']:
+                #
+                # wait on release branch CI success
+                #
+                LOGGER.info("Waiting on CI build for {0}".format(develop))
+                ghc.wait_on_gh_status(
+                    sha,
+                    timeout=rel_conf['wait_on_ci_timeout'],
+                    interval=rel_conf['wait_on_ci_interval']
+                )
+            ghc.push_branch_with_retry(
+                attempts=rel_conf['push_retry_attempts'],
+                cooloff=rel_conf['push_retry_cooloff']
             )
-            ghc.set_branch_state(
-                'success',
-                rel_conf['github_context_string'],
-                branch=sha
-            )
-        if rel_conf['wait_on_ci_develop']:
-            #
-            # wait on release branch CI success
-            #
-            LOGGER.info("Waiting on CI build for {0}".format(develop))
-            ghc.wait_on_gh_status(
-                sha,
-                timeout=rel_conf['wait_on_ci_timeout'],
-                interval=rel_conf['wait_on_ci_interval']
-            )
-        ghc.push_branch_with_retry(
-            attempts=rel_conf['push_retry_attempts'],
-            cooloff=rel_conf['push_retry_cooloff']
-        )
         if opts.cleanup:
             ghc.delete_branch(release_branch)
 
