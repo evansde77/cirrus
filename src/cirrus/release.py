@@ -521,24 +521,24 @@ def merge_release(opts):
         expected_branch = release_branch_name(config)
         if release_branch != expected_branch:
             msg = (
-                "Not on the expected release branch according "
-                "to cirrus.conf\n Expected:{0} but on {1}"
+                u"Not on the expected release branch according "
+                u"to cirrus.conf\n Expected:{0} but on {1}"
             ).format(expected_branch, release_branch)
             LOGGER.error(msg)
             raise RuntimeError(msg)
 
         # merge release branch into master
-        LOGGER.info("Tagging and pushing {0}".format(tag))
+        LOGGER.info(u"Tagging and pushing {0}".format(tag))
         if opts.skip_master:
-            LOGGER.info('Skipping merging to {}'.format(master))
+            LOGGER.info(u'Skipping merging to {}'.format(master))
         if opts.skip_develop:
-            LOGGER.info('Skipping merging to {}'.format(develop))
+            LOGGER.info(u'Skipping merging to {}'.format(develop))
 
         if not opts.skip_master:
             sha = ghc.repo.head.ref.commit.hexsha
 
             if rel_conf['update_github_context']:
-                LOGGER.info("Setting {} for {}".format(
+                LOGGER.info(u"Setting {} for {}".format(
                     rel_conf['github_context_string'],
                     sha)
                 )
@@ -551,20 +551,20 @@ def merge_release(opts):
                 #
                 # wait on release branch CI success
                 #
-                LOGGER.info("Waiting on CI build for {0}".format(release_branch))
+                LOGGER.info(u"Waiting on CI build for {0}".format(release_branch))
                 ghc.wait_on_gh_status(
                     sha,
                     timeout=rel_conf['wait_on_ci_timeout'],
                     interval=rel_conf['wait_on_ci_interval']
                 )
 
-            LOGGER.info("Merging {} into {}".format(release_branch, master))
+            LOGGER.info(u"Merging {} into {}".format(release_branch, master))
             ghc.pull_branch(master)
             ghc.merge_branch(release_branch)
             sha = ghc.repo.head.ref.commit.hexsha
 
             if rel_conf['update_github_context']:
-                LOGGER.info("Setting {} for {}".format(
+                LOGGER.info(u"Setting {} for {}".format(
                     rel_conf['github_context_string'],
                     sha)
                 )
@@ -577,7 +577,7 @@ def merge_release(opts):
                 #
                 # wait on release branch CI success
                 #
-                LOGGER.info("Waiting on CI build for {0}".format(master))
+                LOGGER.info(u"Waiting on CI build for {0}".format(master))
                 ghc.wait_on_gh_status(
                     sha,
                     timeout=rel_conf['wait_on_ci_timeout'],
@@ -587,17 +587,17 @@ def merge_release(opts):
                 attempts=rel_conf['push_retry_attempts'],
                 cooloff=rel_conf['push_retry_cooloff']
             )
-            LOGGER.info("Tagging {} as {}".format(master, tag))
+            LOGGER.info(u"Tagging {} as {}".format(master, tag))
             ghc.tag_release(tag, master)
 
-        LOGGER.info("Merging {} into {}".format(release_branch, develop))
+        LOGGER.info(u"Merging {} into {}".format(release_branch, develop))
         if not opts.skip_develop:
             ghc.pull_branch(develop)
             ghc.merge_branch(release_branch)
             sha = ghc.repo.head.ref.commit.hexsha
 
             if rel_conf['update_github_context']:
-                LOGGER.info("Setting {} for {}".format(
+                LOGGER.info(u"Setting {} for {}".format(
                     rel_conf['github_context_string'],
                     sha)
                 )
@@ -610,7 +610,7 @@ def merge_release(opts):
                 #
                 # wait on release branch CI success
                 #
-                LOGGER.info("Waiting on CI build for {0}".format(develop))
+                LOGGER.info(u"Waiting on CI build for {0}".format(develop))
                 ghc.wait_on_gh_status(
                     sha,
                     timeout=rel_conf['wait_on_ci_timeout'],
