@@ -215,8 +215,8 @@ def get_chef_auth():
         'chef_server': config.get('cirrus', 'chef-server'),
         'chef_username': config.get('cirrus', 'chef-username'),
         'chef_keyfile': config.get('cirrus', 'chef-keyfile'),
-        'chef_client_user': config('cirrus', 'chef-client-user'),
-        'chef_client_keyfile': config('cirrus', 'chef-client-keyfile')
+        'chef_client_user': config.get('cirrus', 'chef-client-user'),
+        'chef_client_keyfile': config.get('cirrus', 'chef-client-keyfile')
     }
 
 
