@@ -84,6 +84,7 @@ class ChefServerDeployer(Deployer):
         attributes = {
             a: args['version'] for a in args['attributes']
         }
+
         if args['environment'] is not None:
             ct.update_chef_environment(
                 args['chef_server'],
@@ -111,7 +112,7 @@ class ChefServerDeployer(Deployer):
         if opts['chef_client_user'] is None:
             msg = (
                 "No chef client user provided, please update your gitconfig"
-                " to include  chef_client_user and chef_client_keyfile"
+                " to include  chef-client-user and chef-client-keyfile"
                 " in the cirrus section"
             )
             LOGGER.error(msg)
@@ -170,6 +171,7 @@ class ChefServerDeployer(Deployer):
             param: self.package_conf.get_param('chef', param, None)
             for param in params
         }
+        result['attributes'] = attr_list(result['attributes'])
         result.update(chef_auth)
         return result
 

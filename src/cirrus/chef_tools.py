@@ -91,6 +91,7 @@ def edit_chef_environment(server_url, cert, username, environment, attributes):
             set_dotted(overrides, attr, new_value)
         env.save()
 
+
 def edit_chef_role(server_url, cert, username, rolename, attributes):
     """
     _edit_chef_role_
