@@ -197,7 +197,10 @@ class ChefServerDeployer(Deployer):
         ]
         for nn in not_none:
             if args[nn] is None:
-                msg = "Must provide a value for {} on CLI or in cirrus.conf chef section"
+                msg = (
+                    "Must provide a value for {} on CLI"
+                    " or in cirrus.conf chef section"
+                ).format(nn)
                 LOGGER.error(msg)
                 raise RuntimeError(msg)
 
