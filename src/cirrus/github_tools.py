@@ -1,9 +1,11 @@
 '''
 Contains class for handling the creation of pull requests
 '''
+import os
 import git
 import json
 import time
+import arrow
 import requests
 import itertools
 
@@ -70,6 +72,60 @@ class GitHubContext(object):
         resp.raise_for_status()
         state = resp.json()['state']
         return state
+
+    def branch_status_list(self, branch):
+        """
+        Detailed list of status information for the
+        given branch
+
+        """
+        url = "https://api.github.com/repos/{org}/{repo}/commits/{branch}/statuses".format(
+            org=self.config.organisation_name(),
+            repo=self.config.package_name(),
+            branch=branch
+        )
+        resp = self.session.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+        for d in data:
+            yield d
+
+    def log_branch_status(self, branch):
+        """
+        _log_branch_status_
+
+        Log all the current status checks for the named
+        branch
+        """
+        for x in self.branch_status_list(branch):
+            update_time = arrow.get(x['updated_at']).humanize()
+            context = x['context']
+            user = x['creator']['login']
+            state = x['state']
+            msg = (
+                "Branch {branch} Check {context} is {state}, "
+                "created by {user} and updated {update}"
+            ).format(
+                branch=branch, context=context, user=user,
+                state=state, update=update_time
+            )
+            LOGGER.info(msg)
+
+    def reset_branch_status(self, branch, expire_time=600):
+        """
+        _reset_branch_status_
+
+        Set any statuses older than expire_time in seconds to success
+        """
+        for x in self.branch_status_list(branch):
+            update_time = arrow.get(x['updated_at'])
+            delta = arrow.utcnow() - update_time
+            LOGGER.info("Branch status for {branch} last update: {time}".format(
+                branch=branch,
+                time=update_time.humanize()
+                ))
+            if delta.seconds > expire_time:
+                self.set_branch_state('success', x['context'], branch)
 
     def set_branch_state(self, state, context, branch=None):
         """
@@ -189,6 +245,8 @@ class GitHubContext(object):
                 self.push_branch(branch_name=branch_name)
                 break
             except RuntimeError as ex:
+                msg = "Error pushing branch {}: {}".format(branch_name, str(ex))
+                LOGGER.info(msg)
                 count += 1
                 error_flag = ex
                 time.sleep(cooloff)
