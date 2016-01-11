@@ -170,18 +170,14 @@ def release_config(config, opts):
         release_config['wait_on_ci'] = True
     if opts.github_context_string:
         release_config['update_github_context'] = True
-        release_config['github_context_string'] = parse_to_list(opts.github_context_string)
+        release_config['github_context_string'] = opts.github_context_string
 
     if opts.github_develop_context_string:
         release_config['update_develop_github_context'] = True
-        release_config['github_develop_context_string'] = parse_to_list(
-            opts.github_develop_context_string
-        )
+        release_config['github_develop_context_string'] = opts.github_develop_context_string
     if opts.github_master_context_string:
         release_config['update_master_github_context'] = True
-        release_config['github_master_context_string'] = parse_to_list(
-            opts.github_master_context_string
-        )
+        release_config['github_master_context_string'] = opts.github_master_context_string
 
     # validate argument types
     release_config['wait_on_ci_timeout'] = int(
@@ -205,6 +201,25 @@ def release_config(config, opts):
         if release_config['github_context_string'] is None:
             msg = "if using update_github_context you must provide a github_context_string"
             raise RuntimeError(msg)
+        release_config['github_context_string'] = parse_to_list(
+            release_config['github_context_string']
+        )
+    if release_config['update_develop_github_context']:
+        # require context string                                                                                                                                                        if release_config['github_develop_context_string'] is None:
+        if release_config['github_develop_context_string'] is None:
+            msg = "if using update_develop_github_context you must provide a github_context_string"
+            raise RuntimeError(msg)
+        release_config['github_develop_context_string'] = parse_to_list(
+            release_config['github_develop_context_string']
+        )
+    if release_config['update_master_github_context']:
+        # require context string
+        if release_config['github_master_context_string'] is None:
+            msg = "if using update_master_github_context you must provide a github_master_context_string"
+            raise RuntimeError(msg)
+        release_config['github_master_context_string'] = parse_to_list(
+            release_config['github_master_context_string']
+        )
     return release_config
 
 
