@@ -89,6 +89,9 @@ def artifact_name(config):
     return build_artifact
 
 
+parse_to_list = lambda s: [x.strip() for x in s.split(',') if x.strip()]
+
+
 def release_branch_name(config):
     """
     build expected release branch name from current config
@@ -142,6 +145,10 @@ def release_config(config, opts):
         'push_retry_cooloff': 0,
         'github_context_string': None,
         'update_github_context': False,
+        'develop_github_context_string': None,
+        'master_github_context_string': None,
+        'update_develop_github_context': False,
+        'update_master_github_context': False
     }
 
     release_config = {}
@@ -165,6 +172,13 @@ def release_config(config, opts):
         release_config['update_github_context'] = True
         release_config['github_context_string'] = opts.github_context_string
 
+    if opts.github_develop_context_string:
+        release_config['update_develop_github_context'] = True
+        release_config['github_develop_context_string'] = opts.github_develop_context_string
+    if opts.github_master_context_string:
+        release_config['update_master_github_context'] = True
+        release_config['github_master_context_string'] = opts.github_master_context_string
+
     # validate argument types
     release_config['wait_on_ci_timeout'] = int(
         release_config['wait_on_ci_timeout']
@@ -187,6 +201,25 @@ def release_config(config, opts):
         if release_config['github_context_string'] is None:
             msg = "if using update_github_context you must provide a github_context_string"
             raise RuntimeError(msg)
+        release_config['github_context_string'] = parse_to_list(
+            release_config['github_context_string']
+        )
+    if release_config['update_develop_github_context']:
+        # require context string                                                                                                                                                        if release_config['github_develop_context_string'] is None:
+        if release_config['github_develop_context_string'] is None:
+            msg = "if using update_develop_github_context you must provide a github_context_string"
+            raise RuntimeError(msg)
+        release_config['github_develop_context_string'] = parse_to_list(
+            release_config['github_develop_context_string']
+        )
+    if release_config['update_master_github_context']:
+        # require context string
+        if release_config['github_master_context_string'] is None:
+            msg = "if using update_master_github_context you must provide a github_master_context_string"
+            raise RuntimeError(msg)
+        release_config['github_master_context_string'] = parse_to_list(
+            release_config['github_master_context_string']
+        )
     return release_config
 
 
@@ -234,6 +267,7 @@ def build_parser(argslist):
         '--wait-on-ci',
         action='store_true',
         dest='wait_on_ci',
+        default=False,
         help='Wait for GH CI status to be success before uploading'
     )
     merge_command.add_argument(
@@ -241,6 +275,19 @@ def build_parser(argslist):
         default=None,
         dest='github_context_string',
         help='Update the github context string provided when pushed'
+    )
+
+    merge_command.add_argument(
+        '--develop-context-string',
+        default=None,
+        dest='github_develop_context_string',
+        help='Update the github context string for develop branch provided when pushed'
+    )
+    merge_command.add_argument(
+        '--master-context-string',
+        default=None,
+        dest='github_master_context_string',
+        help='Update the github context string for master branch provided when pushed'
     )
 
     merge_command.add_argument(
@@ -253,13 +300,22 @@ def build_parser(argslist):
         '--skip-master',
         action='store_true',
         dest='skip_master',
+        default=False,
         help='Skip the master merge and push'
     )
     merge_command.add_argument(
         '--skip-develop',
         action='store_true',
         dest='skip_develop',
+        default=False,
         help='Skip the develop merge and push'
+    )
+    merge_command.add_argument(
+        '--log-status',
+        action='store_true',
+        dest='log_status',
+        default=False,
+        help='log all status values for branches during command'
     )
 
     upload_command = subparsers.add_parser('upload')
@@ -534,19 +590,11 @@ def merge_release(opts):
         if opts.skip_develop:
             LOGGER.info(u'Skipping merging to {}'.format(develop))
 
+        if opts.log_status:
+            ghc.log_branch_status(master)
         if not opts.skip_master:
             sha = ghc.repo.head.ref.commit.hexsha
 
-            if rel_conf['update_github_context']:
-                LOGGER.info(u"Setting {} for {}".format(
-                    rel_conf['github_context_string'],
-                    sha)
-                )
-                ghc.set_branch_state(
-                    'success',
-                    rel_conf['github_context_string'],
-                    branch=sha
-                )
             if rel_conf['wait_on_ci']:
                 #
                 # wait on release branch CI success
@@ -563,16 +611,7 @@ def merge_release(opts):
             ghc.merge_branch(release_branch)
             sha = ghc.repo.head.ref.commit.hexsha
 
-            if rel_conf['update_github_context']:
-                LOGGER.info(u"Setting {} for {}".format(
-                    rel_conf['github_context_string'],
-                    sha)
-                )
-                ghc.set_branch_state(
-                    'success',
-                    rel_conf['github_context_string'],
-                    branch=sha
-                )
+
             if rel_conf['wait_on_ci_master']:
                 #
                 # wait on release branch CI success
@@ -583,6 +622,29 @@ def merge_release(opts):
                     timeout=rel_conf['wait_on_ci_timeout'],
                     interval=rel_conf['wait_on_ci_interval']
                 )
+            if rel_conf['update_github_context']:
+                for ctx in rel_conf['github_context_string']:
+                    LOGGER.info(u"Setting {} for {}".format(
+                        ctx,
+                        sha)
+                    )
+                    ghc.set_branch_state(
+                        'success',
+                        ctx,
+                        branch=sha
+                    )
+
+            if rel_conf['update_master_github_context']:
+                for ctx in rel_conf['github_master_context_string']:
+                    LOGGER.info(u"Setting {} for {}".format(
+                        ctx,
+                        sha)
+                    )
+                    ghc.set_branch_state(
+                        'success',
+                        ctx,
+                        branch=sha
+                    )
             ghc.push_branch_with_retry(
                 attempts=rel_conf['push_retry_attempts'],
                 cooloff=rel_conf['push_retry_cooloff']
@@ -591,21 +653,13 @@ def merge_release(opts):
             ghc.tag_release(tag, master)
 
         LOGGER.info(u"Merging {} into {}".format(release_branch, develop))
+        if opts.log_status:
+            ghc.log_branch_status(develop)
         if not opts.skip_develop:
             ghc.pull_branch(develop)
             ghc.merge_branch(release_branch)
             sha = ghc.repo.head.ref.commit.hexsha
 
-            if rel_conf['update_github_context']:
-                LOGGER.info(u"Setting {} for {}".format(
-                    rel_conf['github_context_string'],
-                    sha)
-                )
-                ghc.set_branch_state(
-                    'success',
-                    rel_conf['github_context_string'],
-                    branch=sha
-                )
             if rel_conf['wait_on_ci_develop']:
                 #
                 # wait on release branch CI success
@@ -616,6 +670,29 @@ def merge_release(opts):
                     timeout=rel_conf['wait_on_ci_timeout'],
                     interval=rel_conf['wait_on_ci_interval']
                 )
+            if rel_conf['update_github_context']:
+                for ctx in rel_conf['github_context_string']:
+                    LOGGER.info(u"Setting {} for {}".format(
+                        ctx,
+                        sha)
+                    )
+                    ghc.set_branch_state(
+                        'success',
+                        ctx,
+                        branch=sha
+                    )
+
+            if rel_conf['update_develop_github_context']:
+                for ctx in rel_conf['github_develop_context_string']:
+                    LOGGER.info(u"Setting {} for {}".format(
+                        ctx,
+                        sha)
+                    )
+                    ghc.set_branch_state(
+                        'success',
+                        ctx,
+                        branch=sha
+                    )
             ghc.push_branch_with_retry(
                 attempts=rel_conf['push_retry_attempts'],
                 cooloff=rel_conf['push_retry_cooloff']

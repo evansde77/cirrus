@@ -36,7 +36,7 @@ Config file options, added in a ```[chef]``` section of the cirrus.conf:
  * chef_server - Chef Server URL 
  * chef_username - user name to access chef-server
  * chef_keyfile - SSH Key file path to access chef-server
- * attributes - command separated, dot delimited attributes under override_attributes to set to the version. 
+ * attributes - comma separated, dot delimited attributes under override_attributes to set to the version. 
 
 
 Example:
