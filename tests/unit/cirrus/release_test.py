@@ -176,7 +176,6 @@ class ReleaseUploadCommandTest(unittest.TestCase):
             mock_os.path.join.return_value = 'build_artifact'
 
             opts = mock.Mock()
-            opts.no_upload = False
             opts.test = False
             upload_release(opts)
 
