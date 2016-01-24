@@ -1,4 +1,4 @@
 *.pyc
-venv/*
+venv/
 cirrus.sublime-project
 src/cirrus.egg-info
