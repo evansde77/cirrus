@@ -60,6 +60,7 @@ def create_github_token(git_config):
     requests for things like pull requests
 
     """
+    oauth_note = "cirrus script"
     user = ask_question('what is your github username?', default=os.environ['USER'])
     passwd = getpass.getpass('what is your github password?')
     resp = requests.get(GITHUB_AUTH_URL, auth=(user, passwd))
@@ -67,7 +68,7 @@ def create_github_token(git_config):
     apps = resp.json()
     matched_app = None
     for app in apps:
-        if app['app']['name'] == 'cirrus script (API)':
+        if app['app']['name'] == oauth_note:
             matched_app = app
             print "Token found for cirrus script... reusing it..."
             break
@@ -78,7 +79,7 @@ def create_github_token(git_config):
         resp = requests.post(
             GITHUB_AUTH_URL,
             auth=(user, passwd),
-            data=json.dumps({"scopes":["gist","repo"], "note": "cirrus script"})
+            data=json.dumps({"scopes":["gist","repo"], "note": oath_note})
             )
         resp.raise_for_status()
         matched_app = resp.json()
