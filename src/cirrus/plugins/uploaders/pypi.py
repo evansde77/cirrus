@@ -30,7 +30,7 @@ class Pypi(Uploader):
             LOGGER.error(msg)
             raise RuntimeError(msg)
 
-        command = 'python setup.py sdist'
+        command = 'python setup.py sdist upload'
         if opts.pypi_url:
             LOGGER.info("using pypi server {}".format(opts.pypi_url))
             pypi_url = opts.pypi_url

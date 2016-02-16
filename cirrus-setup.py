@@ -44,7 +44,10 @@ setup_args ={
     'include_package_data': True,
     'install_requires': requirements,
     'name': parser.get('package', 'name'),
-    'version': parser.get('package', 'version')
+    'version': parser.get('package', 'version'),
+    'url': get_default(parser, 'package', 'url', None),
+    'author': get_default(parser, 'package','author', None),
+    'author_email': get_default(parser, 'package','author_email', None)
 }
 
 if parser.has_section('console_scripts'):
@@ -57,5 +60,5 @@ if parser.has_section('console_scripts'):
 if src_dir:
     setup_args['packages'] = setuptools.find_packages(src_dir, exclude=excl_dirs)
     setup_args['provides'] = setuptools.find_packages(src_dir)
-
+    setup_args['package_dir'] = {'':src_dir}
 setuptools.setup(**setup_args)
