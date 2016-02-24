@@ -18,7 +18,7 @@ LOGGER = get_logger()
 class OptionHelper(dict):
     """helper class to resolve cli and cirrus conf opts"""
     def __init__(self, cli_opts, config):
-        super(OptionHelper, self).__init__(self)
+        super(OptionHelper, self).__init__()
         self['username'] = config.get_param('docker', 'docker_login_username', None)
         self['email'] = config.get_param('docker', 'docker_login_email', None)
         self['password'] = config.get_param('docker', 'docker_login_password', None)
@@ -37,7 +37,7 @@ class OptionHelper(dict):
 class BuildOptionHelper(OptionHelper):
     """helper class to resolve cli and cirrus conf opts for build"""
     def __init__(self, cli_opts, config):
-        super(BuildOptionHelper, self).__init__(self)
+        super(BuildOptionHelper, self).__init__(cli_opts, config)
         self['docker_repo'] = config.get_param('docker', 'repo', None)
         self['directory'] = config.get_param('docker', 'directory', None)
         self['template'] = config.get_param('docker', 'dockerstache_template', None)
@@ -117,6 +117,9 @@ def build_parser():
 
 
 def _docker_build(path, tag):
+    """
+    execute docker build -t <tag> <path> in a subprocess
+    """
     command = ['docker', 'build', '-t', tag, path]
     LOGGER.info("Executing docker build command: {}".format(' '.join(command)))
     stdout = subprocess.check_output(command)
@@ -145,6 +148,9 @@ def _docker_login(helper):
 
 
 def _docker_push(tag):
+    """
+    execute docker push command as a subprocess
+    """
     command = ['docker', 'push', tag]
     LOGGER.info("Executing docker push command: {}".format(' '.join(command)))
     stdout = subprocess.check_output(command)
@@ -191,7 +197,7 @@ def docker_build(opts, config):
             defaults=helper['defaults']
         )
 
-    docker_build(path, tag)
+    _docker_build(path, tag)
     return
 
 
@@ -202,14 +208,14 @@ def docker_push(opts, config):
     """
     helper = OptionHelper(opts, config)
     if helper['login']:
-        check = _docker_login(config)
+        check = _docker_login(helper)
         if not check:
             msg = "Unable to perform docker login due to missing cirrus conf entries"
             LOGGER.error(msg)
             sys.exit(1)
     tag = helper['tag']
     if tag is None:
-        tag = tag_name()
+        tag = tag_name(config)
     _docker_push(tag)
 
 
@@ -221,11 +227,15 @@ def main():
     building images can be standardised as part of a workflow
     """
     opts = build_parser()
-    opts = build_parser(sys.argv)
     config = load_configuration()
+    if not config.has_section('docker'):
+        msg = (
+            "Unable to find docker section in cirrus.conf"
+            )
+        LOGGER.error(msg)
+        sys.exit(1)
     if opts.command == 'build':
         docker_build(opts, config)
-
     if opts.command == 'push':
         docker_push(opts, config)
 
