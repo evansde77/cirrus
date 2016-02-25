@@ -124,7 +124,6 @@ def _docker_build(path, tag):
     LOGGER.info("Executing docker build command: {}".format(' '.join(command)))
     stdout = subprocess.check_output(command)
     LOGGER.info(stdout)
-    return
 
 
 def _docker_login(helper):
@@ -155,7 +154,6 @@ def _docker_push(tag):
     LOGGER.info("Executing docker push command: {}".format(' '.join(command)))
     stdout = subprocess.check_output(command)
     LOGGER.info(stdout)
-    return
 
 
 def tag_name(config):
@@ -198,7 +196,6 @@ def docker_build(opts, config):
         )
 
     _docker_build(path, tag)
-    return
 
 
 def docker_push(opts, config):
