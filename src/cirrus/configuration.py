@@ -43,6 +43,9 @@ class Configuration(dict):
                     self.parser.get(section, option)
                 )
 
+    def has_section(self, section):
+        return section in self
+
     def get_param(self, section, param, default=None):
         """
         _get_param_

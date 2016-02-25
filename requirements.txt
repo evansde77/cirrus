@@ -12,3 +12,4 @@ PyChef==0.2.3
 virtualenv
 ./venv/cache/gitconfig-0.0.2.tar.gz
 pluggage
+dockerstache
