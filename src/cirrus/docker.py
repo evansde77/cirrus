@@ -228,6 +228,7 @@ def main():
     if not config.has_section('docker'):
         msg = (
             "Unable to find docker section in cirrus.conf"
+            #TODO: Link to docs here
             )
         LOGGER.error(msg)
         sys.exit(1)
