@@ -8,6 +8,7 @@ import mock
 
 import cirrus.docker as dckr
 from cirrus.configuration import Configuration
+from subprocess import CalledProcessError
 
 
 class DockerFunctionTests(unittest.TestCase):
@@ -17,6 +18,7 @@ class DockerFunctionTests(unittest.TestCase):
     def setUp(self):
         self.patcher = mock.patch('cirrus.docker.subprocess')
         self.mock_subp = self.patcher.start()
+        self.mock_subp.STDOUT = 'STOUT'
         self.mock_check_output = mock.Mock()
         self.mock_check_output.return_value = 'SUBPROCESS OUT'
         self.mock_subp.check_output = self.mock_check_output
@@ -120,6 +122,28 @@ class DockerFunctionTests(unittest.TestCase):
                 mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3'])
             ]
         )
+
+    def test_docker_connection(self):
+        """test is_docker_connected function called as expected"""
+        dckr.is_docker_connected()
+        self.mock_subp.check_output.assert_has_calls(
+            [mock.call(['docker', 'info'], stderr='STOUT')])
+
+    def test_docker_connection_success(self):
+        """test successful docker daemon connection"""
+        result = dckr.is_docker_connected()
+        self.assertTrue(result)
+
+    def test_docker_connection_error(self):
+        """test failed docker daemon connection"""
+        self.mock_subp.check_output.side_effect = CalledProcessError(
+            1,
+            ['docker', 'info'],
+            'Cannot connect to the Docker daemon...')
+
+        with self.assertRaises(CalledProcessError):
+            result = dckr.is_docker_connected()
+            self.assertFalse(result)
 
 if __name__ == '__main__':
     unittest.main()
