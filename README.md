@@ -3,6 +3,8 @@ cirrus
 
 python library build, test and devop like things assistant
 
+[![Build Status](https://travis-ci.org/evansde77/cirrus.svg?branch=develop)](https://travis-ci.org/evansde77/cirrus)
+
 
 Installation as a user:
 =======================
