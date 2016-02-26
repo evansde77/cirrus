@@ -14,6 +14,16 @@ import dockerstache.dockerstache as ds
 
 LOGGER = get_logger()
 
+DOCKER_CONNECTION_HELP = """
+We could not connect to a docker daemon.
+
+If you are using docker-machine, run 'docker-machine env <name>' and follow the
+instructions to configure your shell.
+
+If you are running docker natively, check that the docker service is running
+and you have sufficient privileges to connect.
+"""
+
 
 class OptionHelper(dict):
     """helper class to resolve cli and cirrus conf opts"""
@@ -112,6 +122,7 @@ def build_parser():
         default=False
     )
 
+    subparsers.add_parser('test', help='test docker connection')
     opts = parser.parse_args()
     return opts
 
@@ -216,6 +227,21 @@ def docker_push(opts, config):
     _docker_push(tag)
 
 
+def is_docker_connected():
+    """
+    Tests whether the docker daemon is connected using  the 'docker info'
+    native command
+    """
+    try:
+        subprocess.check_output(['docker', 'info'], stderr=subprocess.STDOUT)
+        LOGGER.info("Docker daemon connection successful")
+    except subprocess.CalledProcessError as ex:
+        LOGGER.error(ex)
+        LOGGER.error(ex.output.strip())
+        return False
+    return True
+
+
 def main():
     """
     _main_
@@ -232,10 +258,18 @@ def main():
             )
         LOGGER.error(msg)
         sys.exit(1)
+
+    if not is_docker_connected():
+        LOGGER.error(DOCKER_CONNECTION_HELP)
+        sys.exit(1)
+
     if opts.command == 'build':
         docker_build(opts, config)
     if opts.command == 'push':
         docker_push(opts, config)
+    if opts.command == 'test':
+        # Already called above
+        pass
 
 
 if __name__ == '__main__':
