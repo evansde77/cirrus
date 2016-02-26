@@ -11,7 +11,9 @@ import mock
 from cirrus.release import new_release
 from cirrus.release import upload_release
 from cirrus.release import build_release
+from cirrus.release import artifact_name
 from cirrus.configuration import Configuration
+from pluggage.errors import FactoryError
 
 from harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
@@ -46,12 +48,13 @@ class ReleaseNewCommandTest(unittest.TestCase):
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
 
-
-    def test_new_release(self):
+    @mock.patch('cirrus.release.has_unstaged_changes')
+    def test_new_release(self, mock_unstaged):
         """
         _test_new_release_
 
         """
+        mock_unstaged.return_value = False
         opts = mock.Mock()
         opts.micro = True
         opts.major = False
@@ -73,6 +76,20 @@ class ReleaseNewCommandTest(unittest.TestCase):
         self.assertEqual(self.mock_branch.call_args[0][1], 'release/1.2.4')
         self.failUnless(self.mock_commit.called)
         self.assertEqual(self.mock_commit.call_args[0][2], 'cirrus.conf')
+
+    @mock.patch('cirrus.release.has_unstaged_changes')
+    def test_new_release_unstaged(self, mock_unstaged):
+        """
+        test new release fails on unstaged changes
+
+        """
+        mock_unstaged.return_value = True
+        opts = mock.Mock()
+        opts.micro = True
+        opts.major = False
+        opts.minor = False
+        opts.bump = None
+        self.assertRaises(RuntimeError, new_release, opts)
 
 
 class ReleaseBuildCommandTest(unittest.TestCase):
@@ -124,11 +141,8 @@ class ReleaseBuildCommandTest(unittest.TestCase):
             self.assertEqual(self.mock_local.call_args[0][0], 'python setup.py sdist')
 
 
-@unittest.skip("fix this to test with plugins")
-class ReleaseUploadCommandTest(unittest.TestCase):
-    """
-    test case for cirrus release upload command
-    """
+class ReleaseUploadTest(unittest.TestCase):
+    """unittest coverage for upload command using plugins"""
     def setUp(self):
         self.dir = tempfile.mkdtemp()
         self.config = os.path.join(self.dir, 'cirrus.conf')
@@ -146,55 +160,55 @@ class ReleaseUploadCommandTest(unittest.TestCase):
             )
         self.harness = CirrusConfigurationHarness('cirrus.release.load_configuration', self.config)
         self.harness.setUp()
-
-        self.patch_put =  mock.patch('cirrus.release.put')
-        self.mock_put = self.patch_put.start()
-
+        self.artifact_name = artifact_name(self.harness.config)
 
     def tearDown(self):
         self.harness.tearDown()
-        self.patch_put.stop()
 
+    def test_missing_build_artifact(self):
+        """test throws if build artifact not found"""
+        opts = mock.Mock()
+        self.assertRaises(RuntimeError, upload_release, opts)
 
-    @mock.patch('cirrus.release.current_branch_mark_status')
-    @mock.patch('cirrus.release.wait_on_gh_status')
-    @mock.patch('cirrus.release.get_active_branch')
-    @mock.patch('cirrus.release.checkout_and_pull')
-    @mock.patch('cirrus.release.merge')
-    @mock.patch('cirrus.release.push')
-    @mock.patch('cirrus.release.tag_release')
-    def test_release_upload(self, m_tag_release, m_push, m_merge, m_checkout_and_pull, m_get_active_branch, m_wait_on_gh_status, m_current_branch_mark_status):
-        """test upload command, mocking out fabric put"""
-        mock_branch = mock.Mock()
-        mock_branch.name = "release/1.2.3"
-        m_get_active_branch.return_value = mock_branch
+    @mock.patch('cirrus.release.os.path.exists')
+    @mock.patch('cirrus.release.get_plugin')
+    def test_upload_plugin(self, mock_plugin, mock_exists):
+        """test call with well behaved plugin"""
+        plugin = mock.Mock()
+        plugin.upload = mock.Mock()
+        mock_exists.return_value = True
+        mock_plugin.return_value = plugin
+        opts = mock.Mock()
+        opts.plugin = 'pypi'
+        opts.test = False
+        upload_release(opts)
+        self.failUnless(plugin.upload.called)
+        plugin.upload.assert_has_calls(
+            [mock.call(opts, self.artifact_name)]
+        )
 
-        with mock.patch('cirrus.release.os') as mock_os:
-            mock_os.path = mock.Mock()
-            mock_os.path.exists = mock.Mock()
-            mock_os.path.exists.return_value = True
-            mock_os.path.join = mock.Mock()
-            mock_os.path.join.return_value = 'build_artifact'
+    @mock.patch('cirrus.release.os.path.exists')
+    @mock.patch('cirrus.release.get_plugin')
+    def test_upload_plugin_test_mode(self, mock_plugin, mock_exists):
+        plugin = mock.Mock()
+        plugin.upload = mock.Mock()
+        mock_exists.return_value = True
+        mock_plugin.return_value = plugin
+        opts = mock.Mock()
+        opts.plugin = 'pypi'
+        opts.test = True
+        upload_release(opts)
+        self.failUnless(not plugin.upload.called)
 
-            opts = mock.Mock()
-            opts.no_upload = False
-            opts.test = False
-            upload_release(opts)
+    @mock.patch('cirrus.release.os.path.exists')
+    def test_upload_bad_plugin(self, mock_exists):
+        """test with missing plugin"""
+        mock_exists.return_value = True
+        opts = mock.Mock()
+        opts.plugin = 'womp'
+        opts.test = True
+        self.assertRaises(FactoryError, upload_release, opts)
 
-            self.failUnless(mock_os.path.exists.called)
-            self.failUnless(self.mock_put.called)
-            self.assertEqual(self.mock_put.call_args[0][0], 'build_artifact')
-            self.assertEqual(self.mock_put.call_args[0][1], '/opt/pypi' )
-            self.assertEqual(mock_os.path.exists.call_args[0][0], 'build_artifact')
-
-            self.assertEqual(m_tag_release.call_args[0][1], '1.2.3')
-            self.assertEqual(m_tag_release.call_args[0][2], 'master')
-            self.failUnless(m_merge.called)
-            self.failUnless(m_push.called)
-            self.assertEqual(m_push.call_count, 2)
-            self.failUnless(m_checkout_and_pull.called)
-
-            self.failUnless(m_current_branch_mark_status.called)
 
 
 if __name__ == '__main__':
