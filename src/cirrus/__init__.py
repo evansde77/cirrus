@@ -5,5 +5,5 @@ _cirrus_
 command line scripts that extend git via the git cirrus alias
 
 """
-__version__="0.0.38"
+__version__="0.0.39"
 
