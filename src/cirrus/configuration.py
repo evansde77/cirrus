@@ -13,6 +13,7 @@ conf = load_configuration()
 """
 import os
 import gitconfig
+import subprocess
 import ConfigParser
 
 
@@ -134,6 +135,13 @@ class Configuration(dict):
             self.parser.write(handle)
 
 
+def _repo_directory():
+    command = ['git', 'rev-parse', '--show-toplevel']
+    process = subprocess.Popen([command], stdout=subprocess.PIPE)
+    outp, err = process.communicate()
+    return outp.strip()
+
+
 def load_configuration(package_dir=None):
     """
     _load_configuration_
@@ -150,8 +158,14 @@ def load_configuration(package_dir=None):
         dirname = package_dir
 
     config_path = os.path.join(dirname, 'cirrus.conf')
+    if not os.path.exists(config_path):
+        repo_dir = _repo_directory()
+        config_path = os.path.join(repo_dir, 'cirrus.conf')
 
     if not os.path.exists(config_path):
+        config_path = None
+
+    if config_path is None:
         msg = "Couldnt find ./cirrus.conf, are you in a package directory?"
         raise RuntimeError(msg)
 

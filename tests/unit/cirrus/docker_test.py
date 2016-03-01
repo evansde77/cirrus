@@ -22,6 +22,11 @@ class DockerFunctionTests(unittest.TestCase):
         self.mock_check_output = mock.Mock()
         self.mock_check_output.return_value = 'SUBPROCESS OUT'
         self.mock_subp.check_output = self.mock_check_output
+        self.mock_popen = mock.Mock()
+        self.mock_subp.Popen = mock.Mock()
+        self.mock_subp.Popen.return_value = self.mock_popen
+        self.mock_popen.communicate = mock.Mock()
+        self.mock_popen.communicate.return_value = ('STDOUT', 'STDERR')
 
         self.opts = mock.Mock()
         self.opts.login = False
