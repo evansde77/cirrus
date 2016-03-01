@@ -127,14 +127,35 @@ def build_parser():
     return opts
 
 
-def _docker_build(path, tag):
+def _docker_build(path, tag, base_tag):
     """
     execute docker build -t <tag> <path> in a subprocess
     """
     command = ['docker', 'build', '-t', tag, path]
     LOGGER.info("Executing docker build command: {}".format(' '.join(command)))
-    stdout = subprocess.check_output(command)
+    try:
+        stdout = subprocess.check_output(command)
+    except subprocess.CalledProcessError as ex:
+        LOGGER.error(ex.output)
+        raise
     LOGGER.info(stdout)
+    image = find_image_id(base_tag)
+    LOGGER.info("Image ID: {}".format(image))
+    return image
+
+
+def find_image_id(base_tag):
+    """
+    grab the last created image id for the repo
+    """
+    command = (
+        "echo $(docker images | grep '{tag}' | "
+        "head -n 1 | awk '{{print $3}}')"
+    ).format(tag=base_tag)
+    process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
+    outp, err = process.communicate()
+    LOGGER.info("Latest Container: {}".format(outp))
+    return outp.strip()
 
 
 def _docker_login(helper):
@@ -157,6 +178,29 @@ def _docker_login(helper):
     return False
 
 
+def _docker_tag(image, tag, latest):
+    """
+    tag the created image ID with the current tag and as latest
+    Note that this uses tag -f
+    """
+    command = ['docker', 'tag', '-f', image, tag]
+    LOGGER.info("Executing {}".format(' '.join(command)))
+    try:
+        stdout = subprocess.check_output(command)
+    except subprocess.CalledProcessError as ex:
+        LOGGER.error(ex.output)
+        raise
+    LOGGER.info(stdout)
+    command = ['docker', 'tag', '-f', image, latest]
+    LOGGER.info("Executing {}".format(' '.join(command)))
+    try:
+        stdout = subprocess.check_output(command)
+    except subprocess.CalledProcessError as ex:
+        LOGGER.error(ex.output)
+        raise
+    LOGGER.info(stdout)
+
+
 def _docker_push(tag):
     """
     execute docker push command as a subprocess
@@ -167,16 +211,24 @@ def _docker_push(tag):
     LOGGER.info(stdout)
 
 
+def tag_base(config):
+    pname = config.package_name()
+    docker_repo = config.get_param('docker', 'repo', None)
+    if docker_repo is None:
+        docker_repo = config.organisation_name()
+    return "{}/{}".format(docker_repo, pname)
+
+
 def tag_name(config):
     """
     build the docker tag string
     """
-    pname = config.package_name()
     pversion = config.package_version()
-    docker_repo = config.get_param('docker', 'repo', None)
-    if docker_repo is None:
-        docker_repo = config.organisation_name()
-    return "{}/{}:{}".format(docker_repo, pname, pversion)
+    return "{}:{}".format(tag_base(config), pversion)
+
+
+def latest_tag_name(config):
+    return "{}:latest".format(tag_base(config))
 
 
 def docker_build(opts, config):
@@ -188,6 +240,7 @@ def docker_build(opts, config):
     as output
     """
     tag = tag_name(config)
+    latest = latest_tag_name(config)
     helper = BuildOptionHelper(opts, config)
     templ = helper['template']
     path = helper['directory']
@@ -206,7 +259,8 @@ def docker_build(opts, config):
             defaults=helper['defaults']
         )
 
-    _docker_build(path, tag)
+    image = _docker_build(path, tag, tag_base(config))
+    _docker_tag(image, tag, latest)
 
 
 def docker_push(opts, config):
