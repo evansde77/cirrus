@@ -163,9 +163,6 @@ def load_configuration(package_dir=None):
         config_path = os.path.join(repo_dir, 'cirrus.conf')
 
     if not os.path.exists(config_path):
-        config_path = None
-
-    if config_path is None:
         msg = "Couldnt find ./cirrus.conf, are you in a package directory?"
         raise RuntimeError(msg)
 
