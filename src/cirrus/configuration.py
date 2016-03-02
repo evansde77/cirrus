@@ -137,7 +137,7 @@ class Configuration(dict):
 
 def _repo_directory():
     command = ['git', 'rev-parse', '--show-toplevel']
-    process = subprocess.Popen([command], stdout=subprocess.PIPE)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE)
     outp, err = process.communicate()
     return outp.strip()
 
