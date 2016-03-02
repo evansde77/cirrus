@@ -91,7 +91,8 @@ class GithubToolsTest(unittest.TestCase):
 
     @mock.patch('cirrus.github_tools.load_configuration')
     @mock.patch("cirrus.github_tools.requests.post")
-    def test_current_branch_mark_status(self, mock_post, mock_config_load):
+    @mock.patch("cirrus.github_tools.push")
+    def test_current_branch_mark_status(self, mock_push, mock_post, mock_config_load):
         """
         _test_current_branch_mark_status_
 
