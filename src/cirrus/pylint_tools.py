@@ -64,7 +64,7 @@ def pyflakes_file(filenames, verbose=False):
         result = local(command, capture=True)
 
     flakes = 0
-    data = result.split('\n')
+    data = [x for x in result.split('\n') if x.strip()]
     if len(data) != 0:
         #We have at least one flake, find the rest
         flakes = count_flakes(data, verbose) + 1
