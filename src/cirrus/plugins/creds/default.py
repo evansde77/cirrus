@@ -20,15 +20,17 @@ class Default(CredsPlugin):
     """
     PLUGGAGE_OBJECT_NAME = 'default'
 
-    def __init__(self):
+    def __init__(self, gitconfig_file=None):
+        self.gitconfig_file = gitconfig_file
         super(Default, self).__init__()
 
     def load(self):
         """
         load - override load hook to read the users .gitconfig file
         """
-        gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
-        self.config = gitconfig.config(gitconfig_file)
+        if self.gitconfig_file is None:
+            self.gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+        self.config = gitconfig.config(self.gitconfig_file)
 
     def github_credentials(self):
         github_user = self.config.get('cirrus', 'github-user')
@@ -77,7 +79,7 @@ class Default(CredsPlugin):
 
     def dockerhub_credentials(self):
         return {
-            'username': self.config.get_param('cirrus', 'docker_login_username', None),
-            'email': self.config.get_param('cirrus', 'docker_login_email', None),
-            'password': self.config.get_param('cirrus', 'docker_login_password', None)
+            'username': self.config.get('cirrus', 'docker_login_username'),
+            'email': self.config.get('cirrus', 'docker_login_email'),
+            'password': self.config.get('cirrus', 'docker_login_password')
         }
