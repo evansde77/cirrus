@@ -65,20 +65,21 @@ class CredsPlugin(PluggagePlugin):
             'password': None
         }
 
-
     def credential_methods(self):
+        """
+        helper to grab all the *_credentials methods on this class
+        """
         match = lambda x: inspect.ismethod(x) and x.__name__.endswith('_credentials')
         return [x for x in inspect.getmembers(self, predicate=match)]
 
     def credential_map(self):
+        """
+        produces a nested credential dictionary that can be used
+        to render templates with a standard format for looking
+        up a credential
+
+        """
         result = {}
         for m_name, m_func in self.credential_methods():
             result[m_name] = m_func()
-
         return result
-
-
-if __name__ == '__main__':
-    x = CredsPlugin()
-    print x.credential_map()
-
