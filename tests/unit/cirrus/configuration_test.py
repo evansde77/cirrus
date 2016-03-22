@@ -69,7 +69,7 @@ class ConfigurationTests(unittest.TestCase):
         config = load_configuration(package_dir="womp")
 
         self.failUnless(mock_result.communicate.called)
-        mock_pop.assert_has_calls(mock.call([['git', 'rev-parse', '--show-toplevel']], stdout=-1))
+        mock_pop.assert_has_calls(mock.call(['git', 'rev-parse', '--show-toplevel'], stdout=-1))
         self.assertEqual(config.package_version(), '1.2.3')
         self.assertEqual(config.package_name(), 'cirrus_tests')
 

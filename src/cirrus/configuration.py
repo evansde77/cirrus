@@ -15,6 +15,20 @@ import os
 import gitconfig
 import subprocess
 import ConfigParser
+import pluggage.registry
+
+
+def get_creds_plugin(plugin_name):
+    """
+    _get_creds_plugin_
+
+    Get the credential access plugin requested from the factory
+    """
+    factory = pluggage.registry.get_factory(
+        'credentials',
+        load_modules=['cirrus.plugins.creds']
+    )
+    return factory(plugin_name)
 
 
 class Configuration(dict):
@@ -26,6 +40,8 @@ class Configuration(dict):
         super(Configuration, self).__init__(self)
         self.config_file = config_file
         self.parser = None
+        self.credentials = None
+        self.gitconfig = None
 
     def load(self):
         """
@@ -43,6 +59,16 @@ class Configuration(dict):
                     option,
                     self.parser.get(section, option)
                 )
+        gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+        self.gitconfig = gitconfig.config(gitconfig_file)
+        self._load_creds_plugin()
+
+    def _load_creds_plugin(self):
+        """look up plugin pref fron gitconfig and load cred plugin"""
+        plugin_name = self.gitconfig.get('cirrus', 'credential-plugin')
+        if not plugin_name:
+            plugin_name = 'default'
+        self.credentials = get_creds_plugin(plugin_name)
 
     def has_section(self, section):
         return section in self
