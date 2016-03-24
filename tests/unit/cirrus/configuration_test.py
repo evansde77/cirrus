@@ -102,7 +102,9 @@ class ConfigurationTests(unittest.TestCase):
             mapping['cirrus']['credentials']['github_credentials'],
             {'github_user': None, 'github_token': None}
         )
-
+        self.assertEqual(
+            mapping['cirrus']['configuration']['package']['name'], 'cirrus_tests'
+        )
 
 
 
