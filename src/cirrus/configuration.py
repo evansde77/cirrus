@@ -38,8 +38,8 @@ class Configuration(dict):
     """
     def __init__(self, config_file, gitconfig_file=None):
         super(Configuration, self).__init__(self)
-        self.config_file = config_file
         self.gitconfig_file = gitconfig_file
+        self.config_file = config_file
         self.parser = None
         self.credentials = None
         self.gitconfig = None
@@ -162,6 +162,15 @@ class Configuration(dict):
         with open(self.config_file, 'w') as handle:
             self.parser.write(handle)
 
+    def configuration_map(self):
+        result = {
+            "cirrus": {
+                "configuration": dict(self),
+                "credentials": self.credentials.credential_map()
+            }
+        }
+        return result
+
 
 def _repo_directory():
     command = ['git', 'rev-parse', '--show-toplevel']
@@ -269,4 +278,4 @@ def get_chef_auth():
 
 
 if __name__ == '__main__':
-    load_configuration()
+    c = load_configuration()
