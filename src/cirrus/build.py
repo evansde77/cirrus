@@ -45,7 +45,6 @@ def build_parser(argslist):
         nargs='*',
         help='generate documentation with Sphinx (Makefile path must be set in cirrus.conf.')
 
-    opts = parser.parse_args(argslist)
     parser.add_argument(
         '-u',
         '--upgrade',
@@ -53,6 +52,7 @@ def build_parser(argslist):
         default=False,
         help='Use --upgrade to update the dependencies in the package requirements'
     )
+    opts = parser.parse_args(argslist)
     return opts
 
 
