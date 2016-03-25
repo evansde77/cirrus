@@ -22,6 +22,15 @@ scripts = [
     for key in config.options("commands")
 ]
 
+requirements_file = open('requirements.txt')
+
+# Manually parse the requirements file. Pip 1.5.6 to 6.0 has a function
+# behavior change for pip.req.parse_requirements. You must use the setuptools
+# format when specifying requirements.
+#  - https://pythonhosted.org/setuptools/setuptools.html#declaring-dependencies
+# Furthermore, you can't use line continuations with the following:
+requirements = requirements_file.read().strip().split('\n')
+
 
 setuptools.setup(
     name=config.get("package", "name"),
@@ -31,7 +40,8 @@ setuptools.setup(
     url="https://github.com/evansde77/cirrus",
     author="Dave Evans",
     author_email="evansde77@gmail.com",
-    
+    include_package_data=True,
+    install_requires=requirements,    
     packages=setuptools.find_packages("src"),
     entry_points = {
       "console_scripts": scripts,
