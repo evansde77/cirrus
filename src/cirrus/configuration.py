@@ -275,7 +275,3 @@ def get_chef_auth():
         'chef_client_user': config.get('cirrus', 'chef-client-user'),
         'chef_client_keyfile': config.get('cirrus', 'chef-client-keyfile')
     }
-
-
-if __name__ == '__main__':
-    c = load_configuration()
