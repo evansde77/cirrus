@@ -45,6 +45,13 @@ def build_parser(argslist):
         nargs='*',
         help='generate documentation with Sphinx (Makefile path must be set in cirrus.conf.')
 
+    parser.add_argument(
+        '-u',
+        '--upgrade',
+        action='store_true',
+        default=False,
+        help='Use --upgrade to update the dependencies in the package requirements'
+    )
     opts = parser.parse_args(argslist)
     return opts
 
@@ -87,7 +94,7 @@ def execute_build(opts):
         local(cmd)
 
     if not os.path.exists(venv_bin_path):
-        cmd = "{0} --distribute {1}".format(venv_command, venv_path)
+        cmd = "{0} {1}".format(venv_command, venv_path)
         LOGGER.info("Bootstrapping virtualenv: {0}".format(venv_path))
         local(cmd)
 
@@ -100,16 +107,25 @@ def execute_build(opts):
             pypi_username=pypi_conf['username'],
             pypi_server=pypi_server
         )
-
-        cmd = (
-            '{0}/bin/pip install '
-            "-i {1} "
-            '-r {2}'
-            ).format(venv_path, pypi_url, reqs_name)
+        if opts.upgrade:
+            cmd = (
+                '{0}/bin/pip install --upgrade '
+                "-i {1} "
+                '-r {2}'
+                ).format(venv_path, pypi_url, reqs_name)
+        else:
+            cmd = (
+                '{0}/bin/pip install '
+                "-i {1} "
+                '-r {2}'
+                ).format(venv_path, pypi_url, reqs_name)
 
     else:
         # no pypi server
-        cmd = '{0}/bin/pip install -r {1}'.format(venv_path, reqs_name)
+        if opts.upgrade:
+            cmd = '{0}/bin/pip install --upgrade -r {1}'.format(venv_path, reqs_name)
+        else:
+            cmd = '{0}/bin/pip install -r {1}'.format(venv_path, reqs_name)
 
     try:
         local(cmd)
