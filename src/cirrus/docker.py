@@ -256,7 +256,8 @@ def docker_build(opts, config):
             input=templ,
             output=path,
             context=helper['context'],
-            defaults=helper['defaults']
+            defaults=helper['defaults'],
+            extend_context=config.configuration_map()
         )
 
     image = _docker_build(path, tag, tag_base(config))

@@ -41,8 +41,15 @@ class ConfigurationTests(unittest.TestCase):
         with open(self.gitconfig, 'w') as handle:
             gitconf.write(handle)
 
+        self.patcher = mock.patch('cirrus.plugins.creds.default.os')
+        default_os = self.patcher.start()
+        default_os.path = mock.Mock()
+        default_os.path.join = mock.Mock()
+        default_os.path.join.return_value = self.gitconfig
+
     def tearDown(self):
         """cleanup"""
+        self.patcher.stop()
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
 
@@ -82,6 +89,22 @@ class ConfigurationTests(unittest.TestCase):
         mock_pop.assert_has_calls(mock.call(['git', 'rev-parse', '--show-toplevel'], stdout=-1))
         self.assertEqual(config.package_version(), '1.2.3')
         self.assertEqual(config.package_name(), 'cirrus_tests')
+
+    def test_configuration_map(self):
+        """test building config mapping"""
+        config = load_configuration(package_dir=self.dir, gitconfig_file=self.gitconfig)
+        mapping = config.configuration_map()
+        self.failUnless('cirrus' in mapping)
+        self.failUnless('credentials' in mapping['cirrus'])
+        self.failUnless('configuration' in mapping['cirrus'])
+        self.failUnless('github_credentials' in mapping['cirrus']['credentials'])
+        self.assertEqual(
+            mapping['cirrus']['credentials']['github_credentials'],
+            {'github_user': None, 'github_token': None}
+        )
+        self.assertEqual(
+            mapping['cirrus']['configuration']['package']['name'], 'cirrus_tests'
+        )
 
 
 

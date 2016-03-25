@@ -45,6 +45,12 @@ class DockerFunctionTests(unittest.TestCase):
             'repo': 'unittesting'
 
         }
+        self.config.credentials = mock.Mock()
+        self.config.credentials.credential_map = mock.Mock()
+        self.config.credentials.credential_map.return_value = {
+            'github_credentials': {'github_user': 'steve', 'github_token': 'steves gh token'},
+            'pypi_credentials': {'username': 'steve', 'token': 'steves pypi token'}
+        }
 
     def tearDown(self):
         self.patcher.stop()
@@ -71,7 +77,7 @@ class DockerFunctionTests(unittest.TestCase):
 
         mock_ds.run.assert_has_calls(
             mock.call(
-                output='vm/docker_image', context=None, defaults=None, input='template'
+                output='vm/docker_image', context=None, defaults=None, input='template', extend_context=mock.ANY
             )
         )
         self.mock_subp.check_output.assert_has_calls(
