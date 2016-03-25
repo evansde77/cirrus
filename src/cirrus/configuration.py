@@ -15,6 +15,20 @@ import os
 import gitconfig
 import subprocess
 import ConfigParser
+import pluggage.registry
+
+
+def get_creds_plugin(plugin_name):
+    """
+    _get_creds_plugin_
+
+    Get the credential access plugin requested from the factory
+    """
+    factory = pluggage.registry.get_factory(
+        'credentials',
+        load_modules=['cirrus.plugins.creds']
+    )
+    return factory(plugin_name)
 
 
 class Configuration(dict):
@@ -22,10 +36,13 @@ class Configuration(dict):
     _Configuration_
 
     """
-    def __init__(self, config_file):
+    def __init__(self, config_file, gitconfig_file=None):
         super(Configuration, self).__init__(self)
+        self.gitconfig_file = gitconfig_file
         self.config_file = config_file
         self.parser = None
+        self.credentials = None
+        self.gitconfig = None
 
     def load(self):
         """
@@ -43,6 +60,17 @@ class Configuration(dict):
                     option,
                     self.parser.get(section, option)
                 )
+        if self.gitconfig_file is None:
+            self.gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+        self.gitconfig = gitconfig.config(self.gitconfig_file)
+        self._load_creds_plugin()
+
+    def _load_creds_plugin(self):
+        """look up plugin pref fron gitconfig and load cred plugin"""
+        plugin_name = self.gitconfig.get('cirrus', 'credential-plugin')
+        if not plugin_name:
+            plugin_name = 'default'
+        self.credentials = get_creds_plugin(plugin_name)
 
     def has_section(self, section):
         return section in self
@@ -134,6 +162,15 @@ class Configuration(dict):
         with open(self.config_file, 'w') as handle:
             self.parser.write(handle)
 
+    def configuration_map(self):
+        result = {
+            "cirrus": {
+                "configuration": dict(self),
+                "credentials": self.credentials.credential_map()
+            }
+        }
+        return result
+
 
 def _repo_directory():
     command = ['git', 'rev-parse', '--show-toplevel']
@@ -142,14 +179,15 @@ def _repo_directory():
     return outp.strip()
 
 
-def load_configuration(package_dir=None):
+def load_configuration(package_dir=None, gitconfig_file=None):
     """
     _load_configuration_
 
     Load the cirrus.conf file and parse it into a nested dictionary
     like Configuration instance.
 
-    :params package_dir: Location of cirrus managed package if not pwd
+    :param package_dir: Location of cirrus managed package if not pwd
+    :param gitconfig_file: Path to gitconfig if not ~/.gitconfig
     :returns: Configuration instance
 
     """
@@ -166,7 +204,7 @@ def load_configuration(package_dir=None):
         msg = "Couldnt find ./cirrus.conf, are you in a package directory?"
         raise RuntimeError(msg)
 
-    config_instance = Configuration(config_path)
+    config_instance = Configuration(config_path, gitconfig_file=gitconfig_file)
     config_instance.load()
     return config_instance
 
@@ -176,6 +214,8 @@ def get_github_auth():
     _get_git_auth_
 
     Pull in github auth user & token from gitconfig
+
+    DEPRECATED: use Configuration.credentials instead
     """
     gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
     config = gitconfig.config(gitconfig_file)
@@ -189,6 +229,7 @@ def get_pypi_auth():
     _pypi_auth_
 
     Get pypi credentials from gitconfig
+    DEPRECATED: use Configuration.credentials instead
 
     """
     gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
@@ -210,6 +251,7 @@ def get_buildserver_auth():
     _buildserver_auth_
 
     Get buildserver credentials from gitconfig
+    DEPRECATED: use Configuration.credentials instead
 
     """
     gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
@@ -221,6 +263,7 @@ def get_buildserver_auth():
 def get_chef_auth():
     """
     get chef auth info from gitconfig
+    DEPRECATED: use Configuration.credentials instead
 
     """
     gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
@@ -232,7 +275,3 @@ def get_chef_auth():
         'chef_client_user': config.get('cirrus', 'chef-client-user'),
         'chef_client_keyfile': config.get('cirrus', 'chef-client-keyfile')
     }
-
-
-if __name__ == '__main__':
-    load_configuration()
