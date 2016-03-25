@@ -112,7 +112,6 @@ def find_cirrus_install():
     return cirrus_dir
 
 
-
 def setup_develop(config):
     """
     _setup_develop_
@@ -122,7 +121,7 @@ def setup_develop(config):
     """
     LOGGER.info("running setup.py develop...")
     local(
-        'git cirrus build'
+        'git cirrus build --upgrade'
     )
 
     local(
