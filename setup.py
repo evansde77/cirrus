@@ -28,6 +28,10 @@ setuptools.setup(
     version=config.get("package", "version"),
     description=config.get("package", "description"),
     package_dir={"":"src"},
+    url="https://github.com/evansde77/cirrus",
+    author="Dave Evans",
+    author_email="evansde77@gmail.com",
+    
     packages=setuptools.find_packages("src"),
     entry_points = {
       "console_scripts": scripts,
