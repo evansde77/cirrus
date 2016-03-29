@@ -93,7 +93,7 @@ class GitConfig(dict):
     @property
     def command(self):
         """base git config command"""
-        return 'git config --file %s' % self.filename
+        return 'git config --file {0}'.format(self.filename)
 
     def parse(self):
         """re-read and parse all elements of git config and populate self"""
