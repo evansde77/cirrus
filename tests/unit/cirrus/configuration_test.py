@@ -55,9 +55,11 @@ class ConfigurationTests(unittest.TestCase):
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
 
-    def test_reading(self):
+    @mock.patch('cirrus.gitconfig.shell_command')
+    def test_reading(self, mock_shell):
         """test config load """
         #test read and accessors
+        mock_shell.return_value = self.gitconf_str
         config = load_configuration(package_dir=self.dir, gitconfig_file=self.gitconfig)
         self.assertEqual(config.package_version(), '1.2.3')
         self.assertEqual(config.package_name(), 'cirrus_tests')
