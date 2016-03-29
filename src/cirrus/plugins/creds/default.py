@@ -40,6 +40,10 @@ class Default(CredsPlugin):
             'github_token': github_token
         }
 
+    def set_github_credentials(self, username, token):
+        self.config.set('cirrus', 'github-user', username)
+        self.config.set('cirrus', 'github-token', token)
+
     def pypi_credentials(self):
         pypi_user = self.config.get('cirrus', 'pypi-user')
         pypi_token = self.config.get('cirrus', 'pypi-token')
@@ -47,6 +51,10 @@ class Default(CredsPlugin):
             'username': pypi_user,
             'token': pypi_token
         }
+
+    def set_pypi_credentials(self, username, token):
+        self.config.set('cirrus', 'pypi-user', username)
+        self.config.set('cirrus', 'pypi-token', token)
 
     def ssh_credentials(self):
         pypi_ssh_user = self.config.get('cirrus', 'ssh-user')
@@ -56,6 +64,10 @@ class Default(CredsPlugin):
             'ssh_key': pypi_key
         }
 
+    def set_ssh_credentials(self, user, keyfile):
+        self.config.set('cirrus', 'ssh-user', user)
+        self.config.set('cirrus', 'ssh-key', keyfile)
+
     def buildserver_credentials(self):
         """
 
@@ -64,6 +76,10 @@ class Default(CredsPlugin):
             'buildserver-user': self.config.get('cirrus', 'buildserver-user'),
             'buildserver-token': self.config.get('cirrus', 'buildserver-token')
         }
+
+    def set_buildserver_credentials(self, user, token):
+        self.config.set('cirrus', 'buildserver-user', user)
+        self.config.set('cirrus', 'buildserver-token', token)
 
     def chef_credentials(self):
         """
@@ -77,9 +93,26 @@ class Default(CredsPlugin):
             'chef_client_keyfile': self.config.get('cirrus', 'chef-client-keyfile')
         }
 
+    def set_chef_credentials(self, server, username, keyfile, client_user=None, client_key=None):
+        if client_user is None:
+            client_user = username
+        if client_key is None:
+            client_key = keyfile
+
+        self.config.set('cirrus', 'chef-server', server)
+        self.config.set('cirrus', 'chef-username', username)
+        self.config.set('cirrus', 'chef-keyfile', keyfile)
+        self.config.set('cirrus', 'chef-client-user', client_user)
+        self.config.set('cirrus', 'chef-client-keyfile', client_key)
+
     def dockerhub_credentials(self):
         return {
             'username': self.config.get('cirrus', 'docker_login_username'),
             'email': self.config.get('cirrus', 'docker_login_email'),
             'password': self.config.get('cirrus', 'docker_login_password')
         }
+
+    def set_dockerhub_credentials(self, email, user, password):
+        self.config.set('cirrus', 'docker_login_username', user)
+        self.config.set('cirrus', 'docker_login_email', email)
+        self.config.set('cirrus', 'docker_login_password', password)

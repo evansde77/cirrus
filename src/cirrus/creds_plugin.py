@@ -31,11 +31,21 @@ class CredsPlugin(PluggagePlugin):
             'github_token': None
         }
 
+    def set_github_credentials(self, user, token):
+        raise NotImplementedError(
+            "{}.set_github_credentials".format(type(self).__name__)
+        )
+
     def pypi_credentials(self):
         return {
             'username': None,
             'token': None,
         }
+
+    def set_pypi_credentials(self, user, token):
+        raise NotImplementedError(
+            "{}.set_pypi_credentials".format(type(self).__name__)
+        )
 
     def ssh_credentials(self):
         return {
@@ -43,11 +53,21 @@ class CredsPlugin(PluggagePlugin):
             'ssh_key': None
         }
 
+    def set_ssh_credentials(self, user, keyfile):
+        raise NotImplementedError(
+            "{}.set_ssh_credentials".format(type(self).__name__)
+        )
+
     def buildserver_credentials(self):
         return {
             'buildserver-user': None,
             'buildserver-token': None
         }
+
+    def set_buildserver_credentials(self, user, token):
+        raise NotImplementedError(
+            "{}.set_buildserver_credentials".format(type(self).__name__)
+        )
 
     def chef_credentials(self):
         return {
@@ -58,6 +78,11 @@ class CredsPlugin(PluggagePlugin):
             'chef_client_keyfile': None,
         }
 
+    def set_chef_credentials(self, server, username, keyfile, client_user=None, client_key=None):
+        raise NotImplementedError(
+            "{}.set_chef_credentials".format(type(self).__name__)
+        )
+
     def dockerhub_credentials(self):
         return {
             'username': None,
@@ -65,11 +90,22 @@ class CredsPlugin(PluggagePlugin):
             'password': None
         }
 
+    def set_dockerhub_credentials(self, email, user, password):
+        raise NotImplementedError(
+            "{}.set_dockerhub_credentials".format(type(self).__name__)
+        )
+
     def credential_methods(self):
         """
         helper to grab all the *_credentials methods on this class
         """
-        match = lambda x: inspect.ismethod(x) and x.__name__.endswith('_credentials')
+        def match(x):
+            result = (
+                inspect.ismethod(x) and
+                x.__name__.endswith('_credentials') and
+                not x.__name__.startswith('set')
+            )
+            return result
         return [x for x in inspect.getmembers(self, predicate=match)]
 
     def credential_map(self):
@@ -83,3 +119,7 @@ class CredsPlugin(PluggagePlugin):
         for m_name, m_func in self.credential_methods():
             result[m_name] = m_func()
         return result
+
+if __name__ == '__main__':
+    p = CredsPlugin()
+    print p.credential_map()

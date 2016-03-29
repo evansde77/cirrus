@@ -72,6 +72,30 @@ class Configuration(dict):
             plugin_name = 'default'
         self.credentials = get_creds_plugin(plugin_name)
 
+    def set_gitconfig_param(self, param, value, section='cirrus'):
+        """
+        helper to set params in users .gitconfig
+        """
+        self.gitconfig.set(section, param, value)
+
+    def get_gitconfig_param(self, param, section='cirrus'):
+        """helper to read values from users .gitconfig"""
+        return self.gitconfig.get(section, param)
+
+    def has_gitconfig_param(self, param, section='cirrus', validator=lambda x: x is not None):
+        """helper to check if a gitconfig param is set/present"""
+        if not param in self.list_gitconfig_params(section):
+            return False
+        return validator(self.gitconfig.get(section, param))
+
+    def list_gitconfig_params(self, section='cirrus'):
+        match = '{}.'.format(section)
+        lines = [
+            x.split(match, 1)[1] for x in self.gitconfig.list if x.startswith(match)
+        ]
+        result = [x.split('=', 1)[0].strip() for x in lines]
+        return result
+
     def has_section(self, section):
         return section in self
 
@@ -213,15 +237,12 @@ def get_github_auth():
     """
     _get_git_auth_
 
-    Pull in github auth user & token from gitconfig
-
-    DEPRECATED: use Configuration.credentials instead
+    Backwards compatibility accessor for github auth using
+    credential plugin
     """
-    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
-    config = gitconfig.config(gitconfig_file)
-    github_user = config.get('cirrus', 'github-user')
-    github_token = config.get('cirrus', 'github-token')
-    return github_user, github_token
+    c = load_configuration()
+    r = c.credentials.get_github_credentials()
+    return r['github_user'], r['github_token']
 
 
 def get_pypi_auth():
@@ -232,17 +253,14 @@ def get_pypi_auth():
     DEPRECATED: use Configuration.credentials instead
 
     """
-    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
-    config = gitconfig.config(gitconfig_file)
-    pypi_user = config.get('cirrus', 'pypi-user')
-    pypi_ssh_user = config.get('cirrus', 'pypi-ssh-user')
-    pypi_key = config.get('cirrus', 'pypi-ssh-key')
-    pypi_token = config.get('cirrus', 'pypi-token')
+    c = load_configuration()
+    pypi = c.credentials.get_pypi_credentials()
+    ssh = c.credentials.get_ssh_credentials()
     return {
-        'username': pypi_user,
-        'ssh_username': pypi_ssh_user,
-        'ssh_key': pypi_key,
-        'token': pypi_token
+        'username': pypi['username'],
+        'ssh_username': ssh['ssh_username'],
+        'ssh_key': ssh['ssh_key'],
+        'token': pypi['token']
     }
 
 
@@ -254,10 +272,9 @@ def get_buildserver_auth():
     DEPRECATED: use Configuration.credentials instead
 
     """
-    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
-    config = gitconfig.config(gitconfig_file)
-    return (config.get('cirrus', 'buildserver-user'),
-            config.get('cirrus', 'buildserver-token'),)
+    c = load_configuration()
+    build = c.credentials.get_buildserver_credentials()
+    return build['buildserver-user'], build['buildserver-token']
 
 
 def get_chef_auth():
