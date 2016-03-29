@@ -12,7 +12,7 @@ conf = load_configuration()
 
 """
 import os
-import gitconfig
+from cirrus.gitconfig import load_gitconfig
 import subprocess
 import ConfigParser
 import pluggage.registry
@@ -62,39 +62,38 @@ class Configuration(dict):
                 )
         if self.gitconfig_file is None:
             self.gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
-        self.gitconfig = gitconfig.config(self.gitconfig_file)
+        self.gitconfig = load_gitconfig(self.gitconfig_file)
         self._load_creds_plugin()
 
     def _load_creds_plugin(self):
         """look up plugin pref fron gitconfig and load cred plugin"""
-        plugin_name = self.gitconfig.get('cirrus', 'credential-plugin')
+        plugin_name = self.gitconfig.get_param('cirrus', 'credential-plugin')
         if not plugin_name:
             plugin_name = 'default'
         self.credentials = get_creds_plugin(plugin_name)
+
+    def _set_creds_plugin(self, plugin):
+        self.set_gitconfig_param('credential-plugin', plugin)
+        self._load_creds_plugin()
 
     def set_gitconfig_param(self, param, value, section='cirrus'):
         """
         helper to set params in users .gitconfig
         """
-        self.gitconfig.set(section, param, value)
+        self.gitconfig.set_param(section, param, value)
 
     def get_gitconfig_param(self, param, section='cirrus'):
         """helper to read values from users .gitconfig"""
-        return self.gitconfig.get(section, param)
+        return self.gitconfig.get_param(section, param)
 
     def has_gitconfig_param(self, param, section='cirrus', validator=lambda x: x is not None):
         """helper to check if a gitconfig param is set/present"""
         if not param in self.list_gitconfig_params(section):
             return False
-        return validator(self.gitconfig.get(section, param))
+        return validator(self.gitconfig.get_param(section, param))
 
     def list_gitconfig_params(self, section='cirrus'):
-        match = '{}.'.format(section)
-        lines = [
-            x.split(match, 1)[1] for x in self.gitconfig.list if x.startswith(match)
-        ]
-        result = [x.split('=', 1)[0].strip() for x in lines]
-        return result
+        return self.gitconfig[section].keys()
 
     def has_section(self, section):
         return section in self
@@ -241,7 +240,7 @@ def get_github_auth():
     credential plugin
     """
     c = load_configuration()
-    r = c.credentials.get_github_credentials()
+    r = c.credentials.github_credentials()
     return r['github_user'], r['github_token']
 
 
@@ -254,8 +253,8 @@ def get_pypi_auth():
 
     """
     c = load_configuration()
-    pypi = c.credentials.get_pypi_credentials()
-    ssh = c.credentials.get_ssh_credentials()
+    pypi = c.credentials.pypi_credentials()
+    ssh = c.credentials.ssh_credentials()
     return {
         'username': pypi['username'],
         'ssh_username': ssh['ssh_username'],
@@ -273,7 +272,7 @@ def get_buildserver_auth():
 
     """
     c = load_configuration()
-    build = c.credentials.get_buildserver_credentials()
+    build = c.credentials.buildserver_credentials()
     return build['buildserver-user'], build['buildserver-token']
 
 
@@ -283,12 +282,12 @@ def get_chef_auth():
     DEPRECATED: use Configuration.credentials instead
 
     """
-    gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
-    config = gitconfig.config(gitconfig_file)
+    c = load_configuration()
+    chef = c.credentials.chef_credentials()
     return {
-        'chef_server': config.get('cirrus', 'chef-server'),
-        'chef_username': config.get('cirrus', 'chef-username'),
-        'chef_keyfile': config.get('cirrus', 'chef-keyfile'),
-        'chef_client_user': config.get('cirrus', 'chef-client-user'),
-        'chef_client_keyfile': config.get('cirrus', 'chef-client-keyfile')
+        'chef_server':  chef['chef-server'],
+        'chef_username': chef['chef-username'],
+        'chef_keyfile': chef['chef-keyfile'],
+        'chef_client_user': chef['chef-client-user'],
+        'chef_client_keyfile': chef['chef-client-keyfile']
     }

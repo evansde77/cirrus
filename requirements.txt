@@ -11,6 +11,5 @@ requests==2.3.0
 PyChef==0.2.3
 keyring==8.5.1
 virtualenv
-gitconfig==0.0.6
 pluggage
 dockerstache>=0.0.9

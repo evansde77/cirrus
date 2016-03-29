@@ -51,7 +51,7 @@ def ask_question(question, default=None, valid=None):
     return result
 
 
-def create_github_token(git_config):
+def create_github_token():
     """
     _create_github_token_
 
@@ -116,6 +116,26 @@ def request_pypi_credentials():
     token = getpass.getpass('what is your pypi token/password?')
     result['username'] = user
     result['token'] = token
+    return result
+
+
+def request_ssh_credentials():
+    """
+    prompt the user to provide ssh credentials if not present
+
+    """
+    result = {'username': None, 'keyfile': None}
+
+    user = ask_question(
+        'what is your ssh username?',
+        default=os.environ['USER']
+    )
+    keyfile = ask_question(
+        'what is your ssh key location?',
+        default=os.path.join(os.environ['HOME'], '.ssh', 'id_rsa')
+    )
+    result['username'] = user
+    result['keyfile'] = keyfile
     return result
 
 
@@ -187,7 +207,7 @@ def build_parser(argslist):
         '--credential-plugin', '-c',
         dest='cred_plugin',
         help='Credential plugin manager to use',
-        default='default',
+        default=None,
     )
     opts = parser.parse_args(argslist)
     return opts
@@ -200,7 +220,42 @@ def main():
     Execute selfsetup command
     """
     opts = build_parser(sys.argv)
-    print opts
+    config = load_configuration()
+    if opts.cred_plugin is not None:
+        config._set_creds_plugin(opts.cred_plugin)
+
+    gh_creds = config.credentials.get_github_credentials()
+    if gh_creds['github_user'] is None:
+        values = create_github_token()
+        config.credentials.set_github_credentials(
+            values['github_user'], values['github_token']
+        )
+
+    pypi_creds = config.credentials.get_pypi_credentials()
+    if pypi_creds['username'] is None:
+        values = request_pypi_credentials()
+        config.credentials.set_pypi_credentials(
+            values['username'], values['token']
+        )
+    ssh_creds = config.credentials.get_ssh_credentials()
+    if ssh_creds['ssh_username'] is None:
+        values = request_ssh_credentials()
+        config.credentials.set_ssh_credentials(values['username'], values['keyfile'])
+
+    build_creds = config.credentials.get_buildserver_credentials()
+    if build_creds['buildserver-user'] is None:
+        values = request_buildserver_credentials()
+        config.credentials.set_buildserver_credentials(
+            values['username'], values['token']
+        )
+
+    docker_creds = config.credentials.get_dockerhub_credentials()
+    if docker_creds['username'] is None:
+        values = request_docker_credentials()
+        config.credentials.set_buildserver_credentials(
+            values['email'], values['username'], values['token']
+        )
+
 
 
 if __name__ == '__main__':
