@@ -4,20 +4,16 @@ selfsetup command to prompt for/configure cirrus post install
 """
 import os
 import sys
+import json
+import getpass
+import requests
+
 from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration, get_creds_plugin
 from cirrus.logger import get_logger
 
 LOGGER = get_logger()
-
-import os
-import sys
-import json
-import getpass
-import requests
-
-
 GITHUB_AUTH_URL = "https://api.github.com/authorizations"
 
 
@@ -26,6 +22,10 @@ def ask_question(question, default=None, valid=None):
     _ask_question_
 
     Ask a question on stdin
+
+    :param question: text to pose a question to the user on the command line
+    :param default: Default arg that can be accepted by hitting enter
+    :param valid: iterable/sequence of acceptable answers to test against
 
     """
     to_ask = "{0}".format(question)
@@ -39,14 +39,14 @@ def ask_question(question, default=None, valid=None):
             result = default
         else:
             msg = "No response provided for question"
-            print msg
+            LOGGER.error(msg)
             raise RuntimeError(msg)
     if valid is not None:
         if result not in valid:
             msg = "Invalid input: {0} must be one of {1}".format(
                 result, valid
             )
-            print msg
+            LOGGER.error(msg)
             raise RuntimeError(msg)
     return result
 
@@ -68,7 +68,10 @@ def create_github_token():
 
     """
     oauth_note = "cirrus script"
-    user = ask_question('what is your github username?', default=os.environ['USER'])
+    user = ask_question(
+        'what is your github username?',
+        default=os.environ['USER']
+    )
     passwd = getpass.getpass('what is your github password?')
     resp = requests.get(GITHUB_AUTH_URL, auth=(user, passwd))
     resp.raise_for_status()
@@ -77,16 +80,18 @@ def create_github_token():
     for app in apps:
         if app['app']['name'] == oauth_note:
             matched_app = app
-            print "Token found for cirrus script... reusing it..."
+            LOGGER.info("Token found for cirrus script... reusing it...")
             break
 
     if matched_app is None:
         # need to create a new token
-        print "Creating a new Token for github access..."
+        LOGGER.info("Creating a new Token for github access...")
         resp = requests.post(
             GITHUB_AUTH_URL,
             auth=(user, passwd),
-            data=json.dumps({"scopes": ["gist", "repo"], "note": oauth_note})
+            data=json.dumps(
+                {"scopes": ["gist", "repo"], "note": oauth_note}
+                )
             )
         resp.raise_for_status()
         matched_app = resp.json()
@@ -176,7 +181,10 @@ def request_buildserver_credentials():
     result = {'user': None, 'token': None}
 
     buildserver = ask_question(
-        'Are you triggering releases with a remote buildserver, eg Jenkins [y/N]?',
+        (
+            'Are you triggering releases with a '
+            'remote buildserver, eg Jenkins [y/N]?'
+        ),
         default='n'
         )
     if 'n' in buildserver.lower():
@@ -240,7 +248,9 @@ def main():
     ssh_creds = config.credentials.get_ssh_credentials()
     if ssh_creds['ssh_username'] is None:
         values = request_ssh_credentials()
-        config.credentials.set_ssh_credentials(values['username'], values['keyfile'])
+        config.credentials.set_ssh_credentials(
+            values['username'], values['keyfile']
+        )
 
     build_creds = config.credentials.get_buildserver_credentials()
     if build_creds['buildserver-user'] is None:
@@ -257,7 +267,5 @@ def main():
         )
 
 
-
 if __name__ == '__main__':
     main()
-
