@@ -41,6 +41,8 @@ class ConfigurationTests(unittest.TestCase):
         with open(self.gitconfig, 'w') as handle:
             gitconf.write(handle)
 
+        self.gitconf_str = "cirrus.credential-plugin=default"
+
         self.patcher = mock.patch('cirrus.plugins.creds.default.os')
         default_os = self.patcher.start()
         default_os.path = mock.Mock()
@@ -53,9 +55,11 @@ class ConfigurationTests(unittest.TestCase):
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
 
-    def test_reading(self):
+    @mock.patch('cirrus.gitconfig.shell_command')
+    def test_reading(self, mock_shell):
         """test config load """
         #test read and accessors
+        mock_shell.return_value = self.gitconf_str
         config = load_configuration(package_dir=self.dir, gitconfig_file=self.gitconfig)
         self.assertEqual(config.package_version(), '1.2.3')
         self.assertEqual(config.package_name(), 'cirrus_tests')
@@ -76,19 +80,25 @@ class ConfigurationTests(unittest.TestCase):
         config2 = load_configuration(package_dir=self.dir)
         self.assertEqual(config2.package_version(), '1.2.4')
 
+    @mock.patch('cirrus.gitconfig.shell_command')
     @mock.patch('cirrus.configuration.subprocess.Popen')
-    def test_reading_missing(self, mock_pop):
+    def test_reading_missing(self, mock_pop, mock_shell):
         """test config load using repo dir"""
         mock_result = mock.Mock()
         mock_result.communicate = mock.Mock()
         mock_result.communicate.return_value = (self.dir, None)
         mock_pop.return_value = mock_result
+        mock_shell.return_value = self.gitconf_str
         config = load_configuration(package_dir="womp")
 
         self.failUnless(mock_result.communicate.called)
         mock_pop.assert_has_calls(mock.call(['git', 'rev-parse', '--show-toplevel'], stdout=-1))
         self.assertEqual(config.package_version(), '1.2.3')
         self.assertEqual(config.package_name(), 'cirrus_tests')
+        self.failUnless(mock_shell.called)
+        mock_shell.assert_has_calls([
+            mock.call('git config --file {} -l'.format(self.gitconfig))
+        ])
 
     def test_configuration_map(self):
         """test building config mapping"""

@@ -50,13 +50,19 @@ class CirrusConfigurationHarness(object):
     TODO: better location for this, plus maybe combine with
        generating the cirrus config file
     """
-    def __init__(self, module_symbol, config_file, **settings):
+    def __init__(self, module_symbol, config_file, gitconf_content=None, **settings):
         self.module_symbol = module_symbol
         self.config_file = config_file
+        self.gitconf_str = gitconf_content
+        if self.gitconf_str is None:
+            self.gitconf_str = "cirrus.credential-plugin=default"
 
     def setUp(self):
         self.mock_config = mock.patch(self.module_symbol)
         self.load_mock = self.mock_config.start()
+        self.patch_gitconfig = mock.patch('cirrus.gitconfig.shell_command')
+        self.mock_gitconfig = self.patch_gitconfig.start()
+        self.mock_gitconfig.return_value = self.gitconf_str
         self.config = Configuration(self.config_file)
         self.config.load()
         self.load_mock.return_value = self.config
