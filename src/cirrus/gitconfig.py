@@ -128,7 +128,7 @@ class GitConfig(dict):
 
     def add_section(self, section):
         """add a new section, returns section instance"""
-        self.setdefault('section', {})
+        self.setdefault(section, {})
         return self[section]
 
     def set_param(self, section, param, value):

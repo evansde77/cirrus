@@ -160,7 +160,6 @@ def request_docker_credentials(auto_yes=False):
         'what is your docker repo username?',
         default=os.environ['USER']
     )
-    result['user'] = user
     email = ask_question(
         'what is your docker repo email?',
         default=None
@@ -229,6 +228,12 @@ def main():
     """
     opts = build_parser(sys.argv)
     config = load_configuration()
+
+    # make sure gitconfig has a cirrus section
+    if 'cirrus' not in config.gitconfig.sections:
+        config.gitconfig.add_section('cirrus')
+
+    # make sure the creds plugin value is set
     if opts.cred_plugin is not None:
         config._set_creds_plugin(opts.cred_plugin)
 
