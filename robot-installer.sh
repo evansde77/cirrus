@@ -72,7 +72,7 @@ ls -al .
 
 cd cirrus
 # bootstrap virtualenv
-virtualenv --distribute venv
+virtualenv  venv
 . venv/bin/activate
 pip install -r requirements.txt 1>> ${LOCATION}/install.log
 
