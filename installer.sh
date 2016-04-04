@@ -25,7 +25,7 @@ git clone ${CIRRUS_REPO} cirrus 1>> ${LOCATION}/install.log
 
 cd cirrus
 # bootstrap virtualenv
-virtualenv --distribute venv
+virtualenv venv
 . venv/bin/activate
 pip install -r requirements.txt 1>> ${LOCATION}/install.log
 
