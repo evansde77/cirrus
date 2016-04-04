@@ -10,6 +10,16 @@ import os
 import cirrus
 import inspect
 import posixpath
+import subprocess
+
+
+def repo_directory():
+    command = ['git', 'rev-parse', '--show-toplevel']
+    process = subprocess.Popen(command, stdout=subprocess.PIPE)
+    outp, err = process.communicate()
+    if process.returncode:
+        return None
+    return outp.strip()
 
 
 def cirrus_home():
@@ -24,10 +34,19 @@ def cirrus_home():
         return os.environ['CIRRUS_HOME']
     
     home = inspect.getsourcefile(cirrus)
-    # from the cirrus init py in the venv, we need to
-    # move up 5 dirs to get the install directory
-    for i in range(6): 
-        home = os.path.dirname(home)
+    if 'venv' in home and 'site-packages' in home:
+        # we are in a pip installed virtualenv site-packages
+        # from the cirrus init py in the venv, we need to
+        # move up 5 dirs to get the install directory
+        for i in range(6): 
+            home = os.path.dirname(home)
+    else:
+        # we are in a local git repo
+        #
+        home = repo_directory()
+        if home is None:
+            msg = "Unable to determine cirrus install location"
+            raise RuntimeError(msg)
     os.environ['CIRRUS_HOME'] = home
     return os.environ['CIRRUS_HOME']
 

@@ -49,7 +49,7 @@ class EnvironmentFunctionTests(unittest.TestCase):
         del os.environ['VIRTUALENV_HOME']
 
         home2 = virtualenv_home()
-        self.assertEqual(home2, 'TESTVALUE/cirrus/venv')
+        self.assertEqual(home2, 'TESTVALUE/venv')
 
 
 if __name__ == '__main__':

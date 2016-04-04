@@ -86,6 +86,7 @@ class ConfigurationTests(unittest.TestCase):
         """test config load using repo dir"""
         mock_result = mock.Mock()
         mock_result.communicate = mock.Mock()
+        mock_result.returncode = 0
         mock_result.communicate.return_value = (self.dir, None)
         mock_pop.return_value = mock_result
         mock_shell.return_value = self.gitconf_str
