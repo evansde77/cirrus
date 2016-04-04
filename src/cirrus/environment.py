@@ -22,12 +22,12 @@ def cirrus_home():
     """
     if os.environ.get('CIRRUS_HOME') is not None:
         return os.environ['CIRRUS_HOME']
-
-    cirrus_init_py = inspect.getsourcefile(cirrus)
-    python_base = os.path.dirname(cirrus_init_py)
-    src_dir = os.path.dirname(python_base)
-    repo_dir = os.path.dirname(src_dir)
-    home = os.path.dirname(repo_dir)
+    
+    home = inspect.getsourcefile(cirrus)
+    # from the cirrus init py in the venv, we need to
+    # move up 5 dirs to get the install directory
+    for i in range(6): 
+        home = os.path.dirname(home)
     os.environ['CIRRUS_HOME'] = home
     return os.environ['CIRRUS_HOME']
 
@@ -42,5 +42,5 @@ def virtualenv_home():
     if os.environ.get('VIRTUALENV_HOME') is not None:
         return os.environ['VIRTUALENV_HOME']
     home = cirrus_home()
-    venv = posixpath.join(home, 'cirrus', 'venv')
+    venv = posixpath.join(home, 'venv')
     return venv

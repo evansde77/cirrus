@@ -1,6 +1,5 @@
 argparse==1.2.1
 arrow==0.4.2
-distribute==0.7.3
 Fabric==1.9.0
 GitPython==0.3.5
 mock==1.0.1
