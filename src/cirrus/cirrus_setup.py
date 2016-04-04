@@ -10,7 +10,7 @@ import requests
 
 from argparse import ArgumentParser
 
-from cirrus.configuration import load_configuration, get_creds_plugin
+from cirrus.configuration import load_setup_configuration, get_creds_plugin
 from cirrus.logger import get_logger
 
 LOGGER = get_logger()
@@ -149,7 +149,7 @@ def request_docker_credentials(auto_yes=False):
     prompt the user for docker credentials
 
     """
-    result = {'user': None, 'token': None, 'email': None}
+    result = {'username': None, 'token': None, 'email': None}
     use_docker = ask_question(
         'Are you building and uploading docker images? [y/N]?',
         default='n'
@@ -166,7 +166,7 @@ def request_docker_credentials(auto_yes=False):
     )
     token = getpass.getpass('what is your docker registry token/password?')
     result['email'] = email
-    result['user'] = user
+    result['username'] = user
     result['token'] = token
     return result
 
@@ -177,7 +177,7 @@ def request_buildserver_credentials():
     prompt the user to provide buildserver credentials if not present
 
     """
-    result = {'user': None, 'token': None}
+    result = {'username': None, 'token': None}
 
     buildserver = ask_question(
         (
@@ -194,7 +194,7 @@ def request_buildserver_credentials():
         default=os.environ['USER']
     )
     token = getpass.getpass('what is your buildserver token/password?')
-    result['user'] = user
+    result['username'] = user
     result['token'] = token
     return result
 
@@ -226,48 +226,53 @@ def main():
 
     Execute selfsetup command
     """
-    opts = build_parser(sys.argv)
-    config = load_configuration()
+    opts = build_parser(sys.argv[1:])
+    config = load_setup_configuration()
 
     # make sure gitconfig has a cirrus section
     if 'cirrus' not in config.gitconfig.sections:
         config.gitconfig.add_section('cirrus')
+    config.gitconfig.set_param(
+        'alias',
+        'cirrus',
+        '! {0}/bin/cirrus'.format(os.environ['VIRTUALENV_HOME'])
+    )
 
     # make sure the creds plugin value is set
     if opts.cred_plugin is not None:
         config._set_creds_plugin(opts.cred_plugin)
 
-    gh_creds = config.credentials.get_github_credentials()
+    gh_creds = config.credentials.github_credentials()
     if gh_creds['github_user'] is None:
         values = create_github_token()
         config.credentials.set_github_credentials(
-            values['github_user'], values['github_token']
+            values['github-user'], values['github-token']
         )
 
-    pypi_creds = config.credentials.get_pypi_credentials()
+    pypi_creds = config.credentials.pypi_credentials()
     if pypi_creds['username'] is None:
         values = request_pypi_credentials()
         config.credentials.set_pypi_credentials(
             values['username'], values['token']
         )
-    ssh_creds = config.credentials.get_ssh_credentials()
+    ssh_creds = config.credentials.ssh_credentials()
     if ssh_creds['ssh_username'] is None:
         values = request_ssh_credentials()
         config.credentials.set_ssh_credentials(
             values['username'], values['keyfile']
         )
 
-    build_creds = config.credentials.get_buildserver_credentials()
+    build_creds = config.credentials.buildserver_credentials()
     if build_creds['buildserver-user'] is None:
         values = request_buildserver_credentials()
         config.credentials.set_buildserver_credentials(
             values['username'], values['token']
         )
 
-    docker_creds = config.credentials.get_dockerhub_credentials()
+    docker_creds = config.credentials.dockerhub_credentials()
     if docker_creds['username'] is None:
         values = request_docker_credentials()
-        config.credentials.set_buildserver_credentials(
+        config.credentials.set_dockerhub_credentials(
             values['email'], values['username'], values['token']
         )
 

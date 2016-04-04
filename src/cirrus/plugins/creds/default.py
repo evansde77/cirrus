@@ -107,12 +107,12 @@ class Default(CredsPlugin):
 
     def dockerhub_credentials(self):
         return {
-            'username': self.config.get_param('cirrus', 'docker_login_username'),
-            'email': self.config.get_param('cirrus', 'docker_login_email'),
-            'password': self.config.get_param('cirrus', 'docker_login_password')
+            'username': self.config.get_param('cirrus', 'docker-login-username'),
+            'email': self.config.get_param('cirrus', 'docker-login-email'),
+            'password': self.config.get_param('cirrus', 'docker-login-password')
         }
 
     def set_dockerhub_credentials(self, email, user, password):
-        self.config.set_param('cirrus', 'docker_login_username', user)
-        self.config.set_param('cirrus', 'docker_login_email', email)
-        self.config.set_param('cirrus', 'docker_login_password', password)
+        self.config.set_param('cirrus', 'docker-login-username', user)
+        self.config.set_param('cirrus', 'docker-login-email', email)
+        self.config.set_param('cirrus', 'docker-login-password', password)
