@@ -128,7 +128,8 @@ class GitConfig(dict):
 
     def add_section(self, section):
         """add a new section, returns section instance"""
-        self.setdefault(section, {})
+        self.set_param(section, 'cirrus-section-init-xyz', 'xyz')
+        self.parse()
         return self[section]
 
     def set_param(self, section, param, value):

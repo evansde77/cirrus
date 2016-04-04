@@ -65,6 +65,13 @@ class Configuration(dict):
         self.gitconfig = load_gitconfig(self.gitconfig_file)
         self._load_creds_plugin()
 
+    def setup_load(self):
+        if self.gitconfig_file is None:
+            self.gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+        self.gitconfig = load_gitconfig(self.gitconfig_file)
+        self.gitconfig.add_section('cirrus')
+        self._load_creds_plugin()
+
     def _load_creds_plugin(self):
         """look up plugin pref fron gitconfig and load cred plugin"""
         plugin_name = self.gitconfig.get_param('cirrus', 'credential-plugin')
@@ -229,6 +236,22 @@ def load_configuration(package_dir=None, gitconfig_file=None):
 
     config_instance = Configuration(config_path, gitconfig_file=gitconfig_file)
     config_instance.load()
+    return config_instance
+
+
+def load_setup_configuration(package_dir=None, gitconfig_file=None):
+    """
+    _load_setup_configuration_
+
+    setup support for loading basic configuration objects to bootstrap cirrus
+
+    :param package_dir: Location of cirrus managed package if not pwd
+    :param gitconfig_file: Path to gitconfig if not ~/.gitconfig
+    :returns: Configuration instance
+
+    """
+    config_instance = Configuration(None, gitconfig_file=gitconfig_file)
+    config_instance.setup_load()
     return config_instance
 
 
