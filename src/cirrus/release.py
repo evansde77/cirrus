@@ -15,7 +15,7 @@ from fabric.operations import local
 import pluggage.registry
 
 from argparse import ArgumentParser
-from cirrus.configuration import load_configuration
+from cirrus.configuration import load_configuration, _repo_directory
 from cirrus.git_tools import build_release_notes
 from cirrus.git_tools import has_unstaged_changes
 from cirrus.git_tools import branch, checkout_and_pull
@@ -388,7 +388,7 @@ def new_release(opts):
     LOGGER.info('release branch is {0}'.format(branch_name))
 
     # need to be on the latest develop
-    repo_dir = os.getcwd()
+    repo_dir = _repo_directory()
     # make sure the branch doesnt already exist on remote
     if remote_branch_exists(repo_dir, branch_name):
         msg = (

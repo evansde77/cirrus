@@ -4,11 +4,12 @@ tests for github_tools
 import json
 import mock
 import unittest
+import subprocess
 
 from cirrus.github_tools import create_pull_request
 from cirrus.github_tools import current_branch_mark_status
 from cirrus.github_tools import get_releases
-
+from .harnesses import _repo_directory
 
 class GithubToolsTest(unittest.TestCase):
     """
@@ -110,7 +111,7 @@ class GithubToolsTest(unittest.TestCase):
         mock_config_load.organisation_name.return_value = self.owner
         mock_config_load.package_name.return_value = self.repo
 
-        current_branch_mark_status(".", "success")
+        current_branch_mark_status(_repo_directory(), "success")
 
         self.failUnless(mock_post.called)
 
