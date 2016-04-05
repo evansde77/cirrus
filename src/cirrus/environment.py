@@ -34,7 +34,7 @@ def cirrus_home():
         return os.environ['CIRRUS_HOME']
     
     home = inspect.getsourcefile(cirrus)
-    if 'venv' in home and 'site-packages' in home:
+    if ('venv' in home) and ('site-packages' in home):
         # we are in a pip installed virtualenv site-packages
         # from the cirrus init py in the venv, we need to
         # move up 5 dirs to get the install directory
@@ -48,7 +48,7 @@ def cirrus_home():
             msg = "Unable to determine cirrus install location"
             raise RuntimeError(msg)
     os.environ['CIRRUS_HOME'] = home
-    return os.environ['CIRRUS_HOME']
+    return home
 
 def virtualenv_home():
     """
