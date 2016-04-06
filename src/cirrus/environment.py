@@ -16,14 +16,14 @@ import subprocess
 #
 # number of subdirectories from cirrus/__init__.py
 # when installed in a venv under CIRRUS_HOME location
-NUMBER_OF_SUBDIRS=6
+NUMBER_OF_SUBDIRS = 6
 
 
 def repo_directory():
     """
-    helper method that extracts the current git repo directory 
-    using a callout to git rev-parse. 
-    If in a repo, this returns the path to the top level dir, 
+    helper method that extracts the current git repo directory
+    using a callout to git rev-parse.
+    If in a repo, this returns the path to the top level dir,
     if not, it returns None
     """
     command = ['git', 'rev-parse', '--show-toplevel']
@@ -44,13 +44,12 @@ def cirrus_home():
     """
     if os.environ.get('CIRRUS_HOME') is not None:
         return os.environ['CIRRUS_HOME']
-    
     home = inspect.getsourcefile(cirrus)
     if ('lib' in home) and ('site-packages' in home):
         # we are in a pip installed virtualenv site-packages
         # from the cirrus init py in the venv, we need to
         # move up 5 dirs to get the install directory
-        for _ in range(NUMBER_OF_SUBDIRS): 
+        for _ in range(NUMBER_OF_SUBDIRS):
             home = os.path.dirname(home)
     else:
         # we are in a local git repo
@@ -61,6 +60,7 @@ def cirrus_home():
             raise RuntimeError(msg)
     os.environ['CIRRUS_HOME'] = home
     return home
+
 
 def virtualenv_home():
     """

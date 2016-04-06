@@ -19,7 +19,6 @@ import ConfigParser
 import pluggage.registry
 
 
-
 def get_creds_plugin(plugin_name):
     """
     _get_creds_plugin_
@@ -95,7 +94,9 @@ class Configuration(dict):
         """helper to read values from users .gitconfig"""
         return self.gitconfig.get_param(section, param)
 
-    def has_gitconfig_param(self, param, section='cirrus', validator=lambda x: x is not None):
+    def has_gitconfig_param(
+            self, param, section='cirrus', validator=lambda x: x is not None
+            ):
         """helper to check if a gitconfig param is set/present"""
         if not param in self.list_gitconfig_params(section):
             return False

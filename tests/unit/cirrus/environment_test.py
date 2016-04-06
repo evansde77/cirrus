@@ -7,7 +7,7 @@ unittests for cirrus.environment module
 import os
 import copy
 import unittest
-import mock 
+import mock
 import tempfile
 
 from cirrus.environment import cirrus_home
@@ -22,17 +22,17 @@ class EnvironmentFunctionTests(unittest.TestCase):
     def setUp(self):
         """save/mock the os.environ settings"""
         self.cirrus_home = copy.deepcopy(os.environ.get('CIRRUS_HOME'))
-        self.venv_home =  copy.deepcopy(os.environ.get('VIRTUALENV_HOME'))
+        self.venv_home = copy.deepcopy(os.environ.get('VIRTUALENV_HOME'))
         os.environ['CIRRUS_HOME'] = "TESTVALUE"
         os.environ['VIRTUALENV_HOME'] = "TESTVALUE"
-       
+
     def tearDown(self):
         """reset env vars"""
-        if  self.cirrus_home is not None:
+        if self.cirrus_home is not None:
             os.environ['CIRRUS_HOME'] = self.cirrus_home
         if self.venv_home is not None:
             os.environ['VIRTUALENV_HOME'] = self.venv_home
-       
+
     def test_cirrus_home(self):
         """test cirrus home function"""
 
@@ -59,10 +59,10 @@ class CleanEnvironmentTests(unittest.TestCase):
         """save/mock the os.environ settings"""
         self.dir = tempfile.mkdtemp()
         self.venv_dir = os.path.join(
-            self.dir, 'venv', 'lib', 'python2.7', 
+            self.dir, 'venv', 'lib', 'python2.7',
             'site-packages', 'cirrus', '__init__.py'
             )
-        self.venv_dir_2 =  os.path.join(
+        self.venv_dir_2 = os.path.join(
             self.dir, 'venv', 'cirrus', '__init__.py'
             )
 
@@ -97,7 +97,7 @@ class CleanEnvironmentTests(unittest.TestCase):
         mock_env.__getitem__ = mock.Mock()
         mock_env.__getitem__.return_value = self.dir
         mock_env.__setitem__ = mock.Mock()
-        mock_srcfile.return_value = self.venv_dir_2 
+        mock_srcfile.return_value = self.venv_dir_2
         mock_repo.return_value = None
         self.assertRaises(RuntimeError, cirrus_home)
         self.failUnless(not mock_env.__setitem__.called)
@@ -112,7 +112,7 @@ class CleanEnvironmentTests(unittest.TestCase):
         mock_env.__getitem__ = mock.Mock()
         mock_env.__getitem__.return_value = None
         mock_env.__setitem__ = mock.Mock()
-        mock_srcfile.return_value = self.venv_dir_2 
+        mock_srcfile.return_value = self.venv_dir_2
         mock_repo.return_value = os.path.dirname(self.venv_dir_2)
         self.assertEqual(cirrus_home(), os.path.dirname(self.venv_dir_2))
         self.failUnless(mock_repo.called)
@@ -121,5 +121,3 @@ class CleanEnvironmentTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
-
