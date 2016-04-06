@@ -15,7 +15,8 @@ from cirrus.release import artifact_name
 from cirrus.configuration import Configuration
 from pluggage.errors import FactoryError
 
-from harnesses import CirrusConfigurationHarness, write_cirrus_conf, _repo_directory
+from harnesses import CirrusConfigurationHarness, write_cirrus_conf
+
 
 class ReleaseNewCommandTest(unittest.TestCase):
     """

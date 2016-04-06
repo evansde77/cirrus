@@ -13,6 +13,7 @@ conf = load_configuration()
 """
 import os
 from cirrus.gitconfig import load_gitconfig
+from cirrus.environment import repo_directory
 import subprocess
 import ConfigParser
 import pluggage.registry
@@ -93,7 +94,9 @@ class Configuration(dict):
         """helper to read values from users .gitconfig"""
         return self.gitconfig.get_param(section, param)
 
-    def has_gitconfig_param(self, param, section='cirrus', validator=lambda x: x is not None):
+    def has_gitconfig_param(
+            self, param, section='cirrus', validator=lambda x: x is not None
+            ):
         """helper to check if a gitconfig param is set/present"""
         if not param in self.list_gitconfig_params(section):
             return False
@@ -202,13 +205,6 @@ class Configuration(dict):
         return result
 
 
-def _repo_directory():
-    command = ['git', 'rev-parse', '--show-toplevel']
-    process = subprocess.Popen(command, stdout=subprocess.PIPE)
-    outp, err = process.communicate()
-    return outp.strip()
-
-
 def load_configuration(package_dir=None, gitconfig_file=None):
     """
     _load_configuration_
@@ -227,8 +223,9 @@ def load_configuration(package_dir=None, gitconfig_file=None):
 
     config_path = os.path.join(dirname, 'cirrus.conf')
     if not os.path.exists(config_path):
-        repo_dir = _repo_directory()
-        config_path = os.path.join(repo_dir, 'cirrus.conf')
+        repo_dir = repo_directory()
+        if repo_dir is not None:
+            config_path = os.path.join(repo_dir, 'cirrus.conf')
 
     if not os.path.exists(config_path):
         msg = "Couldnt find ./cirrus.conf, are you in a package directory?"
