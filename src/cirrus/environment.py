@@ -13,7 +13,19 @@ import posixpath
 import subprocess
 
 
+#
+# number of subdirectories from cirrus/__init__.py
+# when installed in a venv under CIRRUS_HOME location
+NUMBER_OF_SUBDIRS=6
+
+
 def repo_directory():
+    """
+    helper method that extracts the current git repo directory 
+    using a callout to git rev-parse. 
+    If in a repo, this returns the path to the top level dir, 
+    if not, it returns None
+    """
     command = ['git', 'rev-parse', '--show-toplevel']
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
     outp, err = process.communicate()
@@ -34,11 +46,11 @@ def cirrus_home():
         return os.environ['CIRRUS_HOME']
     
     home = inspect.getsourcefile(cirrus)
-    if ('venv' in home) and ('site-packages' in home):
+    if ('lib' in home) and ('site-packages' in home):
         # we are in a pip installed virtualenv site-packages
         # from the cirrus init py in the venv, we need to
         # move up 5 dirs to get the install directory
-        for i in range(6): 
+        for _ in range(NUMBER_OF_SUBDIRS): 
             home = os.path.dirname(home)
     else:
         # we are in a local git repo
