@@ -13,7 +13,7 @@ import os
 import sys
 from argparse import ArgumentParser
 
-from cirrus.environment import cirrus_home
+from cirrus.environment import cirrus_home, virtualenv_home
 from cirrus.configuration import load_configuration, get_pypi_auth
 from cirrus.logger import get_logger
 from fabric.operations import local
@@ -82,7 +82,6 @@ def execute_build(opts):
     venv_bin_path = os.path.join(venv_path, 'bin', 'python')
     venv_command = os.path.join(
         cirrus_home(),
-        'cirrus',
         'venv',
         'bin',
         'virtualenv')
