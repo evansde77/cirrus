@@ -13,7 +13,7 @@ import os
 import sys
 from argparse import ArgumentParser
 
-from cirrus.environment import cirrus_home, virtualenv_home
+from cirrus.environment import cirrus_home
 from cirrus.configuration import load_configuration, get_pypi_auth
 from cirrus.logger import get_logger
 from fabric.operations import local
