@@ -12,7 +12,6 @@ import argparse
 import arrow
 import os
 import requests
-import json
 import inspect
 import contextlib
 
@@ -20,7 +19,7 @@ from fabric.operations import local
 
 import cirrus
 from cirrus.configuration import load_configuration
-from cirrus.environment import cirrus_home
+from cirrus.environment import cirrus_home, virtualenv_home
 from cirrus.github_tools import get_releases
 from cirrus.git_tools import update_to_branch, update_to_tag
 from cirrus.logger import get_logger
@@ -72,7 +71,7 @@ def build_parser(argslist):
         '--legacy-repo',
         help='Use the old, non pip update process',
         required=False,
-        destination='legacy_repo',
+        dest='legacy_repo',
         action='store_true',
         default=False,
     )
@@ -100,13 +99,19 @@ def latest_release(config):
 
     """
     releases = get_releases(config.organisation_name(), config.package_name())
-    tags = [ (release['tag_name'], release['published_at']) for release in releases  ]
+    tags = [(release['tag_name'], release['published_at']) for release in releases]
     sorted(tags, cmp=sort_by_date)
     most_recent_tag = tags[0][0]
     return most_recent_tag
 
+
 def latest_pypi_release():
-    curl https://pypi.python.org/pypi/cirrus-cli/json | jq .info.release_url
+    """grab latest release from pypi"""
+    resp = requests.get(PYPI_JSON_URL)
+    resp.raise_for_status()
+    content = resp.json()
+    latest = content['info']['version']
+    return latest
 
 
 def find_cirrus_install():
@@ -146,13 +151,14 @@ def setup_develop(config):
     return
 
 
-def pip_install(config, version):
+def pip_install(version):
     """pip install the version of cirrus requested"""
     pip_req = 'cirrus=={0}'.format(version)
+    venv_name = os.path.basename(virtualenv_home())
     LOGGER.info("running pip upgrade...")
     local(
         ' . ./{0}/bin/activate && pip install --upgrade {1}'.format(
-            config.venv_name(), pip_req
+            venv_name, pip_req
         )
     )
 
@@ -185,15 +191,14 @@ def pip_update(opts):
     """update pip installed cirrus"""
     install = cirrus_home()
     with chdir(install):
-        config = load_configuration()
         if opts.version is not None:
             tag = opts.version
             LOGGER.info("tag specified: {0}".format(tag))
         else:
             # should probably be a pip call now...
-            tag = latest_release(config)
+            tag = latest_pypi_release()
             LOGGER.info("Retrieved latest tag: {0}".format(tag))
-        pip_install(config, tag)
+        pip_install(tag)
 
 
 def main():
