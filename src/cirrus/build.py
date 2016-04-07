@@ -82,7 +82,6 @@ def execute_build(opts):
     venv_bin_path = os.path.join(venv_path, 'bin', 'python')
     venv_command = os.path.join(
         cirrus_home(),
-        'cirrus',
         'venv',
         'bin',
         'virtualenv')
