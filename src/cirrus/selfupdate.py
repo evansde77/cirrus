@@ -8,10 +8,11 @@ looking up the latest release and using that instead.
 
 """
 import sys
-import git
 import argparse
 import arrow
 import os
+import requests
+import json
 import inspect
 import contextlib
 
@@ -19,12 +20,14 @@ from fabric.operations import local
 
 import cirrus
 from cirrus.configuration import load_configuration
+from cirrus.environment import cirrus_home
 from cirrus.github_tools import get_releases
 from cirrus.git_tools import update_to_branch, update_to_tag
 from cirrus.logger import get_logger
 
 
 LOGGER = get_logger()
+PYPI_JSON_URL = "https://pypi.python.org/pypi/cirrus-cli/json"
 
 
 @contextlib.contextmanager
@@ -65,6 +68,14 @@ def build_parser(argslist):
         required=False,
         default=None,
     )
+    parser.add_argument(
+        '--legacy-repo',
+        help='Use the old, non pip update process',
+        required=False,
+        destination='legacy_repo',
+        action='store_true',
+        default=False,
+    )
 
     opts = parser.parse_args(argslist)
     return opts
@@ -93,6 +104,9 @@ def latest_release(config):
     sorted(tags, cmp=sort_by_date)
     most_recent_tag = tags[0][0]
     return most_recent_tag
+
+def latest_pypi_release():
+    curl https://pypi.python.org/pypi/cirrus-cli/json | jq .info.release_url
 
 
 def find_cirrus_install():
@@ -132,18 +146,21 @@ def setup_develop(config):
     return
 
 
-def main():
-    """
-    _main_
+def pip_install(config, version):
+    """pip install the version of cirrus requested"""
+    pip_req = 'cirrus=={0}'.format(version)
+    LOGGER.info("running pip upgrade...")
+    local(
+        ' . ./{0}/bin/activate && pip install --upgrade {1}'.format(
+            config.venv_name(), pip_req
+        )
+    )
 
-    parse command line opts and deduce wether to check out
-    a branch or tag, default behaviour is to look up latest
-    release on github and install that
 
-    """
+def legacy_update(opts):
+    """update repo installed cirrus"""
     install = find_cirrus_install()
     with chdir(install):
-        opts = build_parser(sys.argv)
         config = load_configuration()
 
         if opts.branch and opts.version:
@@ -162,6 +179,37 @@ def main():
             LOGGER.info("Retrieved latest tag: {0}".format(tag))
         update_to_tag(tag, config)
         setup_develop(config)
+
+
+def pip_update(opts):
+    """update pip installed cirrus"""
+    install = cirrus_home()
+    with chdir(install):
+        config = load_configuration()
+        if opts.version is not None:
+            tag = opts.version
+            LOGGER.info("tag specified: {0}".format(tag))
+        else:
+            # should probably be a pip call now...
+            tag = latest_release(config)
+            LOGGER.info("Retrieved latest tag: {0}".format(tag))
+        pip_install(config, tag)
+
+
+def main():
+    """
+    _main_
+
+    parse command line opts and deduce wether to check out
+    a branch or tag, default behaviour is to look up latest
+    release on github and install that
+
+    """
+    opts = build_parser(sys.argv)
+    if opts.legacy_repo:
+        legacy_update(opts)
+    else:
+        pip_update(opts)
     return
 
 if __name__ == '__main__':
