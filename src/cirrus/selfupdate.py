@@ -153,7 +153,7 @@ def setup_develop(config):
 
 def pip_install(version):
     """pip install the version of cirrus requested"""
-    pip_req = 'cirrus=={0}'.format(version)
+    pip_req = 'cirrus-cli=={0}'.format(version)
     venv_name = os.path.basename(virtualenv_home())
     LOGGER.info("running pip upgrade...")
     local(

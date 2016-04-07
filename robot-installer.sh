@@ -38,11 +38,6 @@ fi
 
 echo "Installing to: $INSTALL_DIR"
 DEFAULT_USER="${USER}"
-CIRRUS_TARFILE="${CIRRUS_VERSION}.tar.gz"
-CIRRUS_UNPACK_DIR="cirrus-${CIRRUS_VERSION}"
-CIRRUS_URL="https://github.com/evansde77/cirrus/archive/${CIRRUS_TARFILE}"
-
-
 LOCATION=${2:-$INSTALL_DIR}
 
 
@@ -56,30 +51,20 @@ mkdir -p $LOCATION
 echo "Installing cirrus to LOCATION=${LOCATION}" > ${LOCATION}/install.log
 cd $LOCATION
 
-if [ -f $CIRRUS_TARFILE ]; then
-    rm -rf $CIRRUS_TARFILE
-fi
-
-curl -LO $CIRRUS_URL
-tar -zxf $CIRRUS_TARFILE
 if [ -f "./cirrus" ]; then
     rm -rf ./cirrus
 fi
-ln -s ./${CIRRUS_UNPACK_DIR} ./cirrus
-
-ls -al .
-
 
 cd cirrus
 # bootstrap virtualenv
 virtualenv  venv
 . venv/bin/activate
-pip install -r requirements.txt 1>> ${LOCATION}/install.log
+pip install cirrus-cli==${CIRRUS_VERSION} 1>> ${LOCATION}/install.log
 
 # run installer
 export CIRRUS_HOME=$LOCATION/cirrus
 export VIRTUALENV_HOME=$LOCATION/cirrus/venv
-python bootstrap.py -y
-python setup.py develop  1>> ${LOCATION}/install.log
+selfsetup --robot --pypi-user=$PYPI_USERNAME --pypi-token=$PYPI_TOKEN
+
 
 

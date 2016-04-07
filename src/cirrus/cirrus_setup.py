@@ -216,32 +216,54 @@ def build_parser(argslist):
         help='Credential plugin manager to use',
         default=None,
     )
+    parser.add_argument(
+        '--robot', '-r',
+        dest='robot_mode',
+        action='store_true',
+        help='Non interactive robot mode installer',
+        default=False
+    )
+    parser.add_argument(
+        '--pypi-username',
+        default=None,
+        help='pypi username'
+    )
+    parser.add_argument(
+        '--pypi-token',
+        default=None,
+        help='pypi access token'
+    )
+    parser.add_argument(
+        '--github-token',
+        default=None,
+        help='github access token'
+    )
+    parser.add_argument(
+        '--github-username',
+        default=None,
+        help='github username'
+    )
+    parser.add_argument(
+        '--ssh-username',
+        default=None,
+        help='ssh username'
+    )
+    parser.add_argument(
+        '--ssh-keyfile',
+        default=None,
+        help='ssh keyfile path'
+    )
+
     opts = parser.parse_args(argslist)
     return opts
 
 
-def main():
+def interactive_setup(opts, config):
     """
-    _main_
+    interactive Q&A style config
 
-    Execute selfsetup command
     """
-    opts = build_parser(sys.argv[1:])
-    config = load_setup_configuration()
-
-    # make sure gitconfig has a cirrus section
-    if 'cirrus' not in config.gitconfig.sections:
-        config.gitconfig.add_section('cirrus')
-    config.gitconfig.set_param(
-        'alias',
-        'cirrus',
-        '! {0}/bin/cirrus'.format(os.environ['VIRTUALENV_HOME'])
-    )
-
-    # make sure the creds plugin value is set
-    if opts.cred_plugin is not None:
-        config._set_creds_plugin(opts.cred_plugin)
-
+    #TODO: Allow cli options if provided instead of prompting
     gh_creds = config.credentials.github_credentials()
     if gh_creds['github_user'] is None:
         values = create_github_token()
@@ -275,6 +297,53 @@ def main():
         config.credentials.set_dockerhub_credentials(
             values['email'], values['username'], values['token']
         )
+
+
+def robot_setup(opts, config):
+    """non interactive setup where creds are passed in as CLI opts"""
+    if opts.pypi_username:
+        config.credentials.set_pypi_credentials(
+            opts.pypi_username, opts.pypi_token
+        )
+    if opts.github_username:
+        config.credentials.set_github_credentials(
+            opts.github_username, opts.github_token
+        )
+    if opts.ssh_username:
+        config.credentials.set_ssh_credentials(
+            opts.ssh_username, opts.ssh_keyfile
+        )
+    #TODO: add remaining options
+    return
+
+
+def main():
+    """
+    _main_
+
+    Execute selfsetup command
+    """
+    opts = build_parser(sys.argv[1:])
+    config = load_setup_configuration()
+
+    # make sure gitconfig has a cirrus section
+    if 'cirrus' not in config.gitconfig.sections:
+        config.gitconfig.add_section('cirrus')
+    config.gitconfig.set_param(
+        'alias',
+        'cirrus',
+        '! {0}/bin/cirrus'.format(os.environ['VIRTUALENV_HOME'])
+    )
+
+    # make sure the creds plugin value is set
+    if opts.cred_plugin is not None:
+        config._set_creds_plugin(opts.cred_plugin)
+
+    if not opts.robot_mode:
+        interactive_setup(opts, config)
+    else:
+        robot_setup(opts, config)
+
 
 
 if __name__ == '__main__':

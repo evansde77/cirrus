@@ -20,19 +20,17 @@ mkdir -p $LOCATION
 
 echo "Installing cirrus to LOCATION=${LOCATION}" > ${LOCATION}/install.log
 cd $LOCATION
-# replace this with git clone of cirrus repo
-git clone ${CIRRUS_REPO} cirrus 1>> ${LOCATION}/install.log
 
-cd cirrus
 # bootstrap virtualenv
 virtualenv venv
 . venv/bin/activate
-pip install -r requirements.txt 1>> ${LOCATION}/install.log
+pip install cirrus-cli 1>> ${LOCATION}/install.log
 
-# run installer
-export CIRRUS_HOME=$LOCATION/cirrus
-export VIRTUALENV_HOME=$LOCATION/cirrus/venv
-python bootstrap.py
-python setup.py develop  1>> ${LOCATION}/install.log
+export CIRRUS_HOME=$LOCATION
+export VIRTUALENV_HOME=$LOCATION/venv
+selfsetup
+
+
+
 
 
