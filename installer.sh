@@ -21,7 +21,8 @@ fi
 virtualenv --version
 if [ $? -eq 127 ]; then
     echo "virtualenv binary not found, cannot proceed"
-    exi
+    exit 127
+fi
 
 read -p "Installation directory [${INSTALL_DIR}]: " LOCATION
 LOCATION=${LOCATION:-$INSTALL_DIR}
