@@ -12,3 +12,4 @@ keyring==8.5.1
 virtualenv
 pluggage
 dockerstache>=0.0.9
+pycrypto==2.6
