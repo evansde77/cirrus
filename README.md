@@ -5,6 +5,11 @@ python library build, test and devop like things assistant
 
 [![Build Status](https://travis-ci.org/evansde77/cirrus.svg?branch=develop)](https://travis-ci.org/evansde77/cirrus)
 
+Installation Prerequisites
+==========================
+
+* Cirrus requires python 2.7 (support for python 3 is in the pipeline) as well as pip and virtualenv installed. 
+* Git tools are heavily used, git is a requirement as cirrus is accessed via git command aliases. 
 
 Installation as a user:
 =======================
