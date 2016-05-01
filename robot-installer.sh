@@ -79,7 +79,6 @@ if [ -f "./cirrus" ]; then
     rm -rf ./cirrus
 fi
 
-cd cirrus
 # bootstrap virtualenv
 virtualenv  venv
 . venv/bin/activate

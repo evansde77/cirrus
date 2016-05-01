@@ -261,7 +261,7 @@ def build_parser(argslist):
     )
     parser.add_argument(
         '--docker-username',
-        defaul=None, 
+        default=None, 
         help='dockerhub username'
     )
     parser.add_argument(
