@@ -46,9 +46,9 @@ virtualenv venv
 . venv/bin/activate
 
 if [ "x$CUSTOM_PYPI_SERVER" == "x" ];then
-    pip install --index-url=${CUSTOM_PYPI_SERVER} ${CIRRUS_PIP_REQ} 1>> ${LOCATION}/install.log
+    pip install ${CIRRUS_PIP_REQ} 1>> ${LOCATION}/install.log    
 else
-    pip install ${CIRRUS_PIP_REQ} 1>> ${LOCATION}/install.log
+	pip install --index-url=${CUSTOM_PYPI_SERVER} ${CIRRUS_PIP_REQ} 1>> ${LOCATION}/install.log
 fi
 
 
