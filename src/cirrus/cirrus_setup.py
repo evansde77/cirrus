@@ -254,6 +254,32 @@ def build_parser(argslist):
         help='ssh keyfile path'
     )
 
+    parser.add_argument(
+        '--docker-email', 
+        default=None, 
+        help='dockerhub email address'
+    )
+    parser.add_argument(
+        '--docker-username',
+        default=None, 
+        help='dockerhub username'
+    )
+    parser.add_argument(
+        '--docker-token',
+        default=None, 
+        help='dockerhub access token'
+    )
+    parser.add_argument(
+        '--buildserver-username',
+        default=None, 
+        help='buildserver username'
+    )
+    parser.add_argument(
+        '--buildserver-token',
+        default=None, 
+        help='buildserver access token'
+    )
+
     opts = parser.parse_args(argslist)
     return opts
 
@@ -313,7 +339,14 @@ def robot_setup(opts, config):
         config.credentials.set_ssh_credentials(
             opts.ssh_username, opts.ssh_keyfile
         )
-    #TODO: add remaining options
+    if opts.docker_username:
+        config.credentials.set_dockerhub_credentials(
+            opts.docker_email, opts.docker_username, opts.docker_token
+        )
+    if opts.buildserver_username:
+        config.credentials.set_buildserver_credentials(
+            opts.buildserver_username, opts.buildserver_token
+        )
     return
 
 
