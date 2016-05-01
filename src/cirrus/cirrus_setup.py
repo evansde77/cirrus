@@ -339,7 +339,7 @@ def robot_setup(opts, config):
         config.credentials.set_ssh_credentials(
             opts.ssh_username, opts.ssh_keyfile
         )
-    if ops.docker_username:
+    if opts.docker_username:
         config.credentials.set_dockerhub_credentials(
             opts.docker_email, opts.docker_username, opts.docker_token
         )
