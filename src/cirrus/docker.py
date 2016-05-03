@@ -125,7 +125,8 @@ def build_parser():
         '--latest',
         action='store_true',
         dest='latest',
-        help='include the image tagged "latest" in the docker push command'
+        help='include the image tagged "latest" in the docker push command',
+        default=False
     )
 
     subparsers.add_parser('test', help='test docker connection')
