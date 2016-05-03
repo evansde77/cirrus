@@ -85,7 +85,7 @@ def build_parser():
         '--login',
         action='store_true',
         dest='login',
-        help='Perform docker login before command using settings in cirrus.conf',
+        help='perform docker login before command using settings in cirrus.conf',
         default=False
     )
     build_command.add_argument(
@@ -118,8 +118,14 @@ def build_parser():
         '--login',
         action='store_true',
         dest='login',
-        help='Perform docker login before command using settings in cirrus.conf',
+        help='perform docker login before command using settings in cirrus.conf',
         default=False
+    )
+    push_command.add_argument(
+        '--latest',
+        action='store_true',
+        dest='latest',
+        help='include the image tagged "latest" in the docker push command'
     )
 
     subparsers.add_parser('test', help='test docker connection')
@@ -271,15 +277,22 @@ def docker_push(opts, config):
     """
     helper = OptionHelper(opts, config)
     if helper['login']:
-        check = _docker_login(helper)
-        if not check:
+        if not _docker_login(helper):
             msg = "Unable to perform docker login due to missing cirrus conf entries"
             LOGGER.error(msg)
             sys.exit(1)
+
     tag = helper['tag']
     if tag is None:
         tag = tag_name(config)
-    _docker_push(tag)
+
+    push_tags = [tag]
+
+    if opts.latest:
+        push_tags.append(latest_tag_name(config))
+
+    for tag in push_tags:
+        _docker_push(tag)
 
 
 def is_docker_connected():
