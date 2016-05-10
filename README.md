@@ -15,8 +15,8 @@ Installation as a user:
 =======================
 
 ```bash
-curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/installer2.sh
-bash installer2.sh
+curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/installer.sh
+bash installer.sh
 ```
 
 The installer script will set up an install of cirrus for you in your home directory
@@ -33,6 +33,7 @@ pull requests made against develop, not master.
 
 ```bash
 git clone https://github.com/evansde77/cirrus.git
+cd cirrus
 git cirrus build
 ```
 
