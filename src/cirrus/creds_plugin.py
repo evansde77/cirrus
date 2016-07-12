@@ -95,6 +95,18 @@ class CredsPlugin(PluggagePlugin):
             "{}.set_dockerhub_credentials".format(type(self).__name__)
         )
 
+    def file_server_credentials(self):
+        return {
+            'file_server': None,
+            'file_server_username': None,
+            'file_server_keyfile': None
+        }
+
+    def set_file_server_credentials(self, server, username, keyfile):
+        raise NotImplementedError(
+            "{}.set_file_server_credentials".format(type(self).__name__)
+        )
+
     def credential_methods(self):
         """
         helper to grab all the *_credentials methods on this class

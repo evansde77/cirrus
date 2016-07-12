@@ -7,3 +7,4 @@ Release uploader plugins
 """
 import fabric_put
 import pypi
+import documentation
