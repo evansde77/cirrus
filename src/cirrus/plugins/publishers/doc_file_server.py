@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-_documentation_
+_doc_file_server_
 
 Publisher plugin that uses fabric to do a remote put
 
