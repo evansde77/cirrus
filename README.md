@@ -256,7 +256,76 @@ Deployer plugins live in [cirrus.plugins.deployers](https://github.com/evansde77
 Plugins:
 
  * [chef](https://github.com/evansde77/cirrus/blob/develop/src/cirrus/plugins/deployers/chef.py) - [docs](https://github.com/evansde77/cirrus/blob/develop/src/cirrus/plugins/deployers/chef.md)
- 
- 
 
 
+#### cirrus docs
+Command for publishing Sphinx documentation
+
+Usage:
+
+```bash
+git cirrus docs build
+git cirrus docs pack
+git cirrus docs publish
+```
+
+Options and config:
+
+1. `git cirrus docs build`: `--make <options>`
+    1. When run without `--make`, the default options `clean html` are used
+    2. Requires a `sphinx_makefile_dir` value set in the `doc` section of cirrus.conf.
+    3. `sphinx_makefile_dir` should point to the directory that contains Sphinx's Makefile.
+2. `git cirrus docs pack` requires the following options in cirrus.conf [doc] section:
+    * sphinx_doc_dir - should point to the directory where the documentation to be packaged is.
+        E.g. /docs/\_build/html
+    * artifact_dir - should point to the directory where the documentation artifact should be saved.
+3. `git cirrus docs publish` requires the following options in cirrus.conf [doc] section:
+    * publisher - the publisher plugin to use
+    1. The publisher selected should have a section in cirrus.conf which contains the publisher options. Available publisher plugins can be found in /cirrus/plugins/publishers
+        1. If using the `doc_file_server` plugin:
+            1. in cirrus.conf:
+                * doc_file_server_url - the URL of the server the documentation is uploaded to
+                * doc_file_server_upload_path - the path to the location on the server the documentation should be uploaded to
+                * doc_file_server_sudo - a value of True or False for if sudo should be used when issuing the Fabric `put` command
+                    _Note:_ Optional if doc_file_server_sudo is False
+            2. in the [cirrus] section of your .gitconfig:
+                * file-server-username - the username used for the documentation file server
+                * file-server-keyfile - the path the ssh keyfile to use when uploading the documentation
+        2. If using the `jenkins` plugin:
+            1. in cirrus.conf:
+                * url - the URL of the Jenkins server
+                * doc_job - the name of the Jenkins job for the documentation build
+                * doc_var - the variable name which the uploaded documentation tarball will be accessed by (Jenkins File Parameter)
+                * arc_var - the variable that will be used to name the file/folder the archive should be unpacked to as determined by the name of the archive filename. I.e. package-0.0.0.tar.gz => package-0.0.0 (Jenkins String Parameter)
+                * extra_vars - a list of dicts containing any other variables needed for the Jenkins job
+            2. in the [cirrus] section of your .gitconfig:
+                * buildserver-user - Jenkins username for authorization
+                * buildserver-token - token or password for authorization
+
+Example cirrus.conf:
+
+```ini
+[doc]
+sphinx_makefile_dir = ./docs/
+sphinx_doc_dir = ./docs/_build/html
+artifact_dir = ./docs/artifacts
+publisher = doc_file_server
+
+[doc_file_server]
+doc_file_server_url = http://localhost:8080
+doc_file_server_upload_path = /docs/package/archive
+doc_file_server_sudo = True
+```
+
+If using `publisher = jenkins`:
+
+```ini
+[jenkins]
+url = https://hostname
+doc_job = doc_build
+doc_var = artifact
+arc_var = ARCHIVE
+extra_vars = [
+    {'name': 'FOO', 'value': 'bar'}
+]
+```

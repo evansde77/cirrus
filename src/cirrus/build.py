@@ -13,6 +13,7 @@ import os
 import sys
 from argparse import ArgumentParser
 
+from cirrus.documentation_utils import build_docs
 from cirrus.environment import cirrus_home
 from cirrus.configuration import load_configuration, get_pypi_auth
 from cirrus.logger import get_logger
@@ -144,43 +145,6 @@ def execute_build(opts):
     local('. ./{0}/bin/activate && python setup.py develop'.format(venv_name))
 
 
-def build_docs(opts):
-    """
-    _build_docs_
-
-    Runs 'make' against a Sphinx makefile.
-    Requires the following cirrus.conf section:
-
-    [doc]
-    sphinx_makefile_dir = /path/to/makefile
-
-    : param argparse.Namspace opts: A Namespace of build options
-    """
-    LOGGER.info('Building docs')
-    config = load_configuration()
-    build_params = config.get('build', {})
-    venv_name = build_params.get('virtualenv_name', 'venv')
-
-    try:
-        docs_root = os.path.join(os.getcwd(),
-                                 config['doc']['sphinx_makefile_dir'])
-    except KeyError:
-        LOGGER.error('Did not find a complete [doc] section in cirrus.conf'
-                     '\nSee below for an example:'
-                     '\n[doc]'
-                     '\n;sphinx_makefile_dir = /path/to/sphinx')
-        sys.exit(1)
-
-    cmd = 'cd {} && make clean html'.format(docs_root)
-
-    if opts.docs:
-        # additional args were passed after --docs.  Pass these to make
-        cmd = 'cd {} && make {}'.format(docs_root, ' '.join(opts.docs))
-
-    local('. ./{}/bin/activate && {}'.format(venv_name, cmd))
-    LOGGER.info('Build command was "{}"'.format(cmd))
-
-
 def main():
     """
     _main_
@@ -191,7 +155,7 @@ def main():
     execute_build(opts)
 
     if opts.docs is not None:
-        build_docs(opts)
+        build_docs(make_opts=opts.docs)
 
 
 if __name__ == '__main__':

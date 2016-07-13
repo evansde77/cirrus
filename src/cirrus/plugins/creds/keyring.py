@@ -112,3 +112,13 @@ class Keyring(CredsPlugin):
         self.keyring.set_password(self.section, 'docker_login_username', user)
         self.keyring.set_password(self.section, 'docker_login_email', email)
         self.keyring.set_password(self.section, 'docker_login_password', password)
+
+    def file_server_credentials(self):
+        return {
+            'file_server_username': self.keyring.get_password(self.section, 'file-server-username'),
+            'file_server_keyfile': self.keyring.get_password(self.section, 'file-server-keyfile')
+        }
+
+    def set_file_server_credentials(self, username, keyfile):
+        self.keyring.set_password(self.section, 'file-server-username', username)
+        self.keyring.set_password(self.section, 'file-server-keyfile', keyfile)
