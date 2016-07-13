@@ -97,12 +97,11 @@ class CredsPlugin(PluggagePlugin):
 
     def file_server_credentials(self):
         return {
-            'file_server': None,
             'file_server_username': None,
             'file_server_keyfile': None
         }
 
-    def set_file_server_credentials(self, server, username, keyfile):
+    def set_file_server_credentials(self, username, keyfile):
         raise NotImplementedError(
             "{}.set_file_server_credentials".format(type(self).__name__)
         )

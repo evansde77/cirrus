@@ -1,4 +1,3 @@
-import json
 import requests
 from cirrus.configuration import get_buildserver_auth
 from cirrus.logger import get_logger

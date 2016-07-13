@@ -11,25 +11,23 @@ import sys
 import tarfile
 
 from fabric.operations import local
-from requests_toolbelt import MultipartEncoder
 import pluggage.registry
 
 from cirrus.configuration import load_configuration
 from cirrus.logger import get_logger
-from cirrus.plugins.jenkins import JenkinsClient
 
 LOGGER = get_logger()
 
 
-def get_plugin(plugin_name):
+def get_publisher_plugin(plugin_name):
     """
-    _get_plugin_
+    _get_publisher_plugin_
 
-    Get the deploy plugin requested from the factory
+    Get the publisher plugin requested from the factory
     """
     factory = pluggage.registry.get_factory(
-        'upload',
-        load_modules=['cirrus.plugins.uploaders']
+        'publish',
+        load_modules=['cirrus.plugins.publishers']
     )
     return factory(plugin_name)
 
@@ -70,13 +68,15 @@ def build_docs(make_opts=None):
     venv_name = build_params.get('virtualenv_name', 'venv')
 
     try:
-        docs_root = os.path.join(os.getcwd(),
-                                 config['doc']['sphinx_makefile_dir'])
+        docs_root = os.path.join(
+            os.getcwd(),
+            config['doc']['sphinx_makefile_dir'])
     except KeyError:
-        LOGGER.error('Did not find a complete [doc] section in cirrus.conf'
-                     '\nSee below for an example:'
-                     '\n[doc]'
-                     '\n;sphinx_makefile_dir = /path/to/sphinx')
+        LOGGER.error(
+            'Did not find a complete [doc] section in cirrus.conf'
+            '\nSee below for an example:'
+            '\n[doc]'
+            '\nsphinx_makefile_dir = /path/to/sphinx')
         sys.exit(1)
 
     cmd = 'cd {} && make clean html'.format(docs_root)
@@ -120,26 +120,21 @@ def build_doc_artifact():
     return artifact_name
 
 
-def upload_documentation(opts):
+def publish_documentation(opts):
     """
-    Upload Sphinx documentation to a remote server.
+    Publish Sphinx documentation.
 
     If a tarfile exists for the current program version, that file will
     be used. Otherwise, the documentation will be built and packaged
     before uploading.
 
-    The argparse.Namespace that calls this functions should have an
-    option named '--docs' which takes a list of arguments which specify
-    how the documentation should be built. If no arguments are provided,
-    that indicates the documentation artifact already exists for the
-    release version being uploaded or that the default arguments -
-    'clean html' - should be used to create the documentation.
-
-    Requires the following cirrus.conf section:
+    Requires the publish_method plugin to be specified in the cirrus.conf [doc]
+    section, and a section containing the required fields for the publisher
+    method, e.g:
     [doc]
-    upload_method = [file_server | jenkins]
+    publisher = file_server
 
-    :param argparse.Namspace opts: A Namespace of upload options
+    :param argparse.Namspace opts: A Namespace of publisher options
     """
     LOGGER.info("Preparing to upload documentation...")
     config = load_configuration()
@@ -151,36 +146,17 @@ def upload_documentation(opts):
         LOGGER.error(msg)
         raise RuntimeError(msg)
 
-    # make sure there is a valid upload method
-    if not doc_params.get('upload_method') \
-            or doc_params.get('upload_method') not in ['file_server', 'jenkins']:
-        msg = 'Unknown upload method {}! Cannot upload documentation'.format(
-            doc_params.get('upload_method')
-        )
-        LOGGER.error(msg)
-        raise RuntimeError(msg)
+    try:
+        publisher = doc_params['publisher']
+    except KeyError:
+        LOGGER.error(
+            'Did not find a publisher in [doc] section of cirrus.conf'
+            '\nSee below for an example:'
+            '\n[doc]'
+            '\npublisher = doc_file_server')
+        sys.exit(1)
 
-    if doc_params['upload_method'] == 'file_server':
-        # direct upload to a file server
-        _file_server_upload(opts, config, doc_artifact)
-
-    if doc_params['upload_method'] == 'jenkins':
-        # pass doc artifact to a Jenkins job
-        _jenkins_upload(opts, config, doc_artifact)
-
-
-def _file_server_upload(opts, config, doc_artifact):
-    """
-    upload doc artifact via fabric put to file server
-
-    .. warning:: If a file of the same name already exists in upload
-        directory it will be overwritten without warning
-
-    cirrus.conf [doc] section requires:
-    upload_method = file_server
-    file_server_upload_path = /path/to/upload/dir
-    """
-    plugin = get_plugin('file_server')
+    plugin = get_publisher_plugin(publisher)
 
     if opts.test:
         LOGGER.info(
@@ -190,99 +166,6 @@ def _file_server_upload(opts, config, doc_artifact):
             )
         )
         return
-    plugin.upload(opts, doc_artifact)
+
+    plugin.publish(opts, doc_artifact)
     return
-
-
-def _jenkins_upload(opts, config, doc_artifact):
-    """
-    pass the doc artifact to a Jenkins job. The actions performed by
-    the Jenkins job is up to the user to decide. Suggested use of the
-    Jenkins upload option is to pass the artifact to Jenkins, upload it
-    to a server and unpack the files so they can be served from a webpage.
-
-    Requires the following sections and values in cirrus.conf:
-
-    [doc]
-    upload_method = jenkins
-
-    [jenkins]
-    url = http://localhost:8080
-    doc_job = default
-    doc_var = archive
-    arc_var = ARCNAME
-    extra_vars = [
-        {"name": varname, "value": varvalue},
-        {"name": varname1, "value": varvalue1}
-    ]
-
-    .. note:: The doc_var is the location of the archive in the Jenkins
-        workspace. It must match whatever is in the section "File location"
-        in the Jenkins job configuration.
-
-    .. note:: arc_var is the variable that will be used to name the file/folder
-        the archive should be unpacked to as determined by the name of the
-        archive filename. I.e. package-0.0.0.tar.gz => package-0.0.0
-
-    .. note:: extra_vars is a list of dicts containing any other variables
-        necessary for the Jenkins build.
-    """
-    try:
-        jenkins_config = config['jenkins']
-    except KeyError:
-        msg = (
-            '[jenkins] section missing from cirrus.conf. '
-            'Please see below for an example.\n'
-            '\n [jenkins]'
-            '\n url = http://localhost:8080'
-            '\n doc_job = default'
-            '\n doc_var = archive'
-            '\n arc_var = ARCNAME'
-            '\n extra_vars = ['
-            '\n    {"name": varname, "value": varvalue},'
-            '\n    {"name": varname1, "value": varvalue1}'
-            '\n ]'
-        )
-        raise RuntimeError(msg)
-
-    filename = os.path.basename(doc_artifact)
-    build_params = {
-        "parameter": [
-            {"name": jenkins_config['doc_var'], "file": "file0"}
-        ]
-    }
-
-    if jenkins_config.get('arc_var'):
-        arcname = filename.rsplit('.', 2)[0]
-        build_params['parameter'].extend(
-            {"name": jenkins_config['arc_var'], "value": arcname}
-        )
-
-    if jenkins_config.get('extra_vars'):
-        build_params['parameter'].extend(jenkins_config['extra_vars'])
-
-    payload = MultipartEncoder(
-        fields={
-            "file0": (filename, open(filename, 'rb'), 'application/x-gzip'),
-            "json": json.dumps(build_params)
-        }
-    )
-
-    if opts.test:
-        LOGGER.info(
-            "Uploading {}-{}.tar.gz to Jenkins disabled by test or "
-            "option...".format(
-                config.package_name(), config.package_version()
-            )
-        )
-        return
-
-    client = JenkinsClient(jenkins_config['url'])
-
-    response = client.start_job_file_upload(jenkins_config['doc_job'], payload)
-
-    if response.status_code != 201:
-        LOGGER.error(response.text)
-        raise RuntimeError(
-            'Jenkins HTTP API returned code {}'.format(response.status_code)
-        )

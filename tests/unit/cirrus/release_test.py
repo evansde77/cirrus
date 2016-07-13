@@ -131,7 +131,6 @@ class ReleaseBuildCommandTest(unittest.TestCase):
             mock_os.path.exists.return_value = True
             mock_os.path.join = mock.Mock()
             mock_os.path.join.return_value = 'build_artifact'
-            mock_os.getcwd = mock.Mock(return_value='')
 
             opts = mock.Mock()
             result = build_release(opts)

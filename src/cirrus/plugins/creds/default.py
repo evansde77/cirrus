@@ -119,12 +119,10 @@ class Default(CredsPlugin):
 
     def file_server_credentials(self):
         return {
-            'file_server': self.config.get_param('cirrus', 'file-server'),
             'file_server_username': self.config.get_param('cirrus', 'file-server-username'),
             'file_server_keyfile': self.config.get_param('cirrus', 'file-server-keyfile')
         }
 
-    def set_file_server_credentials(self, server, username, keyfile):
-        self.config.set_param('cirrus', 'file-server', server)
+    def set_file_server_credentials(self, username, keyfile):
         self.config.set_param('cirrus', 'file-server-username', username)
         self.config.set_param('cirrus', 'file-server-keyfile', keyfile)

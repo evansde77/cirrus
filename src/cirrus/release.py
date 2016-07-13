@@ -16,11 +16,6 @@ import pluggage.registry
 
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
-from cirrus.documentation_utils import (
-    build_docs,
-    build_doc_artifact,
-    upload_documentation
-)
 from cirrus.environment import repo_directory
 from cirrus.git_tools import build_release_notes
 from cirrus.git_tools import has_unstaged_changes
@@ -266,14 +261,7 @@ def build_parser(argslist):
 
     # borrow --micro/minor/major options from "new" command.
     subparsers.add_parser('trigger', parents=[new_command], add_help=False)
-    build_command = subparsers.add_parser('build')
-    build_command.add_argument(
-        '--docs',
-        nargs='*',
-        help=('generate documentation with Sphinx (Makefile path must be set '
-              'in cirrus.conf) and create an artifact. Argument list is used '
-              'to run the Sphinx make command. Default: clean html')
-    )
+    subparsers.add_parser('build')
 
     merge_command = subparsers.add_parser('merge')
     merge_command.add_argument(
@@ -362,32 +350,7 @@ def build_parser(argslist):
         dest='pypi_sudo',
         help='do not use sudo to upload build artifact to pypi'
     )
-    upload_command.add_argument(
-        '--docs',
-        action='store_true',
-        help='upload documentation artifact along with the release artifact'
-    )
-    upload_command.add_argument(
-        '--file-server',
-        action='store',
-        dest='file_server',
-        help='upload documentation to specified file server'
-    )
-    upload_command.add_argument(
-        '--fs-sudo',
-        action='store_true',
-        dest='fs_sudo',
-        help='use sudo to upload doc artifact to the file server'
-    )
-    upload_command.add_argument(
-        '--no-fs-sudo',
-        action='store_false',
-        dest='fs_sudo',
-        help='do not use sudo to upload doc artifact to the file server'
-    )
     upload_command.set_defaults(pypi_sudo=True)
-    upload_command.set_defaults(docs=False)
-    upload_command.set_defaults(fs_sudo=True)
 
     opts = parser.parse_args(argslist)
     return opts
@@ -802,15 +765,9 @@ def main():
     if opts.command == 'upload':
         upload_release(opts)
 
-        if opts.docs:
-            upload_documentation(opts)
-
     if opts.command == 'build':
         build_release(opts)
 
-        if opts.docs is not None:
-            build_docs(make_opts=opts.docs)
-            build_doc_artifact()
 
 if __name__ == '__main__':
 
