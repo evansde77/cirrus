@@ -4,6 +4,7 @@ _docs_
 
 Implement git cirrus docs command
 """
+import sys
 from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.documentation_utils import (
