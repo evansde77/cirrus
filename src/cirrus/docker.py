@@ -26,7 +26,9 @@ and you have sufficient privileges to connect.
 
 
 class OptionHelper(dict):
+
     """helper class to resolve cli and cirrus conf opts"""
+
     def __init__(self, cli_opts, config):
         super(OptionHelper, self).__init__()
         self['username'] = config.get_param('docker', 'docker_login_username', None)
@@ -35,17 +37,15 @@ class OptionHelper(dict):
         self['login'] = config.get_param(
             'docker', 'docker_login_username', None
         ) is not None
-        self['tag'] = None
 
         if cli_opts.login:
             self['login'] = True
-        if hasattr(cli_opts, 'tag'):
-            if cli_opts.tag:
-                self['tag'] = cli_opts.tag
 
 
 class BuildOptionHelper(OptionHelper):
+
     """helper class to resolve cli and cirrus conf opts for build"""
+
     def __init__(self, cli_opts, config):
         super(BuildOptionHelper, self).__init__(cli_opts, config)
         self['docker_repo'] = config.get_param('docker', 'repo', None)
@@ -65,7 +65,7 @@ def build_parser():
     """
     _build_parser_
 
-    Set up command line parser for the deploy command
+    Set up command line parser for the docker-image command
 
     """
     parser = ArgumentParser(
@@ -85,7 +85,7 @@ def build_parser():
         '--login',
         action='store_true',
         dest='login',
-        help='Perform docker login before command using settings in cirrus.conf',
+        help='perform docker login before command using settings in cirrus.conf',
         default=False
     )
     build_command.add_argument(
@@ -118,7 +118,14 @@ def build_parser():
         '--login',
         action='store_true',
         dest='login',
-        help='Perform docker login before command using settings in cirrus.conf',
+        help='perform docker login before command using settings in cirrus.conf',
+        default=False
+    )
+    push_command.add_argument(
+        '--latest',
+        action='store_true',
+        dest='latest',
+        help='include the image tagged "latest" in the docker push command',
         default=False
     )
 
@@ -271,15 +278,16 @@ def docker_push(opts, config):
     """
     helper = OptionHelper(opts, config)
     if helper['login']:
-        check = _docker_login(helper)
-        if not check:
+        if not _docker_login(helper):
             msg = "Unable to perform docker login due to missing cirrus conf entries"
             LOGGER.error(msg)
             sys.exit(1)
-    tag = helper['tag']
-    if tag is None:
-        tag = tag_name(config)
+
+    tag = tag_name(config)
     _docker_push(tag)
+
+    if opts.latest:
+        _docker_push(latest_tag_name(config))
 
 
 def is_docker_connected():

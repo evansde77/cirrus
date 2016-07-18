@@ -108,15 +108,25 @@ class DockerFunctionTests(unittest.TestCase):
     def test_docker_push(self):
         """test plain docker push"""
         self.opts.tag = None
-        dckr.docker_push(self.opts, self.config)
-
-        self.opts.tag = "herpderp"
+        self.opts.latest = False
         dckr.docker_push(self.opts, self.config)
 
         self.mock_subp.check_output.assert_has_calls(
             [
                 mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3']),
-                mock.call(['docker', 'push', 'herpderp'])
+            ]
+        )
+
+    def test_docker_push_latest(self):
+        """test plain docker push"""
+        self.opts.tag = None
+        self.opts.latest = True
+        dckr.docker_push(self.opts, self.config)
+
+        self.mock_subp.check_output.assert_has_calls(
+            [
+                mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3']),
+                mock.call(['docker', 'push', 'unittesting/unittesting:latest']),
             ]
         )
 
