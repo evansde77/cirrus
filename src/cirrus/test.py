@@ -21,9 +21,8 @@ def build_parser(argslist):
     parser = ArgumentParser(
         description='git cirrus test command'
     )
-    subparsers = parser.add_subparsers(dest='command')
-    test_command = subparsers.add_parser('test')
-    test_command.add_argument(
+    
+    parser.add_argument(
         '--suite',
         help=(
             'test suite configuration to use as defined in the '
@@ -31,13 +30,13 @@ def build_parser(argslist):
         ),
         default='default'
     )
-    test_command.add_argument(
+    parser.add_argument(
         '--mode',
         choices=['nosetests', 'tox'],
         default=None,
         help='Choose test runner framework'
     )
-    test_command.add_argument(
+    parser.add_argument(
         '--test-options',
         default='',
         dest='options',
@@ -85,7 +84,7 @@ def main():
 
     Execute test command
     """
-    opts = build_parser(sys.argv)
+    opts = build_parser(sys.argv[1:])
     config = load_configuration()
     mode = config.test_mode(opts.suite)
     if opts.mode:

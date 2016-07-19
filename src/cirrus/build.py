@@ -99,7 +99,8 @@ def execute_build(opts):
     # we have custom build controls in the cirrus.conf
     venv_name = build_params.get('virtualenv_name', 'venv')
     reqs_name = build_params.get('requirements_file', 'requirements.txt')
-    extra_reqs = build_params.get('extra_requirements', [])
+    extra_reqs = build_params.get('extra_requirements', '')
+    extra_reqs = [x.strip() for x in extra_reqs.split(',') if x.strip()]
     if opts.extras:
         extra_reqs.extend(opts.extras)
         extra_reqs = set(extra_reqs)  # dedupe
@@ -175,12 +176,12 @@ def execute_build(opts):
         if opts.upgrade:
             commands = [
                 "{0} --upgrade -r {1}".format(pip_command_base, reqfile)
-                for reqfile in opts.extras
+                for reqfile in extra_reqs
             ]
         else:
             commands = [
                 "{0} -r {1}".format(pip_command_base, reqfile)
-                for reqfile in opts.extras
+                for reqfile in extra_reqs
             ]
 
         for cmd in commands:
