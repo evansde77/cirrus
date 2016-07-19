@@ -84,7 +84,7 @@ def main():
 
     Execute test command
     """
-    opts = build_parser(sys.argv)
+    opts = build_parser(sys.argv[1:])
     config = load_configuration()
     mode = config.test_mode(opts.suite)
     if opts.mode:
