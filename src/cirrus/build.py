@@ -175,12 +175,12 @@ def execute_build(opts):
         if opts.upgrade:
             commands = [
                 "{0} --upgrade -r {1}".format(pip_command_base, reqfile)
-                for reqfile in opts.extras
+                for reqfile in extra_reqs
             ]
         else:
             commands = [
                 "{0} -r {1}".format(pip_command_base, reqfile)
-                for reqfile in opts.extras
+                for reqfile in extra_reqs
             ]
 
         for cmd in commands:
