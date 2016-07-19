@@ -156,6 +156,9 @@ class Configuration(dict):
     def test_where(self, suite):
         return self.get('test-{0}'.format(suite), {}).get('where')
 
+    def test_mode(self, suite):
+        return self.get('test-{0}'.format(suite), {}).get('mode')
+
     def venv_name(self):
         return self.get('build', {}).get('virtualenv_name', 'venv')
 
