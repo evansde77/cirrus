@@ -46,8 +46,7 @@ def build_parser(argslist):
     return opts
 
 
-@nottest
-def nose_test(config, opts):
+def nose_run(config, opts):
     """
     _nose_test_
 
@@ -63,7 +62,7 @@ def nose_test(config, opts):
     )
 
 
-def tox_test(config, opts):
+def tox_run(config, opts):
     """
     tox test
 

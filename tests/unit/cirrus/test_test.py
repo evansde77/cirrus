@@ -4,7 +4,8 @@ test command tests
 import mock
 import unittest
 
-from cirrus.test import nose_test, tox_test
+from cirrus.test import nose_run
+from cirrus.test import tox_run
 
 
 class TestTest(unittest.TestCase):
@@ -19,7 +20,7 @@ class TestTest(unittest.TestCase):
             mock_config.venv_name = mock.Mock()
             mock_config.venv_name.return_value = "VENV"
 
-            tox_test(mock_config, mock_opts)
+            tox_run(mock_config, mock_opts)
             self.failUnless(mock_local.called)
             self.failUnless(mock_config.venv_name.called)
             command = mock_local.call_args[0][0]
@@ -37,7 +38,7 @@ class TestTest(unittest.TestCase):
             mock_config.test_where = mock.Mock()
             mock_config.test_where.return_value = "WHERE"
 
-            nose_test(mock_config, mock_opts)
+            nose_run(mock_config, mock_opts)
             self.failUnless(mock_local.called)
             self.failUnless(mock_config.venv_name.called)
             self.failUnless(mock_config.test_where.called)
