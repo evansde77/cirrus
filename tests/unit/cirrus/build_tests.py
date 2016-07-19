@@ -31,12 +31,12 @@ class BuildParserTests(unittest.TestCase):
             'build',
             '--extra-requirements',
             'test-requirements.txt',
-            ' other-requirements.txt'
+            'other-requirements.txt'
         ]
         opts = build_parser(argv)
         self.assertEqual(
             opts.extras,
-            ['test-requirements.txt', ' other-requirements.txt']
+            ['test-requirements.txt', 'other-requirements.txt']
         )
 
 
@@ -179,9 +179,7 @@ class BuildCommandTests(unittest.TestCase):
             mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install -i https://PYPIUSERNAME:TOKEN@PYPIURL/simple --upgrade -r requirements.txt'),
             mock.call('. ./venv/bin/activate && python setup.py develop')
-
         ])
-
 
 
 if __name__ == '__main__':
