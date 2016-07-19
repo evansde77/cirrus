@@ -7,7 +7,6 @@ import sys
 
 from fabric.operations import local
 from argparse import ArgumentParser
-from nose.tools import nottest
 
 from cirrus.configuration import load_configuration
 
@@ -26,7 +25,10 @@ def build_parser(argslist):
     test_command = subparsers.add_parser('test')
     test_command.add_argument(
         '--suite',
-        help='test suite configuration to use as defined in the test-<suite> section of cirrus.conf',
+        help=(
+            'test suite configuration to use as defined in the '
+            'test-<suite> section of cirrus.conf'
+        ),
         default='default'
     )
     test_command.add_argument(
@@ -87,17 +89,17 @@ def main():
     config = load_configuration()
     mode = config.test_mode(opts.suite)
     if opts.mode:
-        mode =  opts.mode
+        mode = opts.mode
 
     # backwards compat: default to nosetests
     if mode is None:
         mode = 'nosetests'
 
     if mode == 'nosetests':
-        nose_test(config, opts)
+        nose_run(config, opts)
         sys.exit(0)
     if mode == 'tox':
-        tox_test(config, opts)
+        tox_run(config, opts)
         sys.exit(0)
 
 
