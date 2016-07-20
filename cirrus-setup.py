@@ -7,20 +7,23 @@ projects managed with cirrus.
 
 """
 import setuptools
-import ConfigParser
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
 
 
 def get_default(parser, section, option, default):
     """helper to get config settings with a default if not present"""
     try:
         result = parser.get(section, option)
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    except (configparser.NoSectionError, configparser.NoOptionError):
         result = default
     return result
 
 
 # Build a parser and fetch setup options
-parser = ConfigParser.RawConfigParser()
+parser = configparser.RawConfigParser()
 parser.read('cirrus.conf')
 src_dir = get_default(parser, 'package', 'find_packages', '.')
 excl_dirs = get_default(parser, 'package', 'exclude_packages', [])

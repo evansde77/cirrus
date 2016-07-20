@@ -112,8 +112,8 @@ append_cli_opt "ssh-username" "${SSH_USERNAME}"
 append_cli_opt "ssh-keyfile" "${SSH_KEYFILE}"
 
 # run installer
-export CIRRUS_HOME=$LOCATION/cirrus
-export VIRTUALENV_HOME=$LOCATION/cirrus/venv
+export CIRRUS_HOME=$LOCATION
+export VIRTUALENV_HOME=$LOCATION/venv
 selfsetup --robot ${CLI_OPTS}
 
 
