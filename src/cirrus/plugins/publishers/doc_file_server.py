@@ -64,7 +64,7 @@ class Documentation(Publisher):
         # need to check for True as a string because ConfigParser always
         # stores values internally as strings
         use_sudo = False
-        if fs_config.get('doc_file_server_sudo').lower() == 'true':
+        if fs_config.get('doc_file_server_sudo', 'False').lower() == 'true':
             use_sudo = True
 
         LOGGER.info("Uploading {0} to {1}".format(doc_artifact, fs_url))
