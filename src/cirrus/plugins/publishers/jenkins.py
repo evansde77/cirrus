@@ -39,7 +39,7 @@ class Documentation(Publisher):
         arc_var = ARCNAME
         extra_vars = True
 
-        [extra_vars]
+        [jenkins_docs_extra_vars]
         var1 = value
         var2 = value
 
@@ -51,9 +51,9 @@ class Documentation(Publisher):
             the archive should be unpacked to as determined by the name of the
             archive filename. I.e. package-0.0.0.tar.gz => package-0.0.0
 
-        .. note:: extra_vars is a boolean. When True a section named [extra_vars]
-            should be added to cirrus.conf containing any other variables
-            necessary for the Jenkins build.
+        .. note:: extra_vars is a boolean. When True a section named
+            [jenkins_docs_extra_vars] should be added to cirrus.conf containing
+            any other variables necessary for the Jenkins build.
         """
         try:
             jenkins_config = self.package_conf['jenkins']
@@ -68,7 +68,7 @@ class Documentation(Publisher):
                 '\n arc_var = ARCNAME'
                 '\n extra_vars = True'
                 '\n '
-                '\n [extra_vars]'
+                '\n [jenkins_docs_extra_vars]'
                 '\n varname = value'
                 '\n varname1 = value1'
             )
@@ -86,8 +86,8 @@ class Documentation(Publisher):
 
         # need to check for True as a string because ConfigParser always
         # stores values internally as strings
-        if jenkins_config.get('extra_vars').lower() == 'true':
-            extra_vars = self.package_conf.get('extra_vars', {})
+        if jenkins_config.get('extra_vars', 'False').lower() == 'true':
+            extra_vars = self.package_conf.get('jenkins_docs_extra_vars', {})
             for k, v in extra_vars.iteritems():
                 build_params['parameter'].append({"name": k, "value": v})
 

@@ -1,5 +1,4 @@
 import __builtin__
-import json
 import mock
 import os
 import tempfile
@@ -13,6 +12,14 @@ from harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
 
 class FileServerPublisherTests(unittest.TestCase):
+    """
+    Test the doc_file_server publisher plugin.
+
+    A test config is defined with the values required to publish
+    documentation using the doc_file_server plugin which uses Fabric
+    put to upload the doc artifact to a remote server
+
+    """
 
     def setUp(self):
         self.dir = tempfile.mkdtemp()
@@ -56,6 +63,9 @@ class FileServerPublisherTests(unittest.TestCase):
     @mock.patch('cirrus.plugins.publishers.doc_file_server.put')
     @mock.patch('cirrus.plugins.publishers.doc_file_server.FabricHelper')
     def test_docs_file_server(self, m_fabric, m_fabric_put):
+        """
+        test docs_file_server publisher plugin makes put command with Fabric
+        """
         factory = pluggage.registry.get_factory(
             'publish',
             load_modules=['cirrus.plugins.publishers']
@@ -71,6 +81,15 @@ class FileServerPublisherTests(unittest.TestCase):
 
 
 class JenkinsPublisherTests(unittest.TestCase):
+    """
+    Test the jenkins publisher plugin.
+
+    A test config is defined with the values required to publish
+    documentation using the jenkins plugin which issues an API request
+    to Jenkins which uploads the documentation artifact and required
+    parameters to a Jenkins job.
+
+    """
 
     def setUp(self):
         self.dir = tempfile.mkdtemp()
@@ -94,7 +113,7 @@ class JenkinsPublisherTests(unittest.TestCase):
                     'arc_var': 'ARCNAME',
                     'extra_vars': True
                 },
-                'extra_vars': {
+                'jenkins_docs_extra_vars': {
                     'PROJECT': 'cirrus_unittest'
                 }
             }
@@ -112,6 +131,11 @@ class JenkinsPublisherTests(unittest.TestCase):
     @mock.patch('cirrus.plugins.jenkins.get_buildserver_auth')
     @mock.patch('cirrus.plugins.publishers.jenkins.MultipartEncoder')
     def test_jenkins(self, m_encoder, m_auth, m_requests):
+        """
+        test jenkins publisher plugin uses MultipartEncoder to encode form
+        data which is then sent to Jenkins via a POST to the Jenkins /build
+        endpoint
+        """
         factory = pluggage.registry.get_factory(
             'publish',
             load_modules=['cirrus.plugins.publishers']

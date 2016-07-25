@@ -297,7 +297,7 @@ Options and config:
                 * doc_job - the name of the Jenkins job for the documentation build
                 * doc_var - the variable name which the uploaded documentation tarball will be accessed by (Jenkins File Parameter)
                 * arc_var - the variable that will be used to name the file/folder the archive should be unpacked to as determined by the name of the archive filename. I.e. package-0.0.0.tar.gz => package-0.0.0 (Jenkins String Parameter)
-                * extra_vars - a list of dicts containing any other variables needed for the Jenkins job
+                * extra_vars - boolean value indicating if there are move variables to send to Jenkins which should be defined in the section [jenkins_docs_extra_vars]
             2. in the [cirrus] section of your .gitconfig:
                 * buildserver-user - Jenkins username for authorization
                 * buildserver-token - token or password for authorization
@@ -327,6 +327,7 @@ doc_var = artifact
 arc_var = ARCHIVE
 extra_vars = True
 
-[extra_vars]
+[jenkins_docs_extra_vars]
 var = value
+var1 = value1
 ```
