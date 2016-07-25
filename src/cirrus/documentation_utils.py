@@ -5,7 +5,6 @@ _documentation_utils_
 utils for building and uploading Sphinx documentation
 
 """
-import json
 import os
 import sys
 import tarfile
@@ -167,5 +166,5 @@ def publish_documentation(opts):
         )
         return
 
-    plugin.publish(opts, doc_artifact)
+    plugin.publish(doc_artifact)
     return

@@ -6,6 +6,7 @@ Publisher plugin that uses jenkins to handle publishing documentation
 
 """
 import json
+import os
 
 from requests_toolbelt import MultipartEncoder
 
@@ -19,7 +20,7 @@ LOGGER = get_logger()
 class Documentation(Publisher):
     PLUGGAGE_OBJECT_NAME = 'jenkins'
 
-    def publish(self, opts, doc_artifact):
+    def publish(self, doc_artifact):
         """
         Pass the doc artifact to a Jenkins job. The actions performed by
         the Jenkins job is up to the user to decide. Suggested use of the
@@ -36,10 +37,11 @@ class Documentation(Publisher):
         doc_job = default
         doc_var = archive
         arc_var = ARCNAME
-        extra_vars = [
-            {"name": varname, "value": varvalue},
-            {"name": varname1, "value": varvalue1}
-        ]
+        extra_vars = True
+
+        [extra_vars]
+        var1 = value
+        var2 = value
 
         .. note:: The doc_var is the location of the archive in the Jenkins
             workspace. It must match whatever is in the section "File location"
@@ -49,7 +51,8 @@ class Documentation(Publisher):
             the archive should be unpacked to as determined by the name of the
             archive filename. I.e. package-0.0.0.tar.gz => package-0.0.0
 
-        .. note:: extra_vars is a list of dicts containing any other variables
+        .. note:: extra_vars is a boolean. When True a section named [extra_vars]
+            should be added to cirrus.conf containing any other variables
             necessary for the Jenkins build.
         """
         try:
@@ -63,10 +66,11 @@ class Documentation(Publisher):
                 '\n doc_job = default'
                 '\n doc_var = archive'
                 '\n arc_var = ARCNAME'
-                '\n extra_vars = ['
-                '\n    {"name": varname, "value": varvalue},'
-                '\n    {"name": varname1, "value": varvalue1}'
-                '\n ]'
+                '\n extra_vars = True'
+                '\n '
+                '\n [extra_vars]'
+                '\n varname = value'
+                '\n varname1 = value1'
             )
             raise RuntimeError(msg)
 
@@ -77,15 +81,19 @@ class Documentation(Publisher):
 
         if jenkins_config.get('arc_var') is not None:
             arcname = filename.rsplit('.', 2)[0]
-            build_params['parameter'].extend(
+            build_params['parameter'].append(
                 {"name": jenkins_config['arc_var'], "value": arcname})
 
-        if jenkins_config.get('extra_vars') is not None:
-            build_params['parameter'].extend(jenkins_config['extra_vars'])
+        # need to check for True as a string because ConfigParser always
+        # stores values internally as strings
+        if jenkins_config.get('extra_vars').lower() == 'true':
+            extra_vars = self.package_conf.get('extra_vars', {})
+            for k, v in extra_vars.iteritems():
+                build_params['parameter'].append({"name": k, "value": v})
 
         payload = MultipartEncoder(
             fields={
-                "file0": (filename, open(filename, 'rb'), 'application/x-gzip'),
+                "file0": (filename, open(doc_artifact, 'rb'), 'application/x-gzip'),
                 "json": json.dumps(build_params)})
 
         client = JenkinsClient(jenkins_config['url'])
