@@ -46,6 +46,7 @@ def build_parser(argslist):
         action='store_true',
         help='test only, do not actually publish documentation'
     )
+    publish_command.set_defaults(test=False)
 
     opts = parser.parse_args(argslist)
     return opts
