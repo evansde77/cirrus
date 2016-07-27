@@ -34,13 +34,19 @@ def build_parser(argslist):
               'to run the Sphinx make command. Default: clean html'))
     build_command.set_defaults(make=[])
 
-    pack_command = subparsers.add_parser(
+    subparsers.add_parser(
         'pack',
         help='Package documentation as a tarball')
 
     publish_command = subparsers.add_parser(
         'publish',
         help='Publish documentation as specified in cirrus.conf')
+    publish_command.add_argument(
+        '--test',
+        action='store_true',
+        help='test only, do not actually publish documentation'
+    )
+    publish_command.set_defaults(test=False)
 
     opts = parser.parse_args(argslist)
     return opts
