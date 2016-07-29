@@ -134,6 +134,9 @@ class Configuration(dict):
     def pypi_url(self):
         return self.get('pypi', {}).get('pypi_url')
 
+    def pip_options(self):
+        return self.get('pypi', {}).get('pip_options')
+
     def pypi_config(self):
         """
         get the details for uploading to pypi

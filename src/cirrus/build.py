@@ -16,6 +16,7 @@ from argparse import ArgumentParser
 from cirrus.documentation_utils import build_docs
 from cirrus.environment import cirrus_home
 from cirrus.configuration import load_configuration, get_pypi_auth
+from cirrus.pypirc import PypircFile
 from cirrus.logger import get_logger
 from fabric.operations import local
 
@@ -126,19 +127,27 @@ def execute_build(opts):
 
     # custom pypi server
     pypi_server = config.pypi_url()
+    pip_options = config.pip_options()
     pip_command_base = None
     if pypi_server is not None:
-        pypi_conf = get_pypi_auth()
-        pypi_url = (
-            "https://{pypi_username}:{pypi_token}@{pypi_server}/simple"
-        ).format(
-            pypi_token=pypi_conf['token'],
-            pypi_username=pypi_conf['username'],
-            pypi_server=pypi_server
-        )
+
+        pypirc = PypircFile()
+        if pypi_server in pypirc.index_servers:
+            pypi_url = pypirc.get_pypi_url(pypi_server)
+        else:
+            pypi_conf = get_pypi_auth()
+            pypi_url = (
+                "https://{pypi_username}:{pypi_token}@{pypi_server}/simple"
+            ).format(
+                pypi_token=pypi_conf['token'],
+                pypi_username=pypi_conf['username'],
+                pypi_server=pypi_server
+            )
+
         pip_command_base = (
             '{0}/bin/pip install -i {1}'
         ).format(venv_path, pypi_url)
+
         if opts.upgrade:
             cmd = (
                 '{0} --upgrade '
@@ -157,6 +166,9 @@ def execute_build(opts):
             cmd = '{0} --upgrade -r {1}'.format(pip_command_base, reqs_name)
         else:
             cmd = '{0} -r {1}'.format(pip_command_base, reqs_name)
+
+    if pip_options:
+        cmd += " {} ".format(pip_options)
 
     try:
         local(cmd)

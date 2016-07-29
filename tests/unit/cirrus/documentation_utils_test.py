@@ -2,7 +2,6 @@
 documentation utils tests
 
 """
-import __builtin__
 import mock
 import os
 import tempfile
@@ -90,7 +89,7 @@ class TestDocumentationUtils(unittest.TestCase):
         publish_documentation(opts)
         self.assertTrue(plugin.publish.called)
         plugin.publish.assert_has_calls(
-            [mock.call(opts, self.doc_artifact_name)]
+            [mock.call(self.doc_artifact_name)]
         )
 
 if __name__ == '__main__':
