@@ -14,8 +14,11 @@ class PypircFile(dict):
     """
     def __init__(self, filename='~/.pypirc'):
         self.config_file = os.path.expanduser(filename)
-        if os.path.exists(self.config_file):
+        if self.exists():
             self.load()
+
+    def exists(self):
+        return os.path.exists(self.config_file)
 
     def load(self):
         """parse config file into self"""
@@ -41,3 +44,20 @@ class PypircFile(dict):
             msg = "Unknown pypi index name: {}".format(index_alias)
             raise RuntimeError(msg)
         return self[index_alias]
+
+    def get_pypi_url(self, index_alias):
+        if index_alias not in self.index_servers:
+            msg = "Unknown pypi index name: {}".format(index_alias)
+            raise RuntimeError(msg)
+        params = self[index_alias]
+        url = (
+            "https://{username}:{password}@{repository}/simple"
+        ).format(**params)
+        return url
+
+
+if __name__ == '__main__':
+    p = PypircFile()
+    print p.get_pypi_config('imc-dev')
+    print p.get_pypi_url('imc-dev')
+
