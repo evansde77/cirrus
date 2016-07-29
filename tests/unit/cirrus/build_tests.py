@@ -50,9 +50,13 @@ class BuildCommandTests(unittest.TestCase):
         self.os_cwd_patcher = mock.patch('cirrus.build.os.getcwd')
         self.pypi_auth_patcher = mock.patch('cirrus.build.get_pypi_auth')
         self.cirrus_home_patcher = mock.patch('cirrus.build.cirrus_home')
+        self.pypirc_patcher = mock.patch('cirrus.build.PypircFile')
 
         self.build_params = {}
         self.pypi_url_value = None
+
+        self.mock_pypirc_inst = mock.Mock()
+        self.mock_pypirc_inst.index_servers = []
 
         self.mock_load_conf = self.conf_patcher.start()
         self.mock_conf = mock.Mock()
@@ -61,6 +65,7 @@ class BuildCommandTests(unittest.TestCase):
         self.mock_conf.get.return_value = self.build_params
         self.mock_conf.pypi_url = mock.Mock()
         self.mock_conf.pypi_url.return_value = self.pypi_url_value
+        self.mock_conf.pip_options = mock.Mock(return_value=None)
         self.mock_local = self.local_patcher.start()
         self.mock_os_exists = self.os_path_exists_patcher.start()
         self.mock_os_exists.return_value = False
@@ -69,6 +74,8 @@ class BuildCommandTests(unittest.TestCase):
         self.mock_os_cwd.return_value = 'CWD'
         self.mock_cirrus_home = self.cirrus_home_patcher.start()
         self.mock_cirrus_home.return_value = 'CIRRUS_HOME'
+        self.mock_pypirc = self.pypirc_patcher.start()
+        self.mock_pypirc.return_value = self.mock_pypirc_inst
 
         self.mock_pypi_auth.return_value = {
             'username': 'PYPIUSERNAME',
@@ -84,6 +91,7 @@ class BuildCommandTests(unittest.TestCase):
         self.pypi_auth_patcher.stop()
         self.os_cwd_patcher.stop()
         self.cirrus_home_patcher.stop()
+        self.pypirc_patcher.stop()
 
     def test_execute_build_default_pypi(self):
         """test execute_build with default pypi settings"""
@@ -98,6 +106,41 @@ class BuildCommandTests(unittest.TestCase):
         self.mock_local.assert_has_calls([
             mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install -r requirements.txt'),
+            mock.call('. ./venv/bin/activate && python setup.py develop')
+        ])
+
+    def test_execute_build_pypirc(self):
+        """test execute_build with pypirc provided settings"""
+        opts = mock.Mock()
+        opts.clean = False
+        opts.upgrade = False
+        opts.extras = []
+        opts.nosetupdevelop = False
+
+        self.mock_conf.pypi_url.return_value = "dev"
+        self.mock_pypirc_inst.index_servers = ['dev']
+        self.mock_pypirc_inst.get_pypi_url = mock.Mock(return_value="DEVPYPIURL")
+        execute_build(opts)
+
+        self.mock_local.assert_has_calls([
+            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('CWD/venv/bin/pip install -i DEVPYPIURL -r requirements.txt'),
+            mock.call('. ./venv/bin/activate && python setup.py develop')
+        ])
+
+    def test_execute_build_default_pypi_pip_options(self):
+        """test execute_build with default pypi settings"""
+        opts = mock.Mock()
+        opts.clean = False
+        opts.upgrade = False
+        opts.extras = []
+        opts.nosetupdevelop = False
+        self.mock_conf.pip_options.return_value = "PIPOPTIONS"
+        execute_build(opts)
+
+        self.mock_local.assert_has_calls([
+            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('CWD/venv/bin/pip install -r requirements.txt PIPOPTIONS '),
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
 
