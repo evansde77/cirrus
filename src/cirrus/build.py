@@ -147,8 +147,6 @@ def execute_build(opts):
         pip_command_base = (
             '{0}/bin/pip install -i {1}'
         ).format(venv_path, pypi_url)
-        if pip_options:
-            pip_command_base += " {} ".format(pip_options)
 
         if opts.upgrade:
             cmd = (
@@ -163,14 +161,14 @@ def execute_build(opts):
 
     else:
         pip_command_base = '{0}/bin/pip install'.format(venv_path)
-        if pip_options:
-            pip_command_base += " {} ".format(pip_options)
-
         # no pypi server
         if opts.upgrade:
             cmd = '{0} --upgrade -r {1}'.format(pip_command_base, reqs_name)
         else:
             cmd = '{0} -r {1}'.format(pip_command_base, reqs_name)
+
+    if pip_options:
+        cmd += " {} ".format(pip_options)
 
     try:
         local(cmd)

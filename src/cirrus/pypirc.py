@@ -38,13 +38,6 @@ class PypircFile(dict):
         servers = self.get('distutils', {}).get('index-servers', '')
         return [s.strip() for s in servers.split('\n') if s.strip()]
 
-    def get_pypi_config(self, index_alias):
-        """get pypi config for a given index alias"""
-        if index_alias not in self.index_servers:
-            msg = "Unknown pypi index name: {}".format(index_alias)
-            raise RuntimeError(msg)
-        return self[index_alias]
-
     def get_pypi_url(self, index_alias):
         if index_alias not in self.index_servers:
             msg = "Unknown pypi index name: {}".format(index_alias)
@@ -54,10 +47,3 @@ class PypircFile(dict):
             "https://{username}:{password}@{repository}/simple"
         ).format(**params)
         return url
-
-
-if __name__ == '__main__':
-    p = PypircFile()
-    print p.get_pypi_config('imc-dev')
-    print p.get_pypi_url('imc-dev')
-

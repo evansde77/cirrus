@@ -77,8 +77,6 @@ class BuildCommandTests(unittest.TestCase):
         self.mock_pypirc = self.pypirc_patcher.start()
         self.mock_pypirc.return_value = self.mock_pypirc_inst
 
-
-
         self.mock_pypi_auth.return_value = {
             'username': 'PYPIUSERNAME',
             'ssh_username': 'SSHUSERNAME',
@@ -130,8 +128,6 @@ class BuildCommandTests(unittest.TestCase):
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
 
-
-
     def test_execute_build_default_pypi_pip_options(self):
         """test execute_build with default pypi settings"""
         opts = mock.Mock()
@@ -144,7 +140,7 @@ class BuildCommandTests(unittest.TestCase):
 
         self.mock_local.assert_has_calls([
             mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
-            mock.call('CWD/venv/bin/pip install PIPOPTIONS  -r requirements.txt'),
+            mock.call('CWD/venv/bin/pip install -r requirements.txt PIPOPTIONS '),
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
 
