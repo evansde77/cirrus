@@ -67,8 +67,7 @@ class TestDocumentationUtils(unittest.TestCase):
         mock_exists.return_value = True
         with mock.patch('cirrus.documentation_utils.tarfile.open') as mock_tar:
             self.assertTrue(mock_tar.add.called_once_with(
-                self.doc_dir, arcname='cirrus_unittest-1.2.3', recursive=False)
-            )
+                self.doc_dir, arcname='cirrus_unittest-1.2.3'))
 
     @mock.patch('cirrus.documentation_utils.os.path.exists')
     def test_build_doc_artifact_raises(self, mock_exists):
