@@ -21,7 +21,7 @@ class BuildParserTest(unittest.TestCase):
         self.assertEqual(opts.master, 'master')
         self.assertEqual(opts.develop, 'develop')
 
-
+@unittest.skip("Integ test not unit test")
 class PackageInitCommandTest(unittest.TestCase):
     """test case for package init command """
 
