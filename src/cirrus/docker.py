@@ -188,17 +188,9 @@ def _docker_login(helper):
 def _docker_tag(image, tag, latest):
     """
     tag the created image ID with the current tag and as latest
-    Note that this uses tag -f
+
     """
-    command = ['docker', 'tag', '-f', image, tag]
-    LOGGER.info("Executing {}".format(' '.join(command)))
-    try:
-        stdout = subprocess.check_output(command)
-    except subprocess.CalledProcessError as ex:
-        LOGGER.error(ex.output)
-        raise
-    LOGGER.info(stdout)
-    command = ['docker', 'tag', '-f', image, latest]
+    command = ['docker', 'tag', image, tag]
     LOGGER.info("Executing {}".format(' '.join(command)))
     try:
         stdout = subprocess.check_output(command)
