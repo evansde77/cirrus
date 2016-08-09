@@ -112,7 +112,7 @@ def build_doc_artifact():
         raise RuntimeError(msg)
 
     with tarfile.open(artifact_name, "w:gz") as tar:
-        tar.add(doc_dir, arcname=arcname, recursive=False)
+        tar.add(doc_dir, arcname=arcname)
 
     LOGGER.info("Documentation artifact created at: {}".format(artifact_name))
 
