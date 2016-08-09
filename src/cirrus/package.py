@@ -373,7 +373,7 @@ def subl_project(opts):
     """
     create a sublime project file for a repo
     """
-    raise NotImplemented
+    raise NotImplementedError("project setup not yet added")
 
 
 def main():

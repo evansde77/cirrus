@@ -11,6 +11,7 @@ from cirrus.package import (
     setup_branches,
     commit_and_tag,
     build_parser,
+    backup_file,
     init_package
 
 )
@@ -41,6 +42,9 @@ class GitFunctionTests(unittest.TestCase):
         self.tempdir = tempfile.mkdtemp()
         self.repo = os.path.join(self.tempdir, 'throwaway')
         os.mkdir(self.repo)
+        self.bak_file = os.path.join(self.repo, 'backmeup')
+        with open(self.bak_file, 'w') as handle:
+            handle.write("this file exists")
 
         self.patch_working_dir = mock.patch('cirrus.package.working_dir')
         self.mock_wd = self.patch_working_dir.start()
@@ -49,6 +53,13 @@ class GitFunctionTests(unittest.TestCase):
         self.patch_working_dir.stop()
         if os.path.exists(self.tempdir):
             os.system('rm -rf {}'.format(self.tempdir))
+
+    def test_backup_file(self):
+        """test backup_file"""
+        backup_file(self.bak_file)
+        files = os.listdir(self.repo)
+        self.failUnless('backmeup' in files)
+        self.failUnless('backmeup.BAK' in files)
 
     @mock.patch('cirrus.package.branch')
     @mock.patch('cirrus.package.push')
@@ -128,10 +139,10 @@ class CreateFilesTest(unittest.TestCase):
     def test_create_files(self):
         """test create_files call and content of files"""
         opts = mock.Mock()
-        opts.version_file = '__init__.py'
         opts.repo = self.repo
         opts.source = 'src'
         opts.version = '0.0.1'
+        opts.version_file = None
         opts.templates = ['include steve/*']
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
@@ -160,6 +171,10 @@ class CreateFilesTest(unittest.TestCase):
             self.failUnless('include requirements.txt' in content)
             self.failUnless('include cirrus.conf' in content)
             self.failUnless('include steve/*' in content)
+
+        version = os.path.join(self.repo, 'src', '__init__.py')
+        with open(version, 'r') as handle:
+            self.failUnless(opts.version in handle.read())
 
 
 @unittest.skip("Integ test not unit test")
