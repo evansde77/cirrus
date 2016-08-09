@@ -17,7 +17,7 @@ from cirrus.logger import get_logger
 LOGGER = get_logger()
 
 
-def checkout_and_pull(repo_dir, branch_from):
+def checkout_and_pull(repo_dir, branch_from, pull=True):
     """
     _checkout_and_pull_
 
@@ -28,12 +28,13 @@ def checkout_and_pull(repo_dir, branch_from):
     """
     repo = git.Repo(repo_dir)
 
-    if repo.active_branch != branch_from:
+    if str(repo.active_branch) != branch_from:
         git.Git().checkout(branch_from)
 
     # pull branch_from from remote
-    ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_from)
-    return repo.remotes.origin.pull(ref)
+    if pull:
+        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_from)
+        return repo.remotes.origin.pull(ref)
 
 
 def branch(repo_dir, branchname, branch_from):
@@ -47,7 +48,7 @@ def branch(repo_dir, branchname, branch_from):
 
     if branchname in repo.heads:
         msg = "Branch: {0} already exists.".format(branchname)
-        print "{0} Checking it out...".format(msg)
+        LOGGER.info("{0} Checking it out...".format(msg))
         branch_ref = getattr(repo.heads, branchname)
         branch_ref.checkout()
     else:
@@ -144,6 +145,21 @@ def update_to_tag(tag, config, origin='origin'):
     return
 
 
+def commit_files_optional_push(repo_dir, commit_msg, push=True, *filenames):
+    """
+    commit files to the repo, push remote if required.
+
+    """
+    repo = git.Repo(repo_dir)
+    repo.index.add(filenames)
+
+    # commits with message
+    new_commit = repo.index.commit(commit_msg)
+    # push branch to origin
+    if push:
+        return repo.remotes.origin.push(repo.head)
+
+
 def commit_files(repo_dir, commit_msg, *filenames):
     """
     _commit_files_
@@ -153,14 +169,9 @@ def commit_files(repo_dir, commit_msg, *filenames):
     Pushes changes to remote branch after commit
 
     """
-    repo = git.Repo(repo_dir)
-    repo.index.add(filenames)
-
-    # commits with message
-    new_commit = repo.index.commit(commit_msg)
-    # push branch to origin
-    result = repo.remotes.origin.push(repo.head)
-    return result
+    return commit_files_optional_push(
+        repo_dir, commit_msg, push=True, *filenames
+    )
 
 
 def push(repo_dir):
@@ -187,8 +198,8 @@ def tag_release(repo_dir, tag, master='master', push=True):
     Optionally, do not push the tag if push is False
 
     """
-    checkout_and_pull(repo_dir, master)
-    repo = git.Repo('.')
+    checkout_and_pull(repo_dir, master, pull=push)
+    repo = git.Repo(repo_dir)
     exists = any(existing_tag.name == tag for existing_tag in repo.tags)
     if exists:
         # tag already exists
