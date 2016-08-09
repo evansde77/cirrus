@@ -14,18 +14,20 @@ package sublime-project - Assistant to set up a sublime project for a cirrus
   managed package, including build rules for the local venv
 
 """
-import sys
-import os
 import contextlib
 import inspect
+import os
+import sys
+
 import pystache
 import ConfigParser
 
-from argparse import ArgumentParser
-from cirrus.logger import get_logger
-from cirrus.utils import update_version
 import cirrus.templates
 
+from argparse import ArgumentParser
+
+from cirrus.logger import get_logger
+from cirrus.utils import update_version
 from cirrus.git_tools import (
     branch,
     push,
@@ -273,7 +275,7 @@ def write_setup_py(opts):
 
 def write_history(opts):
     """
-    set up the history file containing the sentinenl for
+    set up the history file containing the sentinel for
     release notes
 
     """
@@ -371,7 +373,7 @@ def subl_project(opts):
     """
     create a sublime project file for a repo
     """
-    # TODO: Implement this
+    raise NotImplemented
 
 
 def main():

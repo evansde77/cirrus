@@ -156,10 +156,8 @@ def commit_files_optional_push(repo_dir, commit_msg, push=True, *filenames):
     # commits with message
     new_commit = repo.index.commit(commit_msg)
     # push branch to origin
-    result = None
     if push:
-        result = repo.remotes.origin.push(repo.head)
-    return result
+        return repo.remotes.origin.push(repo.head)
 
 
 def commit_files(repo_dir, commit_msg, *filenames):
@@ -172,7 +170,7 @@ def commit_files(repo_dir, commit_msg, *filenames):
 
     """
     return commit_files_optional_push(
-        repo_dir, commit_msg, True, *filenames
+        repo_dir, commit_msg, push=True, *filenames
     )
 
 
