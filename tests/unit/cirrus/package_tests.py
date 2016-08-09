@@ -8,6 +8,8 @@ import ConfigParser
 
 from cirrus.package import (
     create_files,
+    setup_branches,
+    commit_and_tag,
     build_parser,
     init_package
 
@@ -28,8 +30,83 @@ class BuildParserTest(unittest.TestCase):
         self.assertEqual(opts.develop, 'develop')
 
 
-class InitFunctionsTest(unittest.TestCase):
-    """mocked out init function tests"""
+class GitFunctionTests(unittest.TestCase):
+    """
+    tests for git util functions
+    """
+    def setUp(self):
+        """
+        set up for tests
+        """
+        self.tempdir = tempfile.mkdtemp()
+        self.repo = os.path.join(self.tempdir, 'throwaway')
+        os.mkdir(self.repo)
+
+        self.patch_working_dir = mock.patch('cirrus.package.working_dir')
+        self.mock_wd = self.patch_working_dir.start()
+
+    def tearDown(self):
+        self.patch_working_dir.stop()
+        if os.path.exists(self.tempdir):
+            os.system('rm -rf {}'.format(self.tempdir))
+
+    @mock.patch('cirrus.package.branch')
+    @mock.patch('cirrus.package.push')
+    @mock.patch('cirrus.package.get_active_branch')
+    def test_setup_branches(self, mock_active, mock_push, mock_branch):
+        """test setup_branches"""
+        opts = mock.Mock()
+        opts.no_remote = False
+        opts.repo = self.repo
+        mock_active.return_value = 'mock_develop'
+
+        setup_branches(opts)
+        self.assertEqual(mock_branch.call_count, 2)
+        self.failUnless(mock_push.called)
+        self.failUnless(mock_active.called)
+
+        mock_push.reset_mock()
+        opts.no_remote = True
+        setup_branches(opts)
+        self.failUnless(not mock_push.called)
+
+    @mock.patch('cirrus.package.commit_files_optional_push')
+    @mock.patch('cirrus.package.get_tags')
+    @mock.patch('cirrus.package.tag_release')
+    @mock.patch('cirrus.package.branch')
+    def test_commit_and_tag(self, mock_branch, mock_tag_rel, mock_tags, mock_commit):
+        opts = mock.Mock()
+        opts.no_remote = False
+        opts.repo = self.repo
+        opts.master = 'master'
+        opts.version = '0.0.0'
+
+        #tag doesnt exist
+        mock_tags.return_value = ['0.0.1']
+        commit_and_tag(opts, 'file1', 'file2')
+
+        self.failUnless(mock_commit.called)
+        mock_commit.assert_has_calls([
+            mock.call(
+                self.repo,
+                'git cirrus package init',
+                True,
+                'file1',
+                'file2'
+            )
+        ])
+        self.failUnless(mock_tags.called)
+        self.failUnless(mock_tag_rel.called)
+        self.failUnless(mock_branch.called)
+
+        # tag exists
+        opts.version = '0.0.1'
+        mock_tag_rel.reset_mock()
+        commit_and_tag(opts, 'file1', 'file2')
+        self.failUnless(not mock_tag_rel.called)
+
+class CreateFilesTest(unittest.TestCase):
+    """mocked create_files function tests"""
     def setUp(self):
         """
         set up for tests
@@ -49,6 +126,7 @@ class InitFunctionsTest(unittest.TestCase):
             os.system('rm -rf {}'.format(self.tempdir))
 
     def test_create_files(self):
+        """test create_files call and content of files"""
         opts = mock.Mock()
         opts.version_file = '__init__.py'
         opts.repo = self.repo
