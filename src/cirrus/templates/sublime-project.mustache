@@ -1,0 +1,27 @@
+{
+        "folders":
+        [
+                {
+                        "path": "{{repo_location}}"
+                }
+        ],
+        "build_systems": [
+                {
+
+            "name":"cirrus virtualenv",
+            "working_dir": "${project_path}",
+            "shell" : true,
+            "env" : {
+                "PYTHONPATH" : "{{repo_location}}"
+            },
+            "cmd":
+            [
+                ". ${project_path}/venv/bin/activate && ${project_path}/venv/bin/python $file"
+            ]
+        }
+
+        ]
+
+
+}
+

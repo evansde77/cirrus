@@ -65,4 +65,3 @@ def update_version(filename, new_version, vers_attr='__version__'):
 
     with open(filename, 'w') as handle:
         handle.writelines(lines)
-
