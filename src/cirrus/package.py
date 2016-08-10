@@ -21,6 +21,7 @@ import sys
 
 import pystache
 import ConfigParser
+import pluggage.registry
 
 import cirrus.templates
 
@@ -40,6 +41,30 @@ from cirrus.git_tools import (
 
 DEFAULT_HISTORY_SENTINEL = "\nCIRRUS_HISTORY_SENTINEL\n"
 LOGGER = get_logger()
+
+
+def get_plugin(plugin_name):
+    """
+    _get_plugin_
+
+    Get the editor plugin
+    """
+    factory = pluggage.registry.get_factory(
+        'editors',
+        load_modules=['cirrus.plugins.editors']
+    )
+    return factory(plugin_name)
+
+
+def list_plugins():
+    factory = pluggage.registry.get_factory(
+        'editors',
+        load_modules=['cirrus.plugins.editors']
+    )
+    return [
+        k for k in factory.registry.keys()
+        if k != "EditorPlugin"
+    ]
 
 
 def build_parser(argslist):
@@ -136,18 +161,21 @@ def build_parser(argslist):
         action='store_true'
     )
 
-    subl_command = subparsers.add_parser('sublime-project')
-    subl_command.add_argument(
-        '--project-name', '-p',
-        dest='project',
-        help='Name of project, defaults to name of cirrus package',
-        default=None
+    proj_command = subparsers.add_parser('project')
+    proj_command.add_argument(
+        '--repo', '-r',
+        dest='repo',
+        default=os.getcwd()
     )
-    subl_command.add_argument(
-        '--python-path',
+    proj_command.add_argument(
+        '--type', '-t',
+        help='type of project to create',
+        choices=list_plugins()
+    )
+    proj_command.add_argument(
+        '--pythonpath', '-p',
         nargs='+',
-        help='extra directories in package to add to pythonpath in sublime project',
-        dest='pythonpath',
+        help='subdirs to include on pythonpath',
         default=list()
     )
 
@@ -406,11 +434,13 @@ def init_package(opts):
     LOGGER.info(msg)
 
 
-def subl_project(opts):
+def build_project(opts):
     """
-    create a sublime project file for a repo
+    create an editor/ide project for the repo
     """
-    raise NotImplementedError("project setup not yet added")
+    pname = opts.type
+    plugin = get_plugin(pname)
+    plugin.run(opts)
 
 
 def main():
@@ -421,6 +451,9 @@ def main():
 
     if opts.command == 'init':
         init_package(opts)
+
+    if opts.command == 'project':
+        build_project(opts)
 
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@
 import unittest
 import mock
 import os
+import json
 import tempfile
 import ConfigParser
 
@@ -12,9 +13,12 @@ from cirrus.package import (
     commit_and_tag,
     build_parser,
     backup_file,
-    init_package
+    init_package,
+    build_project
 
 )
+
+from harnesses import CirrusConfigurationHarness
 
 
 class BuildParserTest(unittest.TestCase):
@@ -265,6 +269,38 @@ class PackageInitCommandIntegTest(unittest.TestCase):
         conf = os.path.join(self.repo, 'cirrus.conf')
         self.failUnless(os.path.exists(conf))
 
+    @mock.patch('cirrus.editor_plugin.load_configuration')
+    def test_project_sublime_command(self, mock_lc):
+        """
+        test the sublime project command plugin
+
+        """
+        mock_config = mock.Mock()
+        mock_config.package_name = mock.Mock(return_value='unittests')
+        mock_lc.return_value = mock_config
+
+        argslist = [
+            'project',
+            '-t', 'Sublime',
+            '-r', self.repo,
+        ]
+        opts = build_parser(argslist)
+        build_project(opts)
+        proj = os.path.join(self.repo, 'unittests.sublime-project')
+        self.failUnless(os.path.exists(proj))
+        with open(proj, 'r') as handle:
+            data = json.load(handle)
+        self.failUnless('folders' in data)
+        self.failUnless(data['folders'])
+        self.failUnless('path' in data['folders'][0])
+        self.assertEqual(data['folders'][0]['path'], self.repo)
+
+        build = data['build_systems'][0]
+        self.failUnless('name' in build)
+        self.assertEqual(build['name'], "cirrus virtualenv")
+        self.failUnless('env' in build)
+        self.failUnless('PYTHONPATH' in build['env'])
+        self.assertEqual(build['env']['PYTHONPATH'], self.repo)
 
 if __name__ == '__main__':
     unittest.main()
