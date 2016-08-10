@@ -129,6 +129,12 @@ def build_parser(argslist):
         default=False,
         action='store_true'
     )
+    init_command.add_argument(
+        '--create-version-file',
+        help='create the file containing __version__ if it doesnt exist',
+        default=False,
+        action='store_true'
+    )
 
     subl_command = subparsers.add_parser('sublime-project')
     subl_command.add_argument(
@@ -328,6 +334,44 @@ def write_cirrus_conf(opts, version_file):
     return cirrus_conf
 
 
+def update_package_version(opts):
+    """
+    set and/or update package __version__
+    attr
+    """
+    version_file = opts.version_file
+    if version_file is None:
+        elems = [opts.repo]
+        if opts.source:
+            elems.append(opts.source)
+        elems.append(opts.package)
+        elems.append('__init__.py')
+        version_file = os.path.join(*elems)
+    if not os.path.exists(version_file):
+        msg = (
+            "unable to find version file: {}"
+        ).format(version_file)
+        LOGGER.info(msg)
+        if opts.create_version_file:
+            with open(version_file, 'w') as handle:
+                handle.write("# created by cirrus package init\n")
+                handle.write("__version__ = \"{}\"".format(opts.version))
+            LOGGER.info("creating version file: {}".format(version_file))
+        else:
+            msg = (
+                "Unable to update version file, please verify the path {}"
+                " is correct. Either provide the --version-file"
+                " option pointing"
+                " to an existing file or set the --create-version-file"
+                " flag to create a new file"
+            ).format(version_file)
+            LOGGER.error(msg)
+            sys.exit(1)
+
+    update_version(version_file, opts.version)
+    return version_file
+
+
 def create_files(opts):
     """
     create files and return a list of the
@@ -338,16 +382,9 @@ def create_files(opts):
     files.append(write_setup_py(opts))
     files.append(write_history(opts))
 
-    version_file = opts.version_file
-    if version_file is None:
-        elems = [opts.repo]
-        if opts.source:
-            elems.append(opts.source)
-        elems.append('__init__.py')
-        version_file = os.path.join(*elems)
-    update_version(version_file, opts.version)
-    files.append(version_file)
-    files.append(write_cirrus_conf(opts, version_file))
+    vers_file = update_package_version(opts)
+    files.append(vers_file)
+    files.append(write_cirrus_conf(opts, vers_file))
     return files
 
 

@@ -125,9 +125,11 @@ class CreateFilesTest(unittest.TestCase):
         self.tempdir = tempfile.mkdtemp()
         self.repo = os.path.join(self.tempdir, 'throwaway')
         src_dir = os.path.join(self.repo, 'src')
+        pkg_dir = os.path.join(self.repo, 'src', 'unittests')
         os.mkdir(self.repo)
         os.mkdir(src_dir)
-        init_file = os.path.join(src_dir, '__init__.py')
+        os.mkdir(pkg_dir)
+        init_file = os.path.join(pkg_dir, '__init__.py')
         with open(init_file, 'w') as handle:
             handle.write('# initfile\n')
             handle.write('__version__=\'0.0.0\'\n')
@@ -146,6 +148,7 @@ class CreateFilesTest(unittest.TestCase):
         opts.templates = ['include steve/*']
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
+        opts.create_version_file = False
 
         create_files(opts)
 
@@ -172,7 +175,50 @@ class CreateFilesTest(unittest.TestCase):
             self.failUnless('include cirrus.conf' in content)
             self.failUnless('include steve/*' in content)
 
-        version = os.path.join(self.repo, 'src', '__init__.py')
+        version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
+        with open(version, 'r') as handle:
+            self.failUnless(opts.version in handle.read())
+
+    def test_create_files_with_version(self):
+        """test create_files call and content of files"""
+        opts = mock.Mock()
+        opts.repo = self.repo
+        opts.create_version_file = True
+        opts.source = 'src'
+        opts.version = '0.0.1'
+        opts.version_file = None
+        opts.templates = ['include steve/*']
+        opts.history_file = 'HISTORY.md'
+        opts.package = 'unittests'
+
+        version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
+        os.system('rm -f {}'.format(version))
+        create_files(opts)
+
+        dir_list = os.listdir(self.repo)
+        self.failUnless('cirrus.conf' in dir_list)
+        self.failUnless('HISTORY.md' in dir_list)
+        self.failUnless('MANIFEST.in' in dir_list)
+        self.failUnless('setup.py' in dir_list)
+
+        cirrus_conf = os.path.join(self.repo, 'cirrus.conf')
+        config = ConfigParser.RawConfigParser()
+        config.read(cirrus_conf)
+        self.assertEqual(config.get('package', 'name'), opts.package)
+        self.assertEqual(config.get('package', 'version'), opts.version)
+
+        history = os.path.join(self.repo, 'HISTORY.md')
+        with open(history, 'r') as handle:
+            self.failUnless('CIRRUS_HISTORY_SENTINEL' in handle.read())
+
+        manifest = os.path.join(self.repo, 'MANIFEST.in')
+        with open(manifest, 'r') as handle:
+            content = handle.read()
+            self.failUnless('include requirements.txt' in content)
+            self.failUnless('include cirrus.conf' in content)
+            self.failUnless('include steve/*' in content)
+
+        version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
         with open(version, 'r') as handle:
             self.failUnless(opts.version in handle.read())
 
@@ -188,9 +234,11 @@ class PackageInitCommandIntegTest(unittest.TestCase):
         self.tempdir = tempfile.mkdtemp()
         self.repo = os.path.join(self.tempdir, 'throwaway')
         src_dir = os.path.join(self.repo, 'src')
+        pkg_dir = os.path.join(self.repo, 'src', 'throwaway')
         os.mkdir(self.repo)
         os.mkdir(src_dir)
-        init_file = os.path.join(src_dir, '__init__.py')
+        os.mkdir(pkg_dir)
+        init_file = os.path.join(pkg_dir, '__init__.py')
         with open(init_file, 'w') as handle:
             handle.write('# initfile\n')
         cmd = (
