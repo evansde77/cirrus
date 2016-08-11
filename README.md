@@ -69,6 +69,62 @@ Usage:
 git cirrus hello
 ```
 
+#### cirrus package 
+
+`Beta: new in Release 1.6 and above`
+
+The cirrus package command provides support for setting up cirrus to work in a new package.
+Assuming a starting point of a git repo with at least one commit on the master branch, you can run the git cirrus package init command 
+to add the various configuration and packaging files used by cirrus. This is intended to provide a minimal working template, so some configuration post init will be needed to take advantage of other features. 
+
+The init command will do the following:
+
+1. set up the develop/master branches for gitflow style work 
+2. generate a MANIFEST.in file containing the necessary include statements for packaging with setuptools 
+3. adds the default cirrus setup.py file 
+4. Generates a basic cirrus.conf file for the package
+5. sets up the version number management and history file generation
+
+For example:
+```bash 
+# create a minimal repo 
+mkdir 
+cd test_repo/
+git init 
+git checkout -b develop 
+mkdir src
+mkdir throwaway
+mkdir src/throwaway
+echo "__version__ = '0.0.0'\n" > src/throwaway/__init__.py
+echo "requests\n" > requirements.txt
+git add src/throwaway/__init__.py requirements.txt
+git commit -m "make a package"
+git checkout master
+git merge develop
+
+# run the package init command
+git cirrus package init -p test_repo --no-remote -v 0.0.0 -s src --version-file=src/throwaway/__init__.py 
+# can now use cirrus in the package, eg build:  
+git cirrus build
+
+```
+
+Options available for the package init command:
+
+* --repo, -r - Path to repo, defaults to pwd
+* --source-dir -s Additional directory structure within package for source code eg if you put your source code in a src subdir in the repo. Assumes repo top level directory if not set
+* --package, -p cirrus package name (Required)
+* --version, -v initial package version
+* --organization, -o Organization name to include in package (Eg, Github org or username) 
+* --description, -d Package description 
+* --templates, additional template rules to include in MANIFEST, eg include src/templates/*.json
+* --version-file, Version file, defaults to package __init__.py, where to update the \_\_version\_\_ attribute
+* --history-file, changelog history filename, defaults to HISTORY.md
+* --requirements, requirements file for pip defaults to requirements.txt
+* --master-branch, GitFlow master branch, defaults to master 
+* --develop-branch, GitFlow develop branch, defaults to develop
+* --no-remote, disable pushing changes to remote, commit locally only
+
 
 #### cirrus build
 Builds a new virtualenv and installs the requirements for the package, setting up a development/testing/deployment environment for the package.
