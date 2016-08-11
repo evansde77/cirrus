@@ -156,7 +156,7 @@ def build_parser(argslist):
     )
     init_command.add_argument(
         '--create-version-file',
-        help='create the file containing __version__ if it doesnt exist',
+        help="create the file containing __version__ if it doesn\'t exist",
         default=False,
         action='store_true'
     )

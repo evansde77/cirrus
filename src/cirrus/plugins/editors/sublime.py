@@ -22,11 +22,14 @@ LOGGER = get_logger()
 class Sublime(EditorPlugin):
     """
     Editor plugin that creates a sublime project
-    for the
+    for the repo.
+    The project definition file includes
+    a basic build system for the cirrus virtualenv.
 
     """
     @property
     def template(self):
+        """return path to template"""
         templ_dir = os.path.dirname(inspect.getsourcefile(cirrus.templates))
         templ = os.path.join(templ_dir, 'sublime-project.mustache')
         return templ

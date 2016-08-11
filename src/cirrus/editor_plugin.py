@@ -5,8 +5,6 @@ editor_plugin
 Base Plugin for setting up an editor project in a cirrus repo
 
 """
-import argparse
-
 from pluggage.factory_plugin import PluggagePlugin
 
 from cirrus.configuration import load_configuration
