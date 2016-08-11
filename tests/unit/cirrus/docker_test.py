@@ -15,9 +15,13 @@ class DockerFunctionTests(unittest.TestCase):
     """
     test coverage for docker command module functions
     """
+
     def setUp(self):
         self.patcher = mock.patch('cirrus.docker.subprocess')
+        self.version_patcher = mock.patch('cirrus.docker.get_docker_version')
         self.mock_subp = self.patcher.start()
+        self.mock_get_docker_version = self.version_patcher.start()
+        self.mock_get_docker_version.return_value = 'Docker version 1.12.0, build 8eab29e'
         self.mock_subp.STDOUT = 'STOUT'
         self.mock_check_output = mock.Mock()
         self.mock_check_output.return_value = 'SUBPROCESS OUT'
@@ -54,6 +58,7 @@ class DockerFunctionTests(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
+        self.version_patcher.stop()
 
     def test_docker_build(self):
         """test straight docker build call"""
@@ -61,9 +66,14 @@ class DockerFunctionTests(unittest.TestCase):
         self.failUnless(self.mock_subp.check_output.called)
         self.mock_subp.check_output.assert_has_calls(
             mock.call(
-                ['docker', 'build', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
+                ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
             )
         )
+
+    def test_docker_build_tag_opts(self):
+        """test the _build_tag_opts helper function"""
+        tag_opts = dckr._build_tag_opts(('hodor', '0.1.2', 'latest'))
+        self.assertEqual(tag_opts, ['-t', 'hodor', '-t', '0.1.2', '-t', 'latest'])
 
     @mock.patch('cirrus.docker.ds')
     def test_docker_build_template(self, mock_ds):
@@ -82,7 +92,7 @@ class DockerFunctionTests(unittest.TestCase):
         )
         self.mock_subp.check_output.assert_has_calls(
             mock.call(
-                ['docker', 'build', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
+                ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
             )
         )
 
@@ -101,7 +111,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.mock_subp.check_output.assert_has_calls(
             [
                 mock.call(['docker', 'login', '-u', 'steve', '-e', 'steve@pbr.com', '-p', 'st3v3R0X']),
-                mock.call(['docker', 'build', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image'])
+                mock.call(['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image'])
             ]
         )
 
@@ -165,6 +175,47 @@ class DockerFunctionTests(unittest.TestCase):
         with self.assertRaises(CalledProcessError):
             result = dckr.is_docker_connected()
             self.assertFalse(result)
+
+
+class DockerUtilTest(unittest.TestCase):
+    """
+    The DockerFunctionTests class patches too much (all of the subprocess module)
+    As a result, things like subprocess.CalledProcessError are not caught properly
+    by self.assertRaises
+    Use this class to mock bits as needed.
+    """
+
+    @mock.patch('cirrus.docker.subprocess.check_output')
+    def test_get_docker_version(self, mock_check_output):
+        mock_check_output.return_value = 'Docker version 1.12.0, build 8eab29e'
+        version = dckr.get_docker_version()
+        self.assertEqual(version, 'Docker version 1.12.0, build 8eab29e')
+
+    @mock.patch('cirrus.docker.subprocess.check_output')
+    def test_get_docker_version_error(self, mock_check_output):
+        """test that a subprocess error is caught/handled"""
+        mock_check_output.side_effect = CalledProcessError(
+            1,
+            ['docker', '-v'],
+            'Some error')
+
+        with self.assertRaises(dckr.DockerVersionError):
+            dckr.get_docker_version()
+
+    def test_match_docker_version_error(self):
+        """test a docker version match against unexpected input"""
+        with self.assertRaises(dckr.DockerVersionError):
+            dckr.match_docker_version('-bash: docker: command not found')
+
+    @mock.patch('cirrus.docker.get_docker_version')
+    def test_is_docker_version_installed(self, mock_get_docker_version):
+        """test docker version compare function"""
+        mock_get_docker_version.return_value = 'Docker version 1.12.0, build 8eab29e'
+        self.assertIs(dckr.is_docker_version_installed('1.10.0'), True)
+        self.assertIs(dckr.is_docker_version_installed('1.10.1'), True)
+        self.assertIs(dckr.is_docker_version_installed('1.11.0'), True)
+        self.assertIs(dckr.is_docker_version_installed('1.13.0'), False)
+
 
 if __name__ == '__main__':
     unittest.main()

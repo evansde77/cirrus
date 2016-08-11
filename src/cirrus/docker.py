@@ -4,8 +4,10 @@ docker command
 
 
 """
+import re
 import sys
 import subprocess
+from distutils.version import StrictVersion
 
 from argparse import ArgumentParser
 from cirrus.logger import get_logger
@@ -23,6 +25,26 @@ instructions to configure your shell.
 If you are running docker natively, check that the docker service is running
 and you have sufficient privileges to connect.
 """
+
+DOCKER_VERSION_BUILD_HELP = """
+Your installed version of "docker build" does not support multiple tag (-t)
+arguments. As a result, your image was not auto tagged as "latest".
+
+"docker build -t repo:latest -t repo:1.2.3" is how we apply the "latest" tag to
+a new image since "docker tag -f" was deprecated in Docker 1.10.0.
+
+Please consider upgrading your Docker version.
+"""
+
+# Version 1.10.0 is needed for "docker build" with multiple -t arguments
+DOCKER_REQUIRED_VERSION = '1.10.0'
+
+
+class DockerVersionError(Exception):
+    """
+    Custom exception; installed docker version cannot be verified.
+    """
+    pass
 
 
 class OptionHelper(dict):
@@ -134,12 +156,21 @@ def build_parser():
     return opts
 
 
-def _docker_build(path, tag, base_tag):
+def _docker_build(path, tags, base_tag):
     """
-    execute docker build -t <tag> <path> in a subprocess
+    execute docker build <path> in a subprocess
+
+    The build command uses the multiple tag (-t) option provided by
+    `docker build` since release 1.10. Otherwise, only the last tag in the list
+    is applied.
+
+    :param path: filesystem path containg the build context (Dockerfile)
+    :param tags: sequence of tag strings to apply to the image
+    :param base_tag: full repository repo/tag string (repository/tag:0)
     """
-    command = ['docker', 'build', '-t', tag, path]
+    command = ['docker', 'build'] + _build_tag_opts(tags) + [path]
     LOGGER.info("Executing docker build command: {}".format(' '.join(command)))
+
     try:
         stdout = subprocess.check_output(command)
     except subprocess.CalledProcessError as ex:
@@ -148,7 +179,76 @@ def _docker_build(path, tag, base_tag):
     LOGGER.info(stdout)
     image = find_image_id(base_tag)
     LOGGER.info("Image ID: {}".format(image))
+
+    if not is_docker_version_installed(DOCKER_REQUIRED_VERSION):
+        LOGGER.warning(DOCKER_VERSION_BUILD_HELP)
+
     return image
+
+
+def _build_tag_opts(tags):
+    """
+    create a list of tag options suitable for consumption by
+    subprocess.check_output and similar functions.
+
+    >>> _build_tag_opts(['v1.2.3', 'latest'])
+    ['-t', 'v1.2.3', '-t', 'latest']
+
+    :param tags: sequence of tag strings
+    :returns: list of tag arguments to be fed to docker build.
+    """
+    tag_opts = []
+    for tag in tags:
+        tag_opts += ['-t'] + [tag]
+
+    return tag_opts
+
+
+def is_docker_version_installed(required_version):
+    """
+    Check that the installed docker version is required_version or greater
+    :param required_version: docker version string, such as 1.12.0
+    """
+    raw_version = get_docker_version()
+    installed_version = match_docker_version(raw_version)
+    return StrictVersion(installed_version) >= StrictVersion(required_version)
+
+
+def get_docker_version():
+    """
+    Find the locally installed docker version, as captured from the output of
+    docker -v.
+
+    :returns: the raw string output of docker -v.
+    """
+    try:
+        stdout = subprocess.check_output(('docker', '-v'))
+    except subprocess.CalledProcessError as ex:
+        LOGGER.error(ex.output)
+        raise DockerVersionError(
+            "Installed Docker version cannot be determined")
+    LOGGER.info(stdout)
+    return stdout.strip()
+
+
+def match_docker_version(raw_version_string):
+    """
+    Grab the docker version in xx.yy.zz format from a arbitrary string (works
+    nicely when fed the output of get_docker_version).
+
+    :param raw_version_string: a string containing a docker version, typically
+        in the format returned by docker -v
+        "Docker version 1.12.0, build 8eab29e"
+    :returns: the docker version string, cleaned up as xx.yy.zz
+    """
+    match = re.search('[0-9]+\.[0-9]+\.[0-9]+', raw_version_string)
+    if match is None:
+        raise DockerVersionError(
+            "Installed Docker version cannot be determined. "
+            "Could not match '{}'".format(raw_version_string))
+
+    docker_version = match.group().strip()
+    return docker_version
 
 
 def find_image_id(base_tag):
@@ -183,21 +283,6 @@ def _docker_login(helper):
 
     LOGGER.info('No docker login credentials provided in cirrus.conf')
     return False
-
-
-def _docker_tag(image, tag, latest):
-    """
-    tag the created image ID with the current tag and as latest
-
-    """
-    command = ['docker', 'tag', image, tag]
-    LOGGER.info("Executing {}".format(' '.join(command)))
-    try:
-        stdout = subprocess.check_output(command)
-    except subprocess.CalledProcessError as ex:
-        LOGGER.error(ex.output)
-        raise
-    LOGGER.info(stdout)
 
 
 def _docker_push(tag):
@@ -259,8 +344,8 @@ def docker_build(opts, config):
             extend_context=config.configuration_map()
         )
 
-    image = _docker_build(path, tag, tag_base(config))
-    _docker_tag(image, tag, latest)
+    tags = (latest, tag)
+    _docker_build(path, tags, tag_base(config))
 
 
 def docker_push(opts, config):
