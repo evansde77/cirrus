@@ -170,7 +170,7 @@ def commit_files(repo_dir, commit_msg, *filenames):
 
     """
     return commit_files_optional_push(
-        repo_dir, commit_msg, push=True, *filenames
+        repo_dir, commit_msg, True, *filenames
     )
 
 
