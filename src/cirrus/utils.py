@@ -51,17 +51,23 @@ def update_version(filename, new_version, vers_attr='__version__'):
     _update_version_
 
     Util to update the __version__ field (or different if supplied)
-    in a file with the new version string provided
+    in a file with the new version string provided.
+
+    Will append the version line if not found
 
     """
     lines = []
     with open(filename, 'r') as handle:
         lines = handle.readlines()
 
+    updated = False
     for lineno, line in enumerate(lines):
         if line.startswith(vers_attr):
             lines[lineno] = "{0}=\"{1}\"\n".format(vers_attr, new_version)
+            updated = True
             break
+    if not updated:
+        lines.append("{0}=\"{1}\"\n".format(vers_attr, new_version))
 
     with open(filename, 'w') as handle:
         handle.writelines(lines)
