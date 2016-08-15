@@ -211,7 +211,7 @@ def setup_branches(opts):
         branch(opts.repo, opts.develop, opts.master)
         if do_push:
             LOGGER.info("Pushing {}...".format(opts.develop))
-            push()
+            push(opts.repo)
 
     LOGGER.info("Working on {}".format(get_active_branch(opts.repo)))
 
