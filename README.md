@@ -93,7 +93,6 @@ cd test_repo/
 git init 
 git checkout -b develop 
 mkdir src
-mkdir throwaway
 mkdir src/throwaway
 echo "__version__ = '0.0.0'\n" > src/throwaway/__init__.py
 echo "requests\n" > requirements.txt
