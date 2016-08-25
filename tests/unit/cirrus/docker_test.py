@@ -38,6 +38,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.dockerstache_template = None
         self.opts.dockerstache_context = None
         self.opts.dockerstache_defaults = None
+        self.opts.pre_script = None
 
         self.config = Configuration(None)
         self.config['package'] = {
@@ -66,7 +67,20 @@ class DockerFunctionTests(unittest.TestCase):
         self.failUnless(self.mock_subp.check_output.called)
         self.mock_subp.check_output.assert_has_calls(
             mock.call(
-                ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
+                'docker build -t unittesting/unittesting:latest -t unittesting/unittesting:1.2.3 vm/docker_image',
+                shell=True
+            )
+        )
+
+    def test_docker_build_with_pre_script(self):
+        """test straight docker build call"""
+        self.opts.pre_script = "echo WOMP"
+        dckr.docker_build(self.opts, self.config)
+        self.failUnless(self.mock_subp.check_output.called)
+        self.mock_subp.check_output.assert_has_calls(
+            mock.call(
+                'echo WOMP\ndocker build -t unittesting/unittesting:latest -t unittesting/unittesting:1.2.3 vm/docker_image',
+                shell=True
             )
         )
 
@@ -92,7 +106,9 @@ class DockerFunctionTests(unittest.TestCase):
         )
         self.mock_subp.check_output.assert_has_calls(
             mock.call(
-                ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
+                'docker build -t unittesting/unittesting:latest -t unittesting/unittesting:1.2.3 vm/docker_image',
+                shell=True
+
             )
         )
 
@@ -111,7 +127,10 @@ class DockerFunctionTests(unittest.TestCase):
         self.mock_subp.check_output.assert_has_calls(
             [
                 mock.call(['docker', 'login', '-u', 'steve', '-e', 'steve@pbr.com', '-p', 'st3v3R0X']),
-                mock.call(['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image'])
+                mock.call(
+                    'docker build -t unittesting/unittesting:latest -t unittesting/unittesting:1.2.3 vm/docker_image',
+                    shell=True
+                )
             ]
         )
 
