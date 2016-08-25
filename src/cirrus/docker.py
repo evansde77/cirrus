@@ -75,12 +75,15 @@ class BuildOptionHelper(OptionHelper):
         self['template'] = config.get_param('docker', 'dockerstache_template', None)
         self['context'] = config.get_param('docker', 'dockerstache_context', None)
         self['defaults'] = config.get_param('docker', 'dockerstache_defaults', None)
+        self['pre_script'] = config.get_param('docker', 'docker_build_pre_script', None)
         if cli_opts.docker_repo:
             self['docker_repo'] = cli_opts.docker_repo
         if cli_opts.directory:
             self['directory'] = cli_opts.directory
         if cli_opts.dockerstache_template:
             self['template'] = cli_opts.dockerstache_template
+        if cli_opts.pre_script:
+            self['pre_script'] = cli_opts.pre_script
 
 
 def build_parser():
@@ -134,6 +137,12 @@ def build_parser():
         default=None,
         help='path to dockerstache defaults file'
     )
+    build_command.add_argument(
+        '--pre-script',
+        default=None,
+        help='shell command to run prior to docker build',
+        dest='pre_script'
+        )
 
     push_command = subparsers.add_parser('push')
     push_command.add_argument(
@@ -156,7 +165,7 @@ def build_parser():
     return opts
 
 
-def _docker_build(path, tags, base_tag):
+def _docker_build(path, tags, base_tag, prescript=None):
     """
     execute docker build <path> in a subprocess
 
@@ -169,10 +178,13 @@ def _docker_build(path, tags, base_tag):
     :param base_tag: full repository repo/tag string (repository/tag:0)
     """
     command = ['docker', 'build'] + _build_tag_opts(tags) + [path]
-    LOGGER.info("Executing docker build command: {}".format(' '.join(command)))
-
+    command_str = ""
+    if prescript:
+        command_str += "{}\n".format(prescript)
+    command_str += " ".join(command)
+    LOGGER.info("Executing docker build command: {}".format(command_str))
     try:
-        stdout = subprocess.check_output(command)
+        stdout = subprocess.check_output(command_str, shell=True)
     except subprocess.CalledProcessError as ex:
         LOGGER.error(ex.output)
         raise
@@ -345,7 +357,7 @@ def docker_build(opts, config):
         )
 
     tags = (latest, tag)
-    _docker_build(path, tags, tag_base(config))
+    _docker_build(path, tags, tag_base(config), helper['pre_script'])
 
 
 def docker_push(opts, config):
