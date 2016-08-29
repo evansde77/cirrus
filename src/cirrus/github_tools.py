@@ -272,8 +272,10 @@ class GitHubContext(object):
             count = 0
             error_flag = None
             while count < attempts:
+                error_flag = None
                 try:
                     self.repo.remotes.origin.push(self.repo.head, tags=True)
+                    break
                 except Exception as ex:
                     msg = "Error pushing tags: {}".format(ex)
                     LOGGER.info(msg)
