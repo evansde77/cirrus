@@ -278,7 +278,7 @@ class GitHubContext(object):
                     break
                 except Exception as ex:
                     msg = "Error pushing tags: {}".format(ex)
-                    LOGGER.info(msg)
+                    LOGGER.warning(msg)
                     error_flag = ex
                     time.sleep(cooloff)
                 count += 1
