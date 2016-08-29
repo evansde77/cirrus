@@ -249,7 +249,7 @@ class GitHubContext(object):
         result = self.repo.git.merge('--no-ff', branch_name)
         return result
 
-    def tag_release(self, tag, master='master', push=True):
+    def tag_release(self, tag, master='master', push=True, attempts=1, cooloff=2):
         """
         _tag_release_
 
@@ -269,7 +269,23 @@ class GitHubContext(object):
             raise RuntimeError(msg)
         self.repo.create_tag(tag)
         if push:
-            self.repo.remotes.origin.push(self.repo.head, tags=True)
+            count = 0
+            error_flag = None
+            while count < attempts:
+                try:
+                    self.repo.remotes.origin.push(self.repo.head, tags=True)
+                except Exception as ex:
+                    msg = "Error pushing tags: {}".format(ex)
+                    LOGGER.info(msg)
+                    error_flag = ex
+                    time.sleep(cooloff)
+                count += 1
+            if error_flag is not None:
+                msg = "Unable to push tags {} due to repeated failures: {}".format(
+                    tag, str(ex)
+                )
+                raise RuntimeError(msg)
+
 
     def delete_branch(self, branch_name, remote=True):
         """
