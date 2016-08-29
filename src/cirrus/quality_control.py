@@ -55,6 +55,8 @@ def build_parser(argslist):
 def run_pylint(files=None):
     """
     Runs pylint on a package or list of files
+
+    Returns True if threshold test passes, False otherwise
     """
     config = load_configuration()
     quality_info = ()
@@ -73,13 +75,17 @@ def run_pylint(files=None):
         LOGGER.info(("Failed threshold test.  "
             "Your score: {0}, Threshold {1}".format(
                 quality_info[1], threshold)))
+        return False
     else:
         LOGGER.info("Passed threshold test.")
+        return True
 
 
 def run_pyflakes(verbose, files=None):
     """
     Runs pyflakes on a package or list of files
+
+    Returns True if no violations found, False otherwise.
     """
     config = load_configuration()
     quality_info = ()
@@ -92,10 +98,16 @@ def run_pyflakes(verbose, files=None):
         quality_info[0],
         quality_info[1]))
 
+    if quality_info[1] > 0:
+        return False
+    return True
+
 
 def run_pep8(verbose, files=None):
     """
     Runs pep8 on a package or list of files
+
+    Returns True if no violations found, False otherwise.
     """
     config = load_configuration()
     quality_info = ()
@@ -107,6 +119,10 @@ def run_pep8(verbose, files=None):
     LOGGER.info("Package ran: {0}, Number of Errors: {1}".format(
         quality_info[0],
         quality_info[1]))
+
+    if quality_info[1] > 0:
+        return False
+    return True
 
 
 def main():
@@ -124,21 +140,26 @@ def main():
                 files.remove(item)
         if not files:
             LOGGER.info("No modules have been changed.")
-            exit(0)
+            sys.exit(0)
     else:
         files = opts.files
+
+    pass_qc = True
     #run all if none specified
     if not opts.pylint and not opts.pep8 and not opts.pyflakes:
-        run_pep8(opts.verbose, files=files)
-        run_pyflakes(opts.verbose, files=files)
-        run_pylint(files=files)
+        pass_qc = run_pep8(opts.verbose, files=files) and pass_qc
+        pass_qc = run_pyflakes(opts.verbose, files=files) and pass_qc
+        pass_qc = run_pylint(files=files) and pass_qc
     else:
         if opts.pylint:
-            run_pylint(files=files)
+            pass_qc = run_pylint(files=files) and pass_qc
         if opts.pep8:
-            run_pep8(opts.verbose, files=files)
+            pass_qc = run_pep8(opts.verbose, files=files) and pass_qc
         if opts.pyflakes:
-            run_pyflakes(opts.verbose, files=files)
+            pass_qc = run_pyflakes(opts.verbose, files=files) and pass_qc
+
+    if not pass_qc:
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
