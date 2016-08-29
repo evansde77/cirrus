@@ -9,6 +9,7 @@ import subprocess
 from cirrus.github_tools import create_pull_request
 from cirrus.github_tools import current_branch_mark_status
 from cirrus.github_tools import get_releases
+from cirrus.github_tools import GitHubContext
 from .harnesses import _repo_directory
 
 class GithubToolsTest(unittest.TestCase):
@@ -114,6 +115,72 @@ class GithubToolsTest(unittest.TestCase):
         current_branch_mark_status(_repo_directory(), "success")
 
         self.failUnless(mock_post.called)
+
+    @mock.patch('cirrus.github_tools.git')
+    def test_tag_release(self, mock_git):
+        """test tag_release call"""
+        mock_repo = mock.Mock()
+        mock_repo.active_branch = mock.Mock()
+        mock_repo.active_branch.name = 'master'
+        mock_repo.git = mock.Mock()
+        mock_repo.git.checkout = mock.Mock()
+        mock_tag1 = mock.Mock()
+        mock_tag1.name = '0.0.0'
+        mock_tag2 = mock.Mock()
+        mock_tag2.name = '0.0.1'
+        mock_repo.tags = [
+            mock_tag1, mock_tag2
+        ]
+        mock_repo.create_tag = mock.Mock()
+        mock_git.Repo = mock.Mock(return_value=mock_repo)
+        mock_repo.remotes = mock.Mock()
+        mock_repo.remotes.origin = mock.Mock()
+        mock_repo.remotes.origin.push = mock.Mock()
+
+        ghc = GitHubContext('REPO')
+        ghc.tag_release('0.0.2', 'master', push=True, attempts=2, cooloff=0)
+
+        self.failUnless(mock_repo.create_tag.called)
+        self.failUnless(mock_repo.remotes.origin.push.called)
+
+    @mock.patch('cirrus.github_tools.git')
+    @mock.patch('cirrus.github_tools.time')
+    def test_tag_release_retry(self, mock_time, mock_git):
+        """test repeated tries to push tags"""
+        mock_repo = mock.Mock()
+        mock_repo.active_branch = mock.Mock()
+        mock_repo.active_branch.name = 'master'
+        mock_repo.git = mock.Mock()
+        mock_repo.git.checkout = mock.Mock()
+        mock_tag1 = mock.Mock()
+        mock_tag1.name = '0.0.0'
+        mock_tag2 = mock.Mock()
+        mock_tag2.name = '0.0.1'
+        mock_repo.tags = [
+            mock_tag1, mock_tag2
+        ]
+        mock_repo.create_tag = mock.Mock()
+        mock_git.Repo = mock.Mock(return_value=mock_repo)
+        mock_repo.remotes = mock.Mock()
+        mock_repo.remotes.origin = mock.Mock()
+        mock_repo.remotes.origin.push = mock.Mock(
+            side_effect=RuntimeError("push it real good")
+        )
+        mock_time.sleep = mock.Mock()
+
+        ghc = GitHubContext('REPO')
+        self.assertRaises(
+            RuntimeError,
+            ghc.tag_release,
+            '0.0.2',
+            'master',
+            push=True,
+            attempts=5,
+            cooloff=0
+        )
+        self.assertEqual(mock_repo.remotes.origin.push.call_count, 5)
+        self.assertEqual(mock_time.sleep.call_count, 5)
+        self.failUnless(mock_repo.create_tag.called)
 
 if __name__ == "__main__":
     unittest.main()
