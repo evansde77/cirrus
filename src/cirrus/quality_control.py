@@ -141,7 +141,7 @@ def main():
     if opts.only_changes:
         files = get_diff_files(None)
         # we only want python modules
-        for item in files:
+        for item in files[:]:
             if not item.endswith('.py'):
                 files.remove(item)
         if not files:
@@ -150,21 +150,21 @@ def main():
     else:
         files = opts.files
 
-    pass_qc = True
+    pass_pep8, pass_pyflakes, pass_pylint = True, True, True
     # run all if none specified
     if not opts.pylint and not opts.pep8 and not opts.pyflakes:
-        pass_qc = run_pep8(opts.verbose, files=files) and pass_qc
-        pass_qc = run_pyflakes(opts.verbose, files=files) and pass_qc
-        pass_qc = run_pylint(files=files) and pass_qc
+        pass_pep8 = run_pep8(opts.verbose, files=files)
+        pass_pyflakes = run_pyflakes(opts.verbose, files=files)
+        pass_pylint = run_pylint(files=files)
     else:
         if opts.pylint:
-            pass_qc = run_pylint(files=files) and pass_qc
+            pass_pylint = run_pylint(files=files)
         if opts.pep8:
-            pass_qc = run_pep8(opts.verbose, files=files) and pass_qc
+            pass_pep8 = run_pep8(opts.verbose, files=files)
         if opts.pyflakes:
-            pass_qc = run_pyflakes(opts.verbose, files=files) and pass_qc
+            pass_pyflakes = run_pyflakes(opts.verbose, files=files)
 
-    if not pass_qc:
+    if not all([pass_pep8, pass_pylint, pass_pyflakes]):
         sys.exit(1)
 
 if __name__ == '__main__':
