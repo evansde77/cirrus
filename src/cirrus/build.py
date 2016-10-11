@@ -69,9 +69,8 @@ def build_parser(argslist):
         help='extra requirements files to install'
     )
     parser.add_argument(
-        '--use-virtualenv', 
-        type=str, 
-        dest='use_venv', 
+        '--use-virtualenv',
+        dest='use_venv',
         help='explicit virtualenv binary to use',
         default=None
         )
