@@ -69,6 +69,12 @@ def build_parser(argslist):
         help='extra requirements files to install'
     )
     parser.add_argument(
+        '--use-virtualenv',
+        dest='use_venv',
+        help='explicit virtualenv binary to use',
+        default=None
+        )
+    parser.add_argument(
         '--no-setup-develop',
         dest='nosetupdevelop',
         default=False,
@@ -108,11 +114,10 @@ def execute_build(opts):
 
     venv_path = os.path.join(working_dir, venv_name)
     venv_bin_path = os.path.join(venv_path, 'bin', 'python')
-    venv_command = os.path.join(
-        cirrus_home(),
-        'venv',
-        'bin',
-        'virtualenv')
+    if opts.use_venv:
+        venv_command = opts.use_venv
+    else:
+        venv_command = 'virtualenv'
 
     # remove existing virtual env if building clean
     if opts.clean and os.path.exists(venv_path):

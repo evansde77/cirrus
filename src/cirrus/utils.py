@@ -63,11 +63,11 @@ def update_version(filename, new_version, vers_attr='__version__'):
     updated = False
     for lineno, line in enumerate(lines):
         if line.startswith(vers_attr):
-            lines[lineno] = "{0}=\"{1}\"\n".format(vers_attr, new_version)
+            lines[lineno] = "{0} = \"{1}\"\n".format(vers_attr, new_version)
             updated = True
             break
     if not updated:
-        lines.append("{0}=\"{1}\"\n".format(vers_attr, new_version))
+        lines.append("{0} = \"{1}\"\n".format(vers_attr, new_version))
 
     with open(filename, 'w') as handle:
         handle.writelines(lines)

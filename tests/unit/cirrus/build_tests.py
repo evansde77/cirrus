@@ -100,11 +100,29 @@ class BuildCommandTests(unittest.TestCase):
         opts.upgrade = False
         opts.extras = []
         opts.nosetupdevelop = False
+        opts.use_venv = None
 
         execute_build(opts)
 
         self.mock_local.assert_has_calls([
-            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('virtualenv CWD/venv'),
+            mock.call('CWD/venv/bin/pip install -r requirements.txt'),
+            mock.call('. ./venv/bin/activate && python setup.py develop')
+        ])
+
+    def test_execute_build_default_pypi_custom_venv(self):
+        """test execute_build with default pypi settings"""
+        opts = mock.Mock()
+        opts.clean = False
+        opts.upgrade = False
+        opts.extras = []
+        opts.nosetupdevelop = False
+        opts.use_venv = "CUSTOM_VENV"
+
+        execute_build(opts)
+
+        self.mock_local.assert_has_calls([
+            mock.call('CUSTOM_VENV CWD/venv'),
             mock.call('CWD/venv/bin/pip install -r requirements.txt'),
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
@@ -116,6 +134,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.upgrade = False
         opts.extras = []
         opts.nosetupdevelop = False
+        opts.use_venv = None
 
         self.mock_conf.pypi_url.return_value = "dev"
         self.mock_pypirc_inst.index_servers = ['dev']
@@ -123,7 +142,7 @@ class BuildCommandTests(unittest.TestCase):
         execute_build(opts)
 
         self.mock_local.assert_has_calls([
-            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install -i DEVPYPIURL -r requirements.txt'),
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
@@ -135,11 +154,12 @@ class BuildCommandTests(unittest.TestCase):
         opts.upgrade = False
         opts.extras = []
         opts.nosetupdevelop = False
+        opts.use_venv = None
         self.mock_conf.pip_options.return_value = "PIPOPTIONS"
         execute_build(opts)
 
         self.mock_local.assert_has_calls([
-            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install -r requirements.txt PIPOPTIONS '),
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
@@ -150,12 +170,13 @@ class BuildCommandTests(unittest.TestCase):
         opts.clean = False
         opts.upgrade = True
         opts.extras = []
+        opts.use_venv = None
         opts.nosetupdevelop = False
 
         execute_build(opts)
 
         self.mock_local.assert_has_calls([
-            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install --upgrade -r requirements.txt'),
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
@@ -165,11 +186,12 @@ class BuildCommandTests(unittest.TestCase):
         opts = mock.Mock()
         opts.clean = False
         opts.upgrade = False
+        opts.use_venv = None
         opts.extras = ['test-requirements.txt']
         opts.nosetupdevelop = False
         execute_build(opts)
         self.mock_local.assert_has_calls([
-            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install -r requirements.txt'),
             mock.call('CWD/venv/bin/pip install -r test-requirements.txt'),
             mock.call('. ./venv/bin/activate && python setup.py develop')
@@ -181,11 +203,12 @@ class BuildCommandTests(unittest.TestCase):
         opts.clean = False
         opts.extras = []
         opts.upgrade = False
+        opts.use_venv = None
         opts.nosetupdevelop = True
 
         execute_build(opts)
         self.mock_local.assert_has_calls([
-            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install -r requirements.txt')
         ])
 
@@ -195,13 +218,14 @@ class BuildCommandTests(unittest.TestCase):
         opts.clean = False
         opts.extras = []
         opts.upgrade = False
+        opts.use_venv = None
         opts.nosetupdevelop = False
         self.mock_conf.pypi_url.return_value = "PYPIURL"
 
         execute_build(opts)
 
         self.mock_local.assert_has_calls([
-            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install -i https://PYPIUSERNAME:TOKEN@PYPIURL/simple -r requirements.txt'),
             mock.call('. ./venv/bin/activate && python setup.py develop')
 
@@ -212,6 +236,7 @@ class BuildCommandTests(unittest.TestCase):
         opts = mock.Mock()
         opts.clean = False
         opts.extras = []
+        opts.use_venv = None
         opts.nosetupdevelop = False
         opts.upgrade = True
         self.mock_conf.pypi_url.return_value = "PYPIURL"
@@ -219,7 +244,7 @@ class BuildCommandTests(unittest.TestCase):
         execute_build(opts)
 
         self.mock_local.assert_has_calls([
-            mock.call('CIRRUS_HOME/venv/bin/virtualenv CWD/venv'),
+            mock.call('virtualenv CWD/venv'),
             mock.call('CWD/venv/bin/pip install -i https://PYPIUSERNAME:TOKEN@PYPIURL/simple --upgrade -r requirements.txt'),
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])

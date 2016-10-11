@@ -25,7 +25,8 @@ class BuildParserTest(unittest.TestCase):
     """test for cli parser"""
     def test_build_parser(self):
         argslist = ['init']
-        self.assertRaises(SystemExit, build_parser, argslist)
+        with mock.patch('sys.stderr'):
+            self.assertRaises(SystemExit, build_parser, argslist)
 
         argslist = ['init', '-p', 'throwaway', '-s', 'src']
         opts = build_parser(argslist)

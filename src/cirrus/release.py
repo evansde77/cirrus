@@ -651,7 +651,12 @@ def merge_release(opts):
                 cooloff=rel_conf['push_retry_cooloff']
             )
             LOGGER.info(u"Tagging {} as {}".format(master, tag))
-            ghc.tag_release(tag, master)
+            ghc.tag_release(
+                tag,
+                master,
+                attempts=rel_conf['push_retry_attempts'],
+                cooloff=rel_conf['push_retry_cooloff']
+            )
 
         LOGGER.info(u"Merging {} into {}".format(release_branch, develop))
         if opts.log_status:
