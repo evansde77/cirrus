@@ -110,6 +110,23 @@ class BuildCommandTests(unittest.TestCase):
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
 
+    def test_execute_build_default_pypi_custom_venv(self):
+        """test execute_build with default pypi settings"""
+        opts = mock.Mock()
+        opts.clean = False
+        opts.upgrade = False
+        opts.extras = []
+        opts.nosetupdevelop = False
+        opts.use_venv = "CUSTOM_VENV"
+
+        execute_build(opts)
+
+        self.mock_local.assert_has_calls([
+            mock.call('CUSTOM_VENV CWD/venv'),
+            mock.call('CWD/venv/bin/pip install -r requirements.txt'),
+            mock.call('. ./venv/bin/activate && python setup.py develop')
+        ])
+
     def test_execute_build_pypirc(self):
         """test execute_build with pypirc provided settings"""
         opts = mock.Mock()
