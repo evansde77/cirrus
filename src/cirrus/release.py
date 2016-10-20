@@ -393,9 +393,11 @@ def new_release(opts):
     # make sure the branch doesnt already exist on remote
     if remote_branch_exists(repo_dir, branch_name):
         msg = (
-            "Error: branch {} already exists on the remote repo "
-            "Please clean up that branch before proceeding"
-            ).format(branch_name)
+            "Error: branch {branch_name} already exists on the remote repo "
+            "Please clean up that branch before proceeding\n"
+            "git branch -d {branch_name}\n"
+            "git push origin --delete {branch_name\n"
+            ).format(branch_name=branch_name)
         LOGGER.error(msg)
         raise RuntimeError(msg)
 
