@@ -274,9 +274,12 @@ def _docker_login(helper):
     if helper['username']:
         LOGGER.info("Running docker login as {}".format(helper['username']))
         command = [
-            'docker', 'login', '-u', helper['username'], '-e',
-            helper['email'], '-p', helper['password']
+            'docker', 'login',
+            '-u', helper['username'],
+            '-p', helper['password']
         ]
+        if helper['docker_repo']:
+            command.append(helper['docker_repo'])
         stdout = subprocess.check_output(command)
         LOGGER.info(stdout)
         return True
