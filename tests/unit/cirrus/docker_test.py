@@ -38,6 +38,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.dockerstache_template = None
         self.opts.dockerstache_context = None
         self.opts.dockerstache_defaults = None
+        self.opts.docker_repo = None
 
         self.config = Configuration(None)
         self.config['package'] = {
@@ -105,12 +106,14 @@ class DockerFunctionTests(unittest.TestCase):
         self.config['docker']['docker_login_username'] = 'steve'
         self.config['docker']['docker_login_password'] = 'st3v3R0X'
         self.config['docker']['docker_login_email'] = 'steve@pbr.com'
+        self.config['docker']['repo'] = 'unittesting'
+        print self.config['docker']
 
         dckr.docker_build(self.opts, self.config)
         self.failUnless(self.mock_subp.check_output.called)
         self.mock_subp.check_output.assert_has_calls(
             [
-                mock.call(['docker', 'login', '-u', 'steve', '-e', 'steve@pbr.com', '-p', 'st3v3R0X']),
+                mock.call(['docker', 'login', '-u', 'steve', '-p', 'st3v3R0X', 'unittesting']),
                 mock.call(['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image'])
             ]
         )
@@ -147,12 +150,14 @@ class DockerFunctionTests(unittest.TestCase):
         self.config['docker']['docker_login_username'] = 'steve'
         self.config['docker']['docker_login_password'] = 'st3v3R0X'
         self.config['docker']['docker_login_email'] = 'steve@pbr.com'
+        self.config['docker']['docker_repo'] = None
         dckr.docker_push(self.opts, self.config)
         self.mock_subp.check_output.assert_has_calls(
             [
                 mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3'])
             ]
         )
+
 
     def test_docker_connection(self):
         """test is_docker_connected function called as expected"""

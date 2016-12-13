@@ -59,6 +59,7 @@ class OptionHelper(dict):
         self['login'] = config.get_param(
             'docker', 'docker_login_username', None
         ) is not None
+        self['docker_repo'] = config.get_param('docker', 'repo', None)
 
         if cli_opts.login:
             self['login'] = True
@@ -274,9 +275,14 @@ def _docker_login(helper):
     if helper['username']:
         LOGGER.info("Running docker login as {}".format(helper['username']))
         command = [
-            'docker', 'login', '-u', helper['username'], '-e',
-            helper['email'], '-p', helper['password']
+            'docker', 'login',
+            '-u', helper['username'],
+            '-p', helper['password']
         ]
+        print ">>>", helper
+        if helper.get('docker_repo') is not None:
+            command.append(helper['docker_repo'])
+            print command
         stdout = subprocess.check_output(command)
         LOGGER.info(stdout)
         return True
