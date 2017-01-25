@@ -153,6 +153,8 @@ class CreateFilesTest(unittest.TestCase):
         opts.templates = ['include steve/*']
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
+        opts.requirements = 'requirements.txt'
+        opts.test_requirements = 'test-requirements.txt'
         opts.create_version_file = False
 
         create_files(opts)
@@ -195,7 +197,8 @@ class CreateFilesTest(unittest.TestCase):
         opts.templates = ['include steve/*']
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
-
+        opts.requirements = 'requirements.txt'
+        opts.test_requirements = 'test-requirements.txt'
         version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
         os.system('rm -f {}'.format(version))
         create_files(opts)
