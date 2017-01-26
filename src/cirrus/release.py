@@ -329,7 +329,7 @@ def build_parser(argslist):
     upload_command.add_argument(
         '--plugin',
         dest='plugin',
-        required=True,
+        default='pypi',
         help='Uploader plugin to use'
     )
     upload_command.add_argument(
