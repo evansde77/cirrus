@@ -42,6 +42,17 @@ from cirrus.git_tools import (
 DEFAULT_HISTORY_SENTINEL = "\nCIRRUS_HISTORY_SENTINEL\n"
 LOGGER = get_logger()
 
+TOXFILE = \
+"""
+[tox]
+envlist = py27
+[testenv]
+deps=
+  -r{requirements}
+  -r{test_requirements}
+commands=nosetests -w {testdir}/unit
+"""
+
 
 def get_plugin(plugin_name):
     """
@@ -99,6 +110,11 @@ def build_parser(argslist):
         required=True
     )
     init_command.add_argument(
+        '--tests',
+        help='test dir name',
+        default='tests'
+        )
+    init_command.add_argument(
         '--version', '-v',
         help="initial package version",
         default='0.0.0',
@@ -137,6 +153,19 @@ def build_parser(argslist):
         default='requirements.txt'
     )
     init_command.add_argument(
+        '--test-requirements',
+        help='test requirements file for pip',
+        default='test-requirements.txt',
+        dest='test_requirements'
+    )
+    init_command.add_argument(
+        '--test-mode',
+        help='test execution mode',
+        choices=['nosetests', 'tox'],
+        default='tox',
+    )
+
+    init_command.add_argument(
         '--master-branch',
         help='GitFlow master branch',
         default='master',
@@ -157,6 +186,13 @@ def build_parser(argslist):
     init_command.add_argument(
         '--create-version-file',
         help="create the file containing __version__ if it doesn\'t exist",
+        default=False,
+        action='store_true'
+    )
+
+    init_command.add_argument(
+        '--bootstrap',
+        help="assumes repo is empty and will create a very minimal set of files to get things started",
         default=False,
         action='store_true'
     )
@@ -271,7 +307,8 @@ def write_manifest(opts):
     backup_file(manifest)
     LOGGER.info("setting up manifest: {}".format(manifest))
     lines = [
-        "include requirements.txt",
+        "include {}".format(opts.requirements),
+        "include {}".format(opts.test_requirements),
         "include cirrus.conf"
     ]
     lines.extend(opts.templates)
@@ -351,8 +388,17 @@ def write_cirrus_conf(opts, version_file):
     config.set('gitflow', 'release_branch_prefix', 'release/')
     config.set('gitflow', 'feature_branch_prefix', 'feature/')
 
+    if os.path.exists(opts.test_requirements):
+        config.add_section('build')
+        config.set(
+            'build',
+            'extra_requirements',
+            opts.test_requirements
+        )
+
     config.add_section('test-default')
-    config.set('test-default', 'TESTDIRHERE')
+    config.set('test-default', 'where', 'tests/unit')
+    config.set('test-default', 'mode', opts.test_mode)
 
     config.add_section('quality')
     config.set('quality', 'threshold', 10)
@@ -416,10 +462,103 @@ def create_files(opts):
     return files
 
 
+def bootstrap_repo(opts):
+    """
+    bootstrap an empty repo with initial
+    file and dir structure.
+
+    This adds:
+
+     - src/<package>/__init__.py
+     - test/unit/<package>/example_test.py
+     - requirements.txt
+     - test-requirements.txt
+     - tox.ini
+    """
+    package = opts.package
+    if opts.source is None:
+        opts.source = 'src'
+
+    files = []
+    src_dir = os.path.join(opts.source, package)
+    tests_dir = os.path.join(opts.tests)
+    unit_dir = os.path.join(tests_dir, 'unit')
+    pkg_dir = os.path.join(unit_dir, package)
+    init_files = [
+        os.path.join(tests_dir, '__init__.py'),
+        os.path.join(unit_dir, '__init__.py'),
+        os.path.join(pkg_dir, '__init__.py')
+    ]
+    for d in [src_dir, tests_dir, unit_dir, pkg_dir]:
+        os.makedirs(d)
+
+    for i in init_files:
+        with open(i, 'w') as handle:
+            handle.write("#created by cirrus\n")
+        files.append(i)
+
+    main_init = os.path.join(src_dir, '__init__.py')
+    files.append(main_init)
+    with open(main_init, 'w') as handle:
+        handle.write("#!/usr/bin/env python\n")
+        handle.write("# created by cirrus\n")
+        handle.write("__version__=\'{}\'\n".format(opts.version))
+
+    if not os.path.exists(opts.requirements):
+        with open(opts.requirements, 'w') as handle:
+            handle.write("requests\n")
+        files.append(opts.requirements)
+
+    if not os.path.exists(opts.test_requirements):
+        with open(opts.test_requirements, 'w') as handle:
+            handle.write("tox\n")
+            handle.write("nose\n")
+            handle.write("coverage\n")
+            handle.write("mock\n")
+            handle.write("pep8\n")
+        files.append(opts.test_requirements)
+
+    if not os.path.exists('tox.ini'):
+        with open('tox.ini', 'w') as handle:
+            handle.write(
+                TOXFILE.format(
+                    requirements=opts.requirements,
+                    test_requirements=opts.test_requirements,
+                    testdir=opts.tests
+                )
+            )
+
+        files.append('tox.ini')
+
+    template = os.path.join(
+        os.path.dirname(inspect.getsourcefile(cirrus.templates)),
+        'sample_test.py.mustache'
+    )
+    with open(template, 'r') as handle:
+        templ = handle.read()
+
+    sample_test = os.path.join(pkg_dir, 'sample_test.py')
+    rendered = pystache.render(templ, {'package': opts.package})
+    with open(sample_test, 'w') as handle:
+        handle.write(rendered)
+    files.append(sample_test)
+
+    commit_files_optional_push(
+        opts.repo,
+        "git cirrus package bootstrap",
+        False,
+        *files
+    )
+
+
 def init_package(opts):
     """
     initialise a repo with a basic cirrus setup
     """
+    if opts.bootstrap:
+        with working_dir(opts.repo):
+            bootstrap_repo(opts)
+
     setup_branches(opts)
     # write files
     files = create_files(opts)
