@@ -67,6 +67,16 @@ def create_github_token():
     requests for things like pull requests
 
     """
+    link_gh = ask_question(
+        'Would you like to setup your GitHub access token? [y/N]?',
+        default='n'
+        )
+    if 'n' in link_gh.lower():
+        return {
+            'github-user': os.environ.get('USER', 'GH-user-here'),
+            'github-token': '',
+        }
+
     oauth_note = "cirrus script"
     user = ask_question(
         'what is your github username?',
@@ -255,28 +265,28 @@ def build_parser(argslist):
     )
 
     parser.add_argument(
-        '--docker-email', 
-        default=None, 
+        '--docker-email',
+        default=None,
         help='dockerhub email address'
     )
     parser.add_argument(
         '--docker-username',
-        default=None, 
+        default=None,
         help='dockerhub username'
     )
     parser.add_argument(
         '--docker-token',
-        default=None, 
+        default=None,
         help='dockerhub access token'
     )
     parser.add_argument(
         '--buildserver-username',
-        default=None, 
+        default=None,
         help='buildserver username'
     )
     parser.add_argument(
         '--buildserver-token',
-        default=None, 
+        default=None,
         help='buildserver access token'
     )
 
