@@ -128,6 +128,9 @@ class Configuration(dict):
     def organisation_name(self):
         return self.get('package', {}).get('organization')
 
+    def author_email(self):
+        return self.get('package', {}).get('author_email')
+
     def release_notes_format(self):
         return self.get('package', {}).get('release_notes_format', 'plaintext')
 
@@ -198,6 +201,26 @@ class Configuration(dict):
         """
         self['package']['version'] = new_version
         self.parser.set('package', 'version', new_version)
+        with open(self.config_file, 'w') as handle:
+            self.parser.write(handle)
+
+    def add_docker_settings(self, template, context, directory, repo=None):
+        """
+        add docker settings to the config file and update it
+
+        """
+        if not self.has_section('docker'):
+            self['docker'] = {}
+            self.parser.add_section('docker')
+        self['docker']['dockerstache_template'] = template
+        self['docker']['dockerstache_context'] = context
+        self['docker']['directory'] = directory
+        self.parser.set('docker', 'dockerstache_template', template)
+        self.parser.set('docker', 'dockerstache_context', context)
+        self.parser.set('docker', 'directory', directory)
+        if repo:
+            self['docker']['repo'] = repo
+            self.parser.set('docker', 'repo', repo)
         with open(self.config_file, 'w') as handle:
             self.parser.write(handle)
 
