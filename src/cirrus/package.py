@@ -28,6 +28,8 @@ import cirrus.templates
 from argparse import ArgumentParser
 
 from cirrus.logger import get_logger
+from cirrus.utils import working_dir
+from cirrus.package_container import init_container
 from cirrus.utils import update_version
 from cirrus.git_tools import (
     branch,
@@ -197,6 +199,62 @@ def build_parser(argslist):
         action='store_true'
     )
 
+    cont_command = subparsers.add_parser('container-init')
+    cont_command.add_argument(
+        '--repo', '-r',
+        dest='repo',
+        default=os.getcwd()
+    )
+    cont_command.add_argument(
+        '--template-dir',
+        help="container template dir in repo",
+        default='container-template'
+    )
+    cont_command.add_argument(
+        '--image-dir',
+        help="container image build cache dir in repo",
+        default='image-dir'
+    )
+    cont_command.add_argument(
+        '--base-image', '-b',
+        help="Base image for your docker container",
+        dest='container',
+        required=True
+    )
+    cont_command.add_argument(
+        '--entrypoint', '-e',
+        help='container entrypoint',
+        default='/bin/bash'
+    )
+    cont_command.add_argument(
+        '--docker-registry',
+        default=None,
+        help='docker-registry address'
+    )
+    cont_command.add_argument(
+        '--container-virtualenv',
+        default=None,
+        dest='virtualenv',
+        help="If container image has a virtualenv, install package there, otherwise will install in whatever is system python"
+    )
+    cont_command.add_argument(
+        '--local-install',
+        default=False,
+        action='store_true',
+        help="Add scripts to install from local dist package on container"
+    )
+    cont_command.add_argument(
+        '--pypi-install',
+        default=False,
+        action='store_true',
+        help="Add scripts to install latest version of lib from a pypi server"
+    )
+    cont_command.add_argument(
+        '--no-remote',
+        help='disable pushing changes to remote, commit locally only',
+        default=False,
+        action='store_true'
+    )
     proj_command = subparsers.add_parser('project')
     proj_command.add_argument(
         '--repo', '-r',
@@ -218,18 +276,6 @@ def build_parser(argslist):
     opts = parser.parse_args(argslist)
     return opts
 
-
-@contextlib.contextmanager
-def working_dir(new_dir):
-    """
-    helper to switch to repo dir and back
-    """
-    cwd = os.getcwd()
-    try:
-        os.chdir(new_dir)
-        yield new_dir
-    finally:
-        os.chdir(cwd)
 
 
 def setup_branches(opts):
@@ -443,6 +489,10 @@ def update_package_version(opts):
             sys.exit(1)
 
     update_version(version_file, opts.version)
+    if version_file.startswith(opts.repo):
+        version_file = version_file.replace(opts.repo, '')
+        if version_file.startswith('/'):
+            version_file = version_file[1:]
     return version_file
 
 
@@ -590,6 +640,9 @@ def main():
 
     if opts.command == 'init':
         init_package(opts)
+
+    if opts.command == 'container-init':
+        init_container(opts)
 
     if opts.command == 'project':
         build_project(opts)

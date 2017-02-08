@@ -5,7 +5,25 @@ _utils_
 General purpose utils
 
 """
+import os
+import contextlib
 import codecs
+
+
+@contextlib.contextmanager
+def working_dir(new_dir):
+    """
+    helper to switch to repo dir and back
+    """
+    cwd = os.getcwd()
+    if cwd == "":
+        # edge case observed in some unittests
+        cwd = os.environ['PWD']
+    try:
+        os.chdir(new_dir)
+        yield new_dir
+    finally:
+        os.chdir(cwd)
 
 
 def update_file(filename, sentinel, text):
