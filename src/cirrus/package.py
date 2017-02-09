@@ -134,7 +134,7 @@ def build_parser(argslist):
     )
     init_command.add_argument(
         '--pypi-package-name',
-        help='Name for package on upload to pypi, use if different to package option',
+        help='Name for package on upload to pypi, use if different from package option',
         default=None
     )
 
@@ -167,7 +167,7 @@ def build_parser(argslist):
     )
     init_command.add_argument(
         '--python',
-        help='optionally specifiy the name of python binary to use in this package, eg python2, python3',
+        help='optionally specify the name of python binary to use in this package, eg python2, python3',
         default=None
     )
     init_command.add_argument(
@@ -427,7 +427,7 @@ def write_cirrus_conf(opts, version_file):
     backup_file(cirrus_conf)
     pname = opts.package
     if opts.pypi_package_name:
-        pname =opts.pypi_package_name
+        pname = opts.pypi_package_name
     config = ConfigParser.ConfigParser()
     config.add_section('package')
     config.set('package', 'name', pname)
