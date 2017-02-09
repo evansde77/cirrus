@@ -132,6 +132,11 @@ def build_parser(argslist):
         dest='desc',
         default='PACKAGE DESCRIPTION HERE'
     )
+    init_command.add_argument(
+        '--pypi-package-name',
+        help='Name for package on upload to pypi, use if different to package option',
+        default=None
+    )
 
     init_command.add_argument(
         '--templates',
@@ -159,6 +164,11 @@ def build_parser(argslist):
         help='test requirements file for pip',
         default='test-requirements.txt',
         dest='test_requirements'
+    )
+    init_command.add_argument(
+        '--python',
+        help='optionally specifiy the name of python binary to use in this package, eg python2, python3',
+        default=None
     )
     init_command.add_argument(
         '--test-mode',
@@ -415,9 +425,12 @@ def write_cirrus_conf(opts, version_file):
     cirrus_conf = os.path.join(opts.repo, 'cirrus.conf')
     LOGGER.info("setting up cirrus.conf: {}".format(cirrus_conf))
     backup_file(cirrus_conf)
+    pname = opts.package
+    if opts.pypi_package_name:
+        pname =opts.pypi_package_name
     config = ConfigParser.ConfigParser()
     config.add_section('package')
-    config.set('package', 'name', opts.package)
+    config.set('package', 'name', pname)
     config.set('package', 'version', opts.version)
     config.set('package', 'description', opts.desc)
     config.set('package', 'organization', opts.org)
@@ -433,13 +446,18 @@ def write_cirrus_conf(opts, version_file):
     config.set('gitflow', 'develop_branch', opts.develop)
     config.set('gitflow', 'release_branch_prefix', 'release/')
     config.set('gitflow', 'feature_branch_prefix', 'feature/')
-
+    config.add_section('build')
     if os.path.exists(opts.test_requirements):
-        config.add_section('build')
         config.set(
             'build',
             'extra_requirements',
             opts.test_requirements
+        )
+    if opts.python:
+        config.set(
+            'build',
+            'python',
+            opts.python
         )
 
     config.add_section('test-default')
@@ -461,12 +479,8 @@ def update_package_version(opts):
     """
     version_file = opts.version_file
     if version_file is None:
-        elems = [opts.repo]
-        if opts.source:
-            elems.append(opts.source)
-        elems.append(opts.package)
-        elems.append('__init__.py')
-        version_file = os.path.join(*elems)
+        version_file = os.path.join(opts.repo, main_init_file(opts))
+
     if not os.path.exists(version_file):
         msg = (
             "unable to find version file: {}"
@@ -512,6 +526,42 @@ def create_files(opts):
     return files
 
 
+def make_package_dir(directory, pkgname):
+    # TODO: validate package name
+    if pkgname.count('.') > 0:
+        package_dirs = pkgname.split('.')
+    else:
+        package_dirs = [pkgname]
+
+    results = []
+    pathname = directory
+    while package_dirs:
+        d = package_dirs.pop(0)
+        pathname = os.path.join(pathname, d)
+        init_file = os.path.join(pathname, '__init__.py')
+        os.makedirs(pathname)
+        with open(init_file, 'w') as handle:
+            handle.write("#created by cirrus\n")
+        LOGGER.info("wrote: {}".format(init_file))
+        results.append(init_file)
+    return results
+
+
+def main_init_file(opts):
+    package = opts.package
+    if package.count('.') > 0:
+        package_dirs = package.split('.')
+    else:
+        package_dirs = [package]
+
+    elems = []
+    if opts.source:
+        elems.append(opts.source)
+    elems.extend(package_dirs)
+    elems.append('__init__.py')
+    return os.path.join(*elems)
+
+
 def bootstrap_repo(opts):
     """
     bootstrap an empty repo with initial
@@ -526,20 +576,19 @@ def bootstrap_repo(opts):
      - tox.ini
     """
     package = opts.package
+
     if opts.source is None:
         opts.source = 'src'
 
     files = []
-    src_dir = os.path.join(opts.source, package)
+    src_dir = opts.source
     tests_dir = os.path.join(opts.tests)
     unit_dir = os.path.join(tests_dir, 'unit')
-    pkg_dir = os.path.join(unit_dir, package)
     init_files = [
         os.path.join(tests_dir, '__init__.py'),
         os.path.join(unit_dir, '__init__.py'),
-        os.path.join(pkg_dir, '__init__.py')
     ]
-    for d in [src_dir, tests_dir, unit_dir, pkg_dir]:
+    for d in [src_dir, tests_dir, unit_dir]:
         os.makedirs(d)
 
     for i in init_files:
@@ -547,8 +596,14 @@ def bootstrap_repo(opts):
             handle.write("#created by cirrus\n")
         files.append(i)
 
-    main_init = os.path.join(src_dir, '__init__.py')
-    files.append(main_init)
+    src_inits = make_package_dir(src_dir, package)
+    test_inits = make_package_dir(unit_dir, package)
+    files.extend(src_inits)
+    files.extend(test_inits)
+
+    test_pkg_dir = os.path.dirname(test_inits[-1])
+
+    main_init = main_init_file(opts)
     with open(main_init, 'w') as handle:
         handle.write("#!/usr/bin/env python\n")
         handle.write("# created by cirrus\n")
@@ -587,7 +642,7 @@ def bootstrap_repo(opts):
     with open(template, 'r') as handle:
         templ = handle.read()
 
-    sample_test = os.path.join(pkg_dir, 'sample_test.py')
+    sample_test = os.path.join(test_pkg_dir, 'sample_test.py')
     rendered = pystache.render(templ, {'package': opts.package})
     with open(sample_test, 'w') as handle:
         handle.write(rendered)

@@ -80,6 +80,11 @@ def build_parser(argslist):
         default=False,
         action='store_true'
     )
+    parser.add_argument(
+        '--python', '-p',
+        help='Which python to use to create venv',
+        default=None
+    )
     opts = parser.parse_args(argslist)
     return opts
 
@@ -107,6 +112,9 @@ def execute_build(opts):
     venv_name = build_params.get('virtualenv_name', 'venv')
     reqs_name = build_params.get('requirements_file', 'requirements.txt')
     extra_reqs = build_params.get('extra_requirements', '')
+    python_bin = build_params.get('python', None)
+    if opts.python:
+        python_bin = opts.python
     extra_reqs = [x.strip() for x in extra_reqs.split(',') if x.strip()]
     if opts.extras:
         extra_reqs.extend(opts.extras)
@@ -118,6 +126,8 @@ def execute_build(opts):
         venv_command = opts.use_venv
     else:
         venv_command = 'virtualenv'
+    if python_bin:
+        venv_command += ' -p {} '.format(python_bin)
 
     # remove existing virtual env if building clean
     if opts.clean and os.path.exists(venv_path):
