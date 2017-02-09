@@ -108,6 +108,11 @@ class Configuration(dict):
     def has_section(self, section):
         return section in self
 
+    def add_section(self, section):
+        if not self.has_section(section):
+            self[section] = {}
+            self.parser.add_section(section)
+
     def get_param(self, section, param, default=None):
         """
         _get_param_
@@ -209,9 +214,7 @@ class Configuration(dict):
         add docker settings to the config file and update it
 
         """
-        if not self.has_section('docker'):
-            self['docker'] = {}
-            self.parser.add_section('docker')
+        self.add_section('docker')
         self['docker']['dockerstache_template'] = template
         self['docker']['dockerstache_context'] = context
         self['docker']['directory'] = directory

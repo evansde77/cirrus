@@ -121,6 +121,7 @@ class GitFunctionTests(unittest.TestCase):
         commit_and_tag(opts, 'file1', 'file2')
         self.failUnless(not mock_tag_rel.called)
 
+
 class CreateFilesTest(unittest.TestCase):
     """mocked create_files function tests"""
     def setUp(self):
@@ -155,6 +156,8 @@ class CreateFilesTest(unittest.TestCase):
         opts.package = 'unittests'
         opts.requirements = 'requirements.txt'
         opts.test_requirements = 'test-requirements.txt'
+        opts.pypi_package_name = None
+        opts.python = None
         opts.create_version_file = False
 
         create_files(opts)
@@ -198,6 +201,8 @@ class CreateFilesTest(unittest.TestCase):
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
         opts.requirements = 'requirements.txt'
+        opts.pypi_package_name = None
+        opts.python = None
         opts.test_requirements = 'test-requirements.txt'
         version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
         os.system('rm -f {}'.format(version))
@@ -229,6 +234,79 @@ class CreateFilesTest(unittest.TestCase):
         version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
         with open(version, 'r') as handle:
             self.failUnless(opts.version in handle.read())
+
+    def test_create_files_with_python(self):
+        """test create_files call and content of files"""
+        opts = mock.Mock()
+        opts.repo = self.repo
+        opts.create_version_file = True
+        opts.source = 'src'
+        opts.version = '0.0.1'
+        opts.version_file = None
+        opts.templates = []
+        opts.history_file = 'HISTORY.md'
+        opts.package = 'unittests'
+        opts.requirements = 'requirements.txt'
+        opts.pypi_package_name = 'pypi.package.unittest'
+        opts.python = 'python3'
+        opts.test_requirements = 'test-requirements.txt'
+        version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
+        os.system('rm -f {}'.format(version))
+        create_files(opts)
+
+        dir_list = os.listdir(self.repo)
+        self.failUnless('cirrus.conf' in dir_list)
+        self.failUnless('HISTORY.md' in dir_list)
+        self.failUnless('MANIFEST.in' in dir_list)
+        self.failUnless('setup.py' in dir_list)
+
+        cirrus_conf = os.path.join(self.repo, 'cirrus.conf')
+        config = ConfigParser.RawConfigParser()
+        config.read(cirrus_conf)
+        self.assertEqual(config.get('package', 'name'), opts.pypi_package_name)
+        self.assertEqual(config.get('package', 'version'), opts.version)
+        self.assertEqual(config.get('build', 'python'), 'python3')
+
+
+@unittest.skip("Integ test not unit test")
+class PackageInitBootstrapTest(unittest.TestCase):
+    def setUp(self):
+        """
+        set up for tests
+        """
+        self.tempdir = tempfile.mkdtemp()
+        self.repo = os.path.join(self.tempdir, 'throwaway')
+        os.mkdir(self.repo)
+        cmd = (
+            "cd {} && git init && "
+            "git checkout -b master && "
+            "git commit --allow-empty -m \"new repo\" "
+        ).format(self.repo)
+        os.system(cmd)
+
+    def tearDown(self):
+        if os.path.exists(self.tempdir):
+            os.system('rm -rf {}'.format(self.tempdir))
+
+
+    def test_init_command_dot_package(self):
+        """test the init command"""
+        argslist = [
+            'init', '--bootstrap', '-p', 'pkg.module.throwaway', '-r', self.repo,
+            '--no-remote',
+            '-s', 'src'
+        ]
+        opts = build_parser(argslist)
+        init_package(opts)
+        conf = os.path.join(self.repo, 'cirrus.conf')
+        self.failUnless(os.path.exists(conf))
+        src_dir = os.path.join(self.repo, 'src', 'pkg', 'module', 'throwaway', '__init__.py')
+        test_dir = os.path.join(self.repo, 'tests', 'unit', 'pkg', 'module', 'throwaway', '__init__.py')
+        sample = os.path.join(self.repo, 'tests', 'unit', 'pkg', 'module', 'throwaway', 'sample_test.py')
+        self.failUnless(os.path.exists(src_dir))
+        self.failUnless(os.path.exists(test_dir))
+
+
 
 
 @unittest.skip("Integ test not unit test")
