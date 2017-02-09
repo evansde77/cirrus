@@ -25,7 +25,7 @@ DOCKER_PRE_SCRIPT = \
 """#!/bin/bash
 echo "this is the dockerstache pre render script"
 echo "it runs in the following environment before rendering tempates"
-printenv
+printenv | grep DOCKERSTACHE
 
 """
 
@@ -33,7 +33,7 @@ DOCKER_POST_SCRIPT = \
 """#!/bin/bash
 echo "this is the dockerstache post render script"
 echo "it runs in the following environment after rendering tempates"
-printenv
+printenv | grep DOCKERSTACHE
 {copy_dist}
 
 """

@@ -101,6 +101,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.extras = []
         opts.nosetupdevelop = False
         opts.use_venv = None
+        opts.python = None
 
         execute_build(opts)
 
@@ -118,11 +119,30 @@ class BuildCommandTests(unittest.TestCase):
         opts.extras = []
         opts.nosetupdevelop = False
         opts.use_venv = "CUSTOM_VENV"
+        opts.python = None
 
         execute_build(opts)
 
         self.mock_local.assert_has_calls([
             mock.call('CUSTOM_VENV CWD/venv'),
+            mock.call('CWD/venv/bin/pip install -r requirements.txt'),
+            mock.call('. ./venv/bin/activate && python setup.py develop')
+        ])
+
+    def test_execute_build_with_python_(self):
+        """test execute_build with default pypi settings, -p option"""
+        opts = mock.Mock()
+        opts.clean = False
+        opts.upgrade = False
+        opts.extras = []
+        opts.nosetupdevelop = False
+        opts.use_venv = None
+        opts.python = "python3"
+
+        execute_build(opts)
+
+        self.mock_local.assert_has_calls([
+            mock.call('virtualenv -p python3  CWD/venv'),
             mock.call('CWD/venv/bin/pip install -r requirements.txt'),
             mock.call('. ./venv/bin/activate && python setup.py develop')
         ])
@@ -135,6 +155,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.extras = []
         opts.nosetupdevelop = False
         opts.use_venv = None
+        opts.python = None
 
         self.mock_conf.pypi_url.return_value = "dev"
         self.mock_pypirc_inst.index_servers = ['dev']
@@ -155,6 +176,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.extras = []
         opts.nosetupdevelop = False
         opts.use_venv = None
+        opts.python = None
         self.mock_conf.pip_options.return_value = "PIPOPTIONS"
         execute_build(opts)
 
@@ -171,6 +193,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.upgrade = True
         opts.extras = []
         opts.use_venv = None
+        opts.python = None
         opts.nosetupdevelop = False
 
         execute_build(opts)
@@ -187,6 +210,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.clean = False
         opts.upgrade = False
         opts.use_venv = None
+        opts.python = None
         opts.extras = ['test-requirements.txt']
         opts.nosetupdevelop = False
         execute_build(opts)
@@ -204,6 +228,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.extras = []
         opts.upgrade = False
         opts.use_venv = None
+        opts.python = None
         opts.nosetupdevelop = True
 
         execute_build(opts)
@@ -219,6 +244,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.extras = []
         opts.upgrade = False
         opts.use_venv = None
+        opts.python = None
         opts.nosetupdevelop = False
         self.mock_conf.pypi_url.return_value = "PYPIURL"
 
@@ -239,6 +265,7 @@ class BuildCommandTests(unittest.TestCase):
         opts.use_venv = None
         opts.nosetupdevelop = False
         opts.upgrade = True
+        opts.python = None
         self.mock_conf.pypi_url.return_value = "PYPIURL"
 
         execute_build(opts)
