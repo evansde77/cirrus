@@ -98,6 +98,11 @@ def has_unstaged_changes(repo_dir):
     return False
 
 
+def current_branch(repo_dir):
+    repo = git.Repo(repo_dir)
+    return str(repo.active_branch)
+
+
 def update_to_branch(branch, config, origin='origin'):
     """
     checkout specified branch, updating to pull in latest remotes
