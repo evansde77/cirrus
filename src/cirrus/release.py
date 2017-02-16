@@ -18,9 +18,10 @@ from argparse import ArgumentParser
 from cirrus.configuration import load_configuration
 from cirrus.environment import repo_directory
 from cirrus.git_tools import build_release_notes
-from cirrus.git_tools import has_unstaged_changes
+from cirrus.git_tools import has_unstaged_changes, current_branch
 from cirrus.git_tools import branch, checkout_and_pull
 from cirrus.git_tools import commit_files, remote_branch_exists
+from cirrus.git_tools import commit_files_optional_push
 from cirrus.github_tools import GitHubContext
 from cirrus.utils import update_file, update_version
 from cirrus.logger import get_logger
@@ -261,6 +262,14 @@ def build_parser(argslist):
 
     # borrow --micro/minor/major options from "new" command.
     subparsers.add_parser('trigger', parents=[new_command], add_help=False)
+    new_version_command = subparsers.add_parser('new-version', parents=[new_command], add_help=False)
+    new_version_command.add_argument(
+        '--no-remote',
+        help='Do not push to remote if set',
+        default=False,
+        action='store_true'
+    )
+
     subparsers.add_parser('build')
 
     merge_command = subparsers.add_parser('merge')
@@ -354,6 +363,73 @@ def build_parser(argslist):
 
     opts = parser.parse_args(argslist)
     return opts
+
+
+def make_new_version(opts):
+    LOGGER.info("Updating package version...")
+    if not highlander([opts.major, opts.minor, opts.micro]):
+        msg = "Can only specify one of --major, --minor or --micro"
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+
+    fields = ['major', 'minor', 'micro']
+    mask = [opts.major, opts.minor, opts.micro]
+    field = [x for x in itertools.compress(fields, mask)][0]
+
+    config = load_configuration()
+    current_version = config.package_version()
+
+    # need to be on the latest develop
+    repo_dir = repo_directory()
+    curr_branch = current_branch(repo_dir)
+    # make sure repo is clean
+    if has_unstaged_changes(repo_dir):
+        msg = (
+            "Error: Unstaged changes are present on the branch {}"
+            "Please commit them or clean up before proceeding"
+        ).format(curr_branch)
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+
+    # update cirrus conf
+    new_version = bump_version_field(current_version, field)
+
+    msg = "Bumping version from {prev} to {new} on branch {branch}".format(
+        prev=current_version,
+        new=new_version,
+        branch=curr_branch
+    )
+    LOGGER.info(msg)
+
+    config.update_package_version(new_version)
+    changes = ['cirrus.conf']
+
+    if opts.bump:
+        for pkg in opts.bump:
+            if '==' not in pkg:
+                msg = 'Malformed version expression.  Please use "pkg==0.0.0"'
+                LOGGER.error(msg)
+                raise RuntimeError(msg)
+        try:
+            update_requirements('requirements.txt', opts.bump)
+            changes.append('requirements.txt')
+        except Exception as ex:
+            # halt on any problem updating requirements
+            LOGGER.exception('Failed to update requirements.txt -- {}'.format(ex))
+            raise RuntimeError(ex)
+
+    # update __version__ or equivalent
+    version_file, version_attr = config.version_file()
+    if version_file is not None:
+        LOGGER.info('Updating {0} attribute in {1}'.format(version_file, version_attr))
+        update_version(version_file, new_version, version_attr)
+        changes.append(version_file)
+
+    # update files changed
+    msg = "cirrus release: version bumped for {0}".format(curr_branch)
+    LOGGER.info('Committing files: {0}'.format(','.join(changes)))
+    LOGGER.info(msg)
+    commit_files_optional_push(repo_dir, msg, not opts.no_remote, *changes)
 
 
 def new_release(opts):
@@ -762,6 +838,8 @@ def main():
     opts = build_parser(sys.argv)
     if opts.command == 'new':
         new_release(opts)
+    if opts.command == 'new-version':
+        make_new_version(opts)
 
     if opts.command == 'trigger':
         trigger_release(opts)
