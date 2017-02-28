@@ -11,6 +11,7 @@ import mock
 from cirrus.release import new_release
 from cirrus.release import upload_release
 from cirrus.release import build_release
+from cirrus.release import cleanup_release
 from cirrus.release import artifact_name
 from cirrus.configuration import Configuration
 from pluggage.errors import FactoryError
@@ -91,6 +92,64 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.minor = False
         opts.bump = None
         self.assertRaises(RuntimeError, new_release, opts)
+
+
+class ReleaseCleanupCommandTest(unittest.TestCase):
+    """
+    Test Case for cleanup function
+    """
+    def setUp(self):
+        """set up test files"""
+        self.dir = tempfile.mkdtemp()
+        self.config = os.path.join(self.dir, 'cirrus.conf')
+        write_cirrus_conf(self.config,
+            **{
+                'package': {'name': 'cirrus_unittest', 'version': '1.2.3'},
+                'gitflow': {'develop_branch': 'develop', 'release_branch_prefix': 'release/'},
+                }
+            )
+        self.harness = CirrusConfigurationHarness('cirrus.release.load_configuration', self.config)
+        self.harness.setUp()
+        self.patch_ghc = mock.patch('cirrus.release.GitHubContext')
+        self.mock_ghc = self.patch_ghc.start()
+        self.mock_ctx = mock.Mock()
+        self.mock_instance = mock.Mock()
+        self.mock_instance.delete_branch = mock.Mock()
+        self.mock_ctx.__enter__ = mock.Mock(return_value=self.mock_instance)
+        self.mock_ctx.__exit__ = mock.Mock()
+
+        self.mock_ghc.return_value=self.mock_ctx
+
+    def tearDown(self):
+        self.patch_ghc.stop()
+        self.harness.tearDown()
+        if os.path.exists(self.dir):
+            os.system('rm -rf {0}'.format(self.dir))
+
+    def test_cleanup_command(self):
+        """test cleanup"""
+        opts = mock.Mock()
+        opts.no_remote = False
+        opts.version = None
+
+        cleanup_release(opts)
+        self.failUnless(self.mock_ghc.called)
+        self.failUnless(self.mock_instance.delete_branch.called)
+        self.mock_instance.delete_branch.assert_has_calls([mock.call('release/1.2.3', True)])
+
+        self.mock_instance.reset_mock()
+        opts.no_remote = True
+        opts.version = '4.5.6'
+        cleanup_release(opts)
+        self.failUnless(self.mock_instance.delete_branch.called)
+        self.mock_instance.delete_branch.assert_has_calls([mock.call('release/4.5.6', False)])
+
+        self.mock_instance.reset_mock()
+        opts.no_remote = False
+        opts.version = 'release/7.8.9'
+        cleanup_release(opts)
+        self.failUnless(self.mock_instance.delete_branch.called)
+        self.mock_instance.delete_branch.assert_has_calls([mock.call('release/7.8.9', True)])
 
 
 class ReleaseBuildCommandTest(unittest.TestCase):
