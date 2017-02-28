@@ -270,6 +270,21 @@ def build_parser(argslist):
         action='store_true'
     )
 
+    cleanup_command = subparsers.add_parser(
+        'cleanup'
+    )
+    cleanup_command.add_argument(
+        '--version', '-v',
+        help='version to cleanup, defaults to current release',
+        default=None
+    )
+    cleanup_command.add_argument(
+        '--no-remote',
+        help='Do not remove remote branch if set',
+        default=False,
+        action='store_true'
+    )
+
     subparsers.add_parser('build')
 
     merge_command = subparsers.add_parser('merge')
@@ -634,6 +649,31 @@ def upload_release(opts):
     return
 
 
+def cleanup_release(opts):
+    """
+    _cleanup_release_
+
+    Remove local and remote release branches if they exist
+
+    """
+    config = load_configuration()
+    repo_dir = os.getcwd()
+    pfix = config.gitflow_release_prefix()
+    branch_name = release_branch_name(config)
+
+    if opts.version is not None:
+        if not opts.version.startswith(pfix):
+            branch_name = "{0}{1}".format(
+                pfix,
+                opts.version
+            )
+        else:
+            branch_name = opts.version
+    LOGGER.info("Cleaning release branches for {}".format(branch_name))
+    with GitHubContext(repo_dir) as ghc:
+        ghc.delete_branch(branch_name, not opts.no_remote)
+
+
 def merge_release(opts):
     """
     _merge_release_
@@ -852,6 +892,9 @@ def main():
 
     if opts.command == 'build':
         build_release(opts)
+
+    if opts.command == 'cleanup':
+        cleanup_release(opts)
 
 
 if __name__ == '__main__':
