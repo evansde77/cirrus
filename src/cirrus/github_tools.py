@@ -8,6 +8,7 @@ import time
 import arrow
 import requests
 import itertools
+from git.exc import GitCommandError
 
 from cirrus.configuration import get_github_auth, load_configuration
 from cirrus.git_tools import get_active_branch
@@ -207,7 +208,12 @@ class GitHubContext(object):
         """
         if branch_name is not None:
             self.repo.git.checkout(branch_name)
-        ret = self.repo.remotes.origin.push(self.repo.head)
+        try:
+            ret = self.repo.remotes.origin.push(self.repo.head)
+        except GitCommandError as ex:
+            msg = "GitCommandError during push: {}".format(ex)
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
         # Check to make sure that we haven't errored out.
         for r in ret:
             if r.flags >= r.ERROR:
@@ -287,7 +293,6 @@ class GitHubContext(object):
                     tag, str(ex)
                 )
                 raise RuntimeError(msg)
-
 
     def delete_branch(self, branch_name, remote=True):
         """
