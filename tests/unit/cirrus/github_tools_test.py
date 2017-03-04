@@ -10,6 +10,7 @@ from cirrus.github_tools import create_pull_request
 from cirrus.github_tools import current_branch_mark_status
 from cirrus.github_tools import get_releases
 from cirrus.github_tools import GitHubContext
+from git.exc import GitCommandError
 from .harnesses import _repo_directory
 
 class GithubToolsTest(unittest.TestCase):
@@ -115,6 +116,63 @@ class GithubToolsTest(unittest.TestCase):
         current_branch_mark_status(_repo_directory(), "success")
 
         self.failUnless(mock_post.called)
+
+
+    @mock.patch('cirrus.github_tools.git')
+    def test_push_branch(self, mock_git):
+        mock_repo = mock.Mock()
+        mock_repo.active_branch = mock.Mock()
+        mock_repo.active_branch.name = 'womp'
+        mock_repo.head = "HEAD"
+        mock_repo.git = mock.Mock()
+        mock_repo.git.checkout = mock.Mock()
+        mock_git.Repo = mock.Mock(return_value=mock_repo)
+        mock_repo.remotes = mock.Mock()
+        mock_ret = mock.Mock()
+        mock_ret.flags = 1000
+        mock_repo.remotes.origin = mock.Mock()
+        mock_repo.remotes.origin.push = mock.Mock(return_value=[mock_ret])
+
+        ghc = GitHubContext('REPO')
+
+        ghc.push_branch('womp')
+        self.failUnless(mock_repo.remotes.origin.push.called)
+        mock_repo.remotes.origin.push.assert_has_calls([mock.call('HEAD')])
+
+        mock_repo.remotes.origin.push = mock.Mock(side_effect=GitCommandError('A', 128))
+        self.assertRaises(RuntimeError, ghc.push_branch, 'womp2')
+
+
+
+    @mock.patch('cirrus.github_tools.git')
+    @mock.patch('cirrus.github_tools.time.sleep')
+    def test_push_branch_with_retry(self, mock_sleep, mock_git):
+        mock_repo = mock.Mock()
+        mock_repo.active_branch = mock.Mock()
+        mock_repo.active_branch.name = 'womp'
+        mock_repo.git = mock.Mock()
+        mock_repo.git.checkout = mock.Mock()
+        mock_git.Repo = mock.Mock(return_value=mock_repo)
+        mock_ret_f = mock.Mock()
+        mock_ret_f.flags = 1
+        mock_ret_f.ERROR = 0
+        mock_ret_f.summary = "mock failure summary"
+        mock_ret_ok = mock.Mock()
+        mock_ret_ok.flags = 0
+        mock_ret_ok.ERROR = 1
+        mock_repo.remotes = mock.Mock()
+        mock_repo.remotes.origin = mock.Mock()
+        mock_repo.remotes.origin.push = mock.Mock(
+            side_effect=[[mock_ret_f], [mock_ret_f], [mock_ret_ok]]
+        )
+
+        ghc = GitHubContext('REPO')
+
+        ghc.push_branch_with_retry('womp', attempts=3, cooloff=2)
+        self.assertEqual(mock_repo.remotes.origin.push.call_count, 3)
+
+        mock_repo.remotes.origin.push = mock.Mock(side_effect=GitCommandError('B', 128))
+        self.assertRaises(RuntimeError, ghc.push_branch_with_retry, 'womp', attempts=3, cooloff=2)
 
     @mock.patch('cirrus.github_tools.git')
     def test_tag_release(self, mock_git):
