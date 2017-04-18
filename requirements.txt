@@ -1,3 +1,4 @@
+paramiko==1.16.0
 argparse==1.2.1
 arrow==0.4.2
 Fabric==1.11.1
