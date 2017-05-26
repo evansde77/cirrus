@@ -143,6 +143,23 @@ class DockerFunctionTests(unittest.TestCase):
             ]
         )
 
+    def test_docker_push_addl(self):
+        """test docker push with additional tags"""
+        self.opts.tag = None
+        self.opts.latest = True
+        self.config['docker']['additional_repos'] = "repo1:8080, repo2:8080"
+        dckr.docker_push(self.opts, self.config)
+        self.mock_subp.check_output.assert_has_calls(
+            [
+                mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3']),
+                mock.call(['docker', 'push', 'unittesting/unittesting:latest']),
+                mock.call(['docker', 'push', 'repo1:8080/unittesting:1.2.3']),
+                mock.call(['docker', 'push', 'repo1:8080/unittesting:latest']),
+                mock.call(['docker', 'push', ' repo2:8080/unittesting:1.2.3']),
+                mock.call(['docker', 'push', ' repo2:8080/unittesting:latest'])
+            ]
+        )
+
     def test_docker_push_login(self):
         """test push with login"""
         self.opts.login = True
