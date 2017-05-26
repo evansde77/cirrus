@@ -71,6 +71,24 @@ class DockerFunctionTests(unittest.TestCase):
             )
         )
 
+    def test_docker_build_addl_repos(self):
+        self.config['docker']['additional_repos'] = "repo1:8080, repo2:8080 "
+        dckr.docker_build(self.opts, self.config)
+        self.failUnless(self.mock_subp.check_output.called)
+        self.mock_subp.check_output.assert_has_calls(
+            mock.call(
+                [
+                    'docker', 'build',
+                    '-t', 'unittesting/unittesting:latest',
+                    '-t', 'unittesting/unittesting:1.2.3',
+                    '-t', 'repo1:8080/unittesting:1.2.3',
+                    '-t', 'repo1:8080/unittesting:latest',
+                    '-t', 'repo2:8080/unittesting:1.2.3',
+                    '-t', 'repo2:8080/unittesting:latest',
+                    'vm/docker_image']
+            )
+        )
+
     def test_docker_build_tag_opts(self):
         """test the _build_tag_opts helper function"""
         tag_opts = dckr._build_tag_opts(('hodor', '0.1.2', 'latest'))
@@ -107,7 +125,6 @@ class DockerFunctionTests(unittest.TestCase):
         self.config['docker']['docker_login_password'] = 'st3v3R0X'
         self.config['docker']['docker_login_email'] = 'steve@pbr.com'
         self.config['docker']['repo'] = 'unittesting'
-        print self.config['docker']
 
         dckr.docker_build(self.opts, self.config)
         self.failUnless(self.mock_subp.check_output.called)
@@ -155,8 +172,8 @@ class DockerFunctionTests(unittest.TestCase):
                 mock.call(['docker', 'push', 'unittesting/unittesting:latest']),
                 mock.call(['docker', 'push', 'repo1:8080/unittesting:1.2.3']),
                 mock.call(['docker', 'push', 'repo1:8080/unittesting:latest']),
-                mock.call(['docker', 'push', ' repo2:8080/unittesting:1.2.3']),
-                mock.call(['docker', 'push', ' repo2:8080/unittesting:latest'])
+                mock.call(['docker', 'push', 'repo2:8080/unittesting:1.2.3']),
+                mock.call(['docker', 'push', 'repo2:8080/unittesting:latest'])
             ]
         )
 

@@ -366,7 +366,15 @@ def docker_build(opts, config):
             extend_context=config.configuration_map()
         )
 
-    tags = (latest, tag)
+    tags = [latest, tag]
+    if helper['additional_repos']:
+        tags.extend(
+            additional_repo_tags(
+                config,
+                helper['additional_repos'],
+                latest=True
+            )
+        )
     _docker_build(path, tags, tag_base(config))
 
 
