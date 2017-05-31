@@ -47,7 +47,9 @@ class DockerVersionError(Exception):
     pass
 
 
-parse_config_list = lambda s: [s.strip() for s in s.split(',') if s.strip()]
+def parse_config_list(s):
+    """util to convert X = A,B,C config entry into ['A', 'B', 'C']"""
+    return [x.strip() for x in s.split(',') if x.strip()]
 
 
 class OptionHelper(dict):
