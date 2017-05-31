@@ -47,6 +47,11 @@ class DockerVersionError(Exception):
     pass
 
 
+def parse_config_list(s):
+    """util to convert X = A,B,C config entry into ['A', 'B', 'C']"""
+    return [x.strip() for x in s.split(',') if x.strip()]
+
+
 class OptionHelper(dict):
 
     """helper class to resolve cli and cirrus conf opts"""
@@ -60,7 +65,10 @@ class OptionHelper(dict):
             'docker', 'docker_login_username', None
         ) is not None
         self['docker_repo'] = config.get_param('docker', 'repo', None)
-
+        addl_repos = config.get_param('docker', 'additional_repos', None)
+        self['additional_repos'] = []
+        if addl_repos:
+            self['additional_repos'] = parse_config_list(addl_repos)
         if cli_opts.login:
             self['login'] = True
 
@@ -279,10 +287,8 @@ def _docker_login(helper):
             '-u', helper['username'],
             '-p', helper['password']
         ]
-        print ">>>", helper
         if helper.get('docker_repo') is not None:
             command.append(helper['docker_repo'])
-            print command
         stdout = subprocess.check_output(command)
         LOGGER.info(stdout)
         return True
@@ -315,6 +321,18 @@ def tag_name(config):
     """
     pversion = config.package_version()
     return "{}:{}".format(tag_base(config), pversion)
+
+
+def additional_repo_tags(config, repos, latest=False):
+    pname = config.package_name()
+    pversion = config.package_version()
+    result = []
+    for repo in repos:
+        t_base = "{}/{}".format(repo, pname)
+        result.append("{}:{}".format(t_base, pversion))
+        if latest:
+            result.append("{}:latest".format(t_base))
+    return result
 
 
 def latest_tag_name(config):
@@ -350,7 +368,15 @@ def docker_build(opts, config):
             extend_context=config.configuration_map()
         )
 
-    tags = (latest, tag)
+    tags = [latest, tag]
+    if helper['additional_repos']:
+        tags.extend(
+            additional_repo_tags(
+                config,
+                helper['additional_repos'],
+                latest=True
+            )
+        )
     _docker_build(path, tags, tag_base(config))
 
 
@@ -371,6 +397,11 @@ def docker_push(opts, config):
 
     if opts.latest:
         _docker_push(latest_tag_name(config))
+
+    if helper['additional_repos']:
+        tags = additional_repo_tags(config, helper['additional_repos'], opts.latest)
+        for t in tags:
+            _docker_push(t)
 
 
 def is_docker_connected():
