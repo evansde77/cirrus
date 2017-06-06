@@ -88,8 +88,8 @@ The init command will do the following:
 For example:
 ```bash 
 # create a minimal repo 
-mkdir 
-cd test_repo/
+mkdir test_repo
+cd test_repo
 git init 
 git checkout -b develop 
 mkdir src
