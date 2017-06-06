@@ -91,11 +91,13 @@ For example:
 mkdir test_repo
 cd test_repo
 git init 
+echo 'readme' > README
+git add README
+git commit -m 'add README; first commit on master'
 git checkout -b develop 
-mkdir src
-mkdir src/throwaway
-echo "__version__ = '0.0.0'\n" > src/throwaway/__init__.py
-echo "requests\n" > requirements.txt
+mkdir -p src/throwaway
+echo "__version__ = '0.0.0'" > src/throwaway/__init__.py
+echo "requests" > requirements.txt
 git add src/throwaway/__init__.py requirements.txt
 git commit -m "make a package"
 git checkout master
