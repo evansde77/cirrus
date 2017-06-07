@@ -1,4 +1,4 @@
-argparse==1.2.1
+argparse
 arrow==0.4.2
 Fabric==1.11.1
 GitPython==0.3.5
@@ -11,6 +11,6 @@ PyChef==0.2.3
 keyring==8.5.1
 virtualenv
 pluggage
-dockerstache>=0.0.9
+dockerstache>=0.0.10
 requests-toolbelt==0.6.2
 tox

@@ -5,7 +5,10 @@ _setup.py_
 Setup script for cirrus.
 
 """
-import ConfigParser
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 import setuptools
 
 #
@@ -41,7 +44,7 @@ setuptools.setup(
     author="Dave Evans",
     author_email="evansde77@gmail.com",
     include_package_data=True,
-    install_requires=requirements,    
+    install_requires=requirements,
     packages=setuptools.find_packages("src"),
     entry_points = {
       "console_scripts": scripts,
