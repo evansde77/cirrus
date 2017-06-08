@@ -12,11 +12,12 @@ conf = load_configuration()
 
 """
 import os
+
+import pluggage.registry
+
 from cirrus.gitconfig import load_gitconfig
 from cirrus.environment import repo_directory
-import subprocess
-import ConfigParser
-import pluggage.registry
+from cirrus._2to3 import ConfigParser
 
 
 def get_creds_plugin(plugin_name):

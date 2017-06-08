@@ -4,12 +4,12 @@ tests for configuration module
 """
 import os
 import unittest
-import ConfigParser
 import tempfile
 import mock
 
 from cirrus.plugins.creds.default import Default
 from cirrus.configuration import load_configuration
+from cirrus._2to3 import ConfigParser
 
 
 class ConfigurationTests(unittest.TestCase):
