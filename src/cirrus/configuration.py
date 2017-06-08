@@ -12,6 +12,7 @@ conf = load_configuration()
 
 """
 import os
+import subprocess
 
 import pluggage.registry
 
