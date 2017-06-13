@@ -9,7 +9,7 @@ import os
 import sys
 import tarfile
 
-from fabric.operations import local
+from cirrus.invoke_helpers import local
 import pluggage.registry
 
 from cirrus.configuration import load_configuration

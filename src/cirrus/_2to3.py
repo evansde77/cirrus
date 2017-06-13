@@ -32,9 +32,7 @@ def python3_todo(*args, **kwargs):
 
 if PY2:
     import ConfigParser
-    from fabric.operations import local as fabric_local
-
-
+    import __builtin__ as builtins
 else:
-    import configparser as configparser
-    fabric_local = python3_todo
+    import configparser as ConfigParser
+    import builtins

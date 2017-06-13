@@ -12,7 +12,7 @@ import unittest
 import tempfile
 import mock
 import subprocess
-import ConfigParser
+from cirrus._2to3 import ConfigParser
 
 from cirrus.configuration import Configuration
 
@@ -39,9 +39,9 @@ def write_cirrus_conf(config_file, **sections):
 
     """
     parser = ConfigParser.RawConfigParser()
-    for section, settings in sections.iteritems():
+    for section, settings in iter(sections.items()):
         parser.add_section(section)
-        for key, value in settings.iteritems():
+        for key, value in iter(settings.items()):
             parser.set(section, key, value)
 
     with open(config_file, 'w') as handle:
@@ -66,6 +66,8 @@ class CirrusConfigurationHarness(object):
             self.gitconf_str = "cirrus.credential-plugin=default"
 
     def setUp(self):
+        self.patch_environ = mock.patch.dict(os.environ, {'HOME': 'womp'})
+        self.patch_environ.start()
         self.mock_config = mock.patch(self.module_symbol)
         self.load_mock = self.mock_config.start()
         self.patch_gitconfig = mock.patch('cirrus.gitconfig.shell_command')
@@ -76,4 +78,5 @@ class CirrusConfigurationHarness(object):
         self.load_mock.return_value = self.config
 
     def tearDown(self):
+        self.patch_environ.stop()
         self.mock_config.stop()

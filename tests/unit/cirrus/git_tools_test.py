@@ -137,7 +137,7 @@ class GitToolsTest(unittest.TestCase):
         prints plaintext release notes
         """
         msg = format_commit_messages(self.commit_info)
-        print "Plaintext release notes:\n{0}\n".format(msg)
+        print("Plaintext release notes:\n{0}\n".format(msg))
 
     def test_markdown_format(self):
         """
@@ -146,30 +146,30 @@ class GitToolsTest(unittest.TestCase):
         prints markdown release notes
         """
         msg = markdown_format(self.commit_info)
-        print "Markdown release notes:\n{0}\n".format(msg)
+        print("Markdown release notes:\n{0}\n".format(msg))
 
-    def test_get_commit_msgs(self):                            
-        """                                                    
-        _test_get_commit_msgs_                                 
-        """      
+    def test_get_commit_msgs(self):
+        """
+        _test_get_commit_msgs_
+        """
         result = get_commit_msgs(None, 'RANDOM_SHA')
-        self.failUnless('committer' in result[0])              
-        self.failUnless('message' in result[0])                
-        self.failUnless('date' in result[0])   
-        self.failUnless('committer' in result[1])              
-        self.failUnless('message' in result[1])                
-        self.failUnless('date' in result[1])   
+        self.failUnless('committer' in result[0])
+        self.failUnless('message' in result[0])
+        self.failUnless('date' in result[0])
+        self.failUnless('committer' in result[1])
+        self.failUnless('message' in result[1])
+        self.failUnless('date' in result[1])
 
-    def test_get_tags(self):                                   
-        """                                                    
-        _test_get_tags_                                        
-        """                                                    
-        result = get_tags(None)  
-        self.failUnlessEqual(result, ['orange', 'banana', 'apple'])  
+    def test_get_tags(self):
+        """
+        _test_get_tags_
+        """
+        result = get_tags(None)
+        self.failUnlessEqual(result, ['orange', 'banana', 'apple'])
 
-    def test_get_tags_with_sha(self):                          
-        """                                                    
-        _test_get_tags_with_sha_                               
+    def test_get_tags_with_sha(self):
+        """
+        _test_get_tags_with_sha_
         """
         result = get_tags_with_sha(None)
         self.assertEqual(result['orange'], 'ORANGE_SHA')

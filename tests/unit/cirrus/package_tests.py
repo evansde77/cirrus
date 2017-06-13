@@ -5,7 +5,7 @@ import mock
 import os
 import json
 import tempfile
-import ConfigParser
+from cirrus._2to3 import ConfigParser
 
 from cirrus.package import (
     create_files,
@@ -18,7 +18,7 @@ from cirrus.package import (
 
 )
 
-from harnesses import CirrusConfigurationHarness
+from .harnesses import CirrusConfigurationHarness
 
 
 class BuildParserTest(unittest.TestCase):
@@ -135,12 +135,17 @@ class CreateFilesTest(unittest.TestCase):
         os.mkdir(self.repo)
         os.mkdir(src_dir)
         os.mkdir(pkg_dir)
+        self.patch_environ = mock.patch.dict(os.environ,
+            {'HOME': self.tempdir, 'USER': 'steve'}
+        )
+        self.patch_environ.start()
         init_file = os.path.join(pkg_dir, '__init__.py')
         with open(init_file, 'w') as handle:
             handle.write('# initfile\n')
             handle.write('__version__=\'0.0.0\'\n')
 
     def tearDown(self):
+        self.patch_environ.stop()
         if os.path.exists(self.tempdir):
             os.system('rm -rf {}'.format(self.tempdir))
 
@@ -154,6 +159,7 @@ class CreateFilesTest(unittest.TestCase):
         opts.templates = ['include steve/*']
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
+        opts.desc = "DESCRIPTION"
         opts.requirements = 'requirements.txt'
         opts.test_requirements = 'test-requirements.txt'
         opts.pypi_package_name = None
@@ -197,6 +203,7 @@ class CreateFilesTest(unittest.TestCase):
         opts.source = 'src'
         opts.version = '0.0.1'
         opts.version_file = None
+        opts.desc = "DESCRIPTION"
         opts.templates = ['include steve/*']
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
@@ -243,6 +250,7 @@ class CreateFilesTest(unittest.TestCase):
         opts.source = 'src'
         opts.version = '0.0.1'
         opts.version_file = None
+        opts.desc = "DESCRIPTION"
         opts.templates = []
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'

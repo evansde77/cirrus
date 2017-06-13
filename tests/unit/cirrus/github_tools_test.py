@@ -1,6 +1,7 @@
 '''
 tests for github_tools
 '''
+import os
 import json
 import mock
 import unittest
@@ -36,11 +37,19 @@ class GithubToolsTest(unittest.TestCase):
 
         self.patch_get = mock.patch('cirrus.github_tools.requests.get')
         self.mock_get = self.patch_get.start()
+        self.patch_environ = mock.patch.dict(os.environ,
+            {
+                'HOME': 'unittest',
+                'USER': 'steve'
+            }
+        )
+        self.patch_environ.start()
 
     def tearDown(self):
         """
         teardown mocks
         """
+        self.patch_environ.stop()
         self.patch_get.stop()
 
     def test_create_pull_request(self):

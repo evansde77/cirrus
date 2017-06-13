@@ -7,3 +7,6 @@ src/cirrus.egg-infocirrus.conf~ requirements.txt~ test_pkg.py~
 .coverage
 .tox
 .dist
+cirrus.sublime-workspace
+dist
+tox.ini

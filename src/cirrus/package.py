@@ -20,7 +20,7 @@ import os
 import sys
 
 import pystache
-import ConfigParser
+from cirrus._2to3 import ConfigParser
 import pluggage.registry
 
 import cirrus.templates

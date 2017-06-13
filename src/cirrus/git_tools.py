@@ -73,9 +73,11 @@ def remote_branch_exists(repo_dir, branchname):
     origin remote. returns True/False
 
     """
+    print(repo_dir)
+    print(type(repo_dir))
     match = branchname
     if not match.startswith('origin/'):
-        match = "origin/{}".format(branchname)
+        match = "origin/{}".format(str(branchname))
     repo = git.Repo(repo_dir)
     resp = repo.git.branch('-r')
     remote_branches = [y for y in resp.split() if y.startswith('origin/')]

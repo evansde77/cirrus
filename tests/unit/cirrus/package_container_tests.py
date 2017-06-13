@@ -28,6 +28,15 @@ class InitContainerTests(unittest.TestCase):
             handle.write("[pypi]\n")
             handle.write("pip_options=PIP_OPTS\n")
 
+        self.patch_environ = mock.patch.dict(
+            os.environ,
+            {
+                'HOME': self.dir,
+                'USER': 'steve',
+            }
+        )
+        self.patch_environ.start()
+
         self.patch_unstaged = mock.patch('cirrus.package_container.has_unstaged_changes')
         self.patch_checkout = mock.patch('cirrus.package_container.checkout_and_pull')
         self.patch_commit = mock.patch('cirrus.package_container.commit_files_optional_push')
@@ -41,6 +50,7 @@ class InitContainerTests(unittest.TestCase):
         self.patch_unstaged.stop()
         self.patch_checkout.stop()
         self.patch_commit.stop()
+        self.patch_environ.stop()
         if os.path.exists(self.dir):
             os.system('rm -rf {}'.format(self.dir))
 

@@ -11,7 +11,7 @@ import sys
 import datetime
 import itertools
 from collections import OrderedDict
-from fabric.operations import local
+from cirrus.invoke_helpers import local
 import pluggage.registry
 
 from argparse import ArgumentParser
@@ -357,7 +357,7 @@ def build_parser(argslist):
         help='Uploader plugin to use'
     )
     upload_command.add_argument(
-        '--pypi-url',
+        '--pypi-url', '-r',
         action='store',
         dest='pypi_url',
         help='upload to specified pypi url'

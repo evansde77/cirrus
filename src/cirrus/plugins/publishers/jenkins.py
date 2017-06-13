@@ -13,6 +13,7 @@ from requests_toolbelt import MultipartEncoder
 from cirrus.logger import get_logger
 from cirrus.plugins.jenkins import JenkinsClient
 from cirrus.publish_plugins import Publisher
+from cirrus._2to3 import builtins
 
 LOGGER = get_logger()
 

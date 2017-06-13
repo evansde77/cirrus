@@ -18,7 +18,7 @@ from cirrus.environment import cirrus_home
 from cirrus.configuration import load_configuration, get_pypi_auth
 from cirrus.pypirc import PypircFile
 from cirrus.logger import get_logger
-from fabric.operations import local
+from cirrus.invoke_helpers import local
 
 LOGGER = get_logger()
 

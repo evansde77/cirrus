@@ -4,7 +4,7 @@
 
 """
 import os
-import ConfigParser
+from cirrus._2to3 import ConfigParser
 
 
 class PypircFile(dict):
