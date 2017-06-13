@@ -9,4 +9,4 @@ src/cirrus.egg-infocirrus.conf~ requirements.txt~ test_pkg.py~
 .dist
 cirrus.sublime-workspace
 dist
-tox.ini
+
