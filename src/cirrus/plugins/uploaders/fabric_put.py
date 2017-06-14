@@ -9,13 +9,9 @@ Uploader plugin that uses fabric to do a remote put
 from cirrus.logger import get_logger
 from cirrus.upload_plugins import Uploader
 from cirrus.configuration import get_pypi_auth
-
+from cirrus.scp import put
 
 LOGGER = get_logger()
-
-
-def put(build_artifact, package_dir, use_sudo=False):
-    raise NotImplemented("Temp disable during py3 port away from fabric")
 
 
 class Pypi(Uploader):
@@ -39,6 +35,9 @@ class Pypi(Uploader):
 
         package_dir = pypi_conf['pypi_upload_path']
         LOGGER.info("Uploading {0} to {1}".format(build_artifact, pypi_url))
-        #with FabricHelper(pypi_url, pypi_user, pypi_auth['ssh_key']):
-        # fabric put the file onto the pypi server
-        put(build_artifact, package_dir, use_sudo=opts.pypi_sudo)
+        put(build_artifact,
+            package_dir,
+            pypi_url,
+            ssh_username=pypi_user,
+            ssh_keyfile=pypi_auth['ssh_key']
+        )
