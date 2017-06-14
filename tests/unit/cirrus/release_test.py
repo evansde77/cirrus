@@ -14,6 +14,7 @@ from cirrus.release import build_release
 from cirrus.release import cleanup_release
 from cirrus.release import artifact_name
 from cirrus.configuration import Configuration
+from cirrus._2to3 import to_str
 from pluggage.errors import FactoryError
 
 from .harnesses import CirrusConfigurationHarness, write_cirrus_conf
@@ -25,7 +26,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
     """
     def setUp(self):
         """set up test files"""
-        self.dir = tempfile.mkdtemp()
+        self.dir = to_str(tempfile.mkdtemp())
         self.config = os.path.join(self.dir, 'cirrus.conf')
         write_cirrus_conf(self.config,
             **{

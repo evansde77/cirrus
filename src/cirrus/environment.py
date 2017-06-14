@@ -12,6 +12,8 @@ import inspect
 import posixpath
 import subprocess
 
+from cirrus._2to3 import to_str
+
 
 #
 # number of subdirectories from cirrus/__init__.py
@@ -31,7 +33,7 @@ def repo_directory():
     outp, err = process.communicate()
     if process.returncode:
         return None
-    return outp.strip()
+    return to_str(outp.strip())
 
 
 def cirrus_home():

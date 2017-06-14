@@ -8,6 +8,7 @@ import mock
 
 import cirrus.docker as dckr
 from cirrus.configuration import Configuration
+import subprocess
 from subprocess import CalledProcessError
 
 
@@ -17,18 +18,15 @@ class DockerFunctionTests(unittest.TestCase):
     """
 
     def setUp(self):
-        self.patcher = mock.patch('cirrus.docker.subprocess')
+        self.patch_check_output = mock.patch('cirrus.docker.subprocess.check_output')
+        self.patch_popen = mock.patch('cirrus.docker.subprocess.Popen')
         self.version_patcher = mock.patch('cirrus.docker.get_docker_version')
-        self.mock_subp = self.patcher.start()
+        self.mock_check_output = self.patch_check_output.start()
         self.mock_get_docker_version = self.version_patcher.start()
         self.mock_get_docker_version.return_value = 'Docker version 1.12.0, build 8eab29e'
-        self.mock_subp.STDOUT = 'STOUT'
-        self.mock_check_output = mock.Mock()
         self.mock_check_output.return_value = 'SUBPROCESS OUT'
-        self.mock_subp.check_output = self.mock_check_output
-        self.mock_popen = mock.Mock()
-        self.mock_subp.Popen = mock.Mock()
-        self.mock_subp.Popen.return_value = self.mock_popen
+        self.mock_popen = self.patch_popen.start()
+        self.mock_popen.return_value = self.mock_popen
         self.mock_popen.communicate = mock.Mock()
         self.mock_popen.communicate.return_value = ('STDOUT', 'STDERR')
 
@@ -58,14 +56,15 @@ class DockerFunctionTests(unittest.TestCase):
         }
 
     def tearDown(self):
-        self.patcher.stop()
+        self.patch_check_output.stop()
+        self.patch_popen.stop()
         self.version_patcher.stop()
 
     def test_docker_build(self):
         """test straight docker build call"""
         dckr.docker_build(self.opts, self.config)
-        self.failUnless(self.mock_subp.check_output.called)
-        self.mock_subp.check_output.assert_has_calls(
+        self.failUnless(self.mock_check_output.called)
+        self.mock_check_output.assert_has_calls(
             mock.call(
                 ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
             )
@@ -74,8 +73,8 @@ class DockerFunctionTests(unittest.TestCase):
     def test_docker_build_addl_repos(self):
         self.config['docker']['additional_repos'] = "repo1:8080, repo2:8080 "
         dckr.docker_build(self.opts, self.config)
-        self.failUnless(self.mock_subp.check_output.called)
-        self.mock_subp.check_output.assert_has_calls(
+        self.failUnless(self.mock_check_output.called)
+        self.mock_check_output.assert_has_calls(
             mock.call(
                 [
                     'docker', 'build',
@@ -109,7 +108,7 @@ class DockerFunctionTests(unittest.TestCase):
                 output='vm/docker_image', context=None, defaults=None, input='template', extend_context=mock.ANY
             )
         )
-        self.mock_subp.check_output.assert_has_calls(
+        self.mock_check_output.assert_has_calls(
             mock.call(
                 ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
             )
@@ -127,8 +126,8 @@ class DockerFunctionTests(unittest.TestCase):
         self.config['docker']['repo'] = 'unittesting'
 
         dckr.docker_build(self.opts, self.config)
-        self.failUnless(self.mock_subp.check_output.called)
-        self.mock_subp.check_output.assert_has_calls(
+        self.failUnless(self.mock_check_output.called)
+        self.mock_check_output.assert_has_calls(
             [
                 mock.call(['docker', 'login', '-u', 'steve', '-p', 'st3v3R0X', 'unittesting']),
                 mock.call(['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image'])
@@ -141,7 +140,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.latest = False
         dckr.docker_push(self.opts, self.config)
 
-        self.mock_subp.check_output.assert_has_calls(
+        self.mock_check_output.assert_has_calls(
             [
                 mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3']),
             ]
@@ -153,7 +152,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.latest = True
         dckr.docker_push(self.opts, self.config)
 
-        self.mock_subp.check_output.assert_has_calls(
+        self.mock_check_output.assert_has_calls(
             [
                 mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3']),
                 mock.call(['docker', 'push', 'unittesting/unittesting:latest']),
@@ -166,7 +165,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.latest = True
         self.config['docker']['additional_repos'] = "repo1:8080, repo2:8080"
         dckr.docker_push(self.opts, self.config)
-        self.mock_subp.check_output.assert_has_calls(
+        self.mock_check_output.assert_has_calls(
             [
                 mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3']),
                 mock.call(['docker', 'push', 'unittesting/unittesting:latest']),
@@ -186,7 +185,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.config['docker']['docker_login_email'] = 'steve@pbr.com'
         self.config['docker']['docker_repo'] = None
         dckr.docker_push(self.opts, self.config)
-        self.mock_subp.check_output.assert_has_calls(
+        self.mock_check_output.assert_has_calls(
             [
                 mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3'])
             ]
@@ -196,8 +195,8 @@ class DockerFunctionTests(unittest.TestCase):
     def test_docker_connection(self):
         """test is_docker_connected function called as expected"""
         dckr.is_docker_connected()
-        self.mock_subp.check_output.assert_has_calls(
-            [mock.call(['docker', 'info'], stderr='STOUT')])
+        self.mock_check_output.assert_has_calls(
+            [mock.call(['docker', 'info'], stderr=mock.ANY)])
 
     def test_docker_connection_success(self):
         """test successful docker daemon connection"""
@@ -206,14 +205,15 @@ class DockerFunctionTests(unittest.TestCase):
 
     def test_docker_connection_error(self):
         """test failed docker daemon connection"""
-        self.mock_subp.check_output.side_effect = CalledProcessError(
+
+        self.mock_check_output.side_effect = CalledProcessError(
             1,
             ['docker', 'info'],
             'Cannot connect to the Docker daemon...')
 
-        with self.assertRaises(CalledProcessError):
-            result = dckr.is_docker_connected()
-            self.assertFalse(result)
+
+        result = dckr.is_docker_connected()
+        self.assertFalse(result)
 
 
 class DockerUtilTest(unittest.TestCase):

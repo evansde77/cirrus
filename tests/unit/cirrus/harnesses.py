@@ -12,7 +12,7 @@ import unittest
 import tempfile
 import mock
 import subprocess
-from cirrus._2to3 import ConfigParser
+from cirrus._2to3 import ConfigParser, to_str
 
 from cirrus.configuration import Configuration
 
@@ -21,7 +21,7 @@ def _repo_directory():
     command = ['git', 'rev-parse', '--show-toplevel']
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
     outp, err = process.communicate()
-    return outp.strip()
+    return to_str(outp.strip())
 
 
 def write_cirrus_conf(config_file, **sections):

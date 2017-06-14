@@ -10,3 +10,4 @@ src/cirrus.egg-infocirrus.conf~ requirements.txt~ test_pkg.py~
 cirrus.sublime-workspace
 dist
 
+venv3

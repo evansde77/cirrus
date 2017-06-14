@@ -113,10 +113,10 @@ def list_feature_branches(opts):
     list unmerged feature branches
     """
     repo_dir = os.getcwd()
-    print "unmerged feature branches:"
+    print("unmerged feature branches:")
     with GitHubContext(repo_dir) as ghc:
         for x in ghc.iter_git_feature_branches(merged=False):
-            print x
+            print(x)
 
 
 def main():

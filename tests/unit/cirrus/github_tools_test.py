@@ -139,9 +139,10 @@ class GithubToolsTest(unittest.TestCase):
         mock_repo.remotes = mock.Mock()
         mock_ret = mock.Mock()
         mock_ret.flags = 1000
+        mock_ret.ERROR = 10000
+        mock_ret.summary = "SUMMARY"
         mock_repo.remotes.origin = mock.Mock()
         mock_repo.remotes.origin.push = mock.Mock(return_value=[mock_ret])
-
         ghc = GitHubContext('REPO')
 
         ghc.push_branch('womp')

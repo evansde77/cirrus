@@ -73,8 +73,6 @@ def remote_branch_exists(repo_dir, branchname):
     origin remote. returns True/False
 
     """
-    print(repo_dir)
-    print(type(repo_dir))
     match = branchname
     if not match.startswith('origin/'):
         match = "origin/{}".format(str(branchname))

@@ -9,6 +9,7 @@ import os
 import operator
 import subprocess
 import contextlib
+from cirrus._2to3 import to_str
 
 
 @contextlib.contextmanager
@@ -33,6 +34,7 @@ def shell_command(command):
         shell=True
     )
     stdout, _ = process.communicate()
+    stdout = to_str(stdout)
     if process.returncode != 0:
         raise RuntimeError(stdout)
     else:

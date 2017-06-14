@@ -9,7 +9,7 @@ import unittest
 
 from cirrus.feature import new_feature_branch, new_pr
 
-from harnesses import CirrusConfigurationHarness, write_cirrus_conf
+from .harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
 
 class FeatureCommandTest(unittest.TestCase):

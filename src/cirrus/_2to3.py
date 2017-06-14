@@ -33,6 +33,17 @@ def python3_todo(*args, **kwargs):
 if PY2:
     import ConfigParser
     import __builtin__ as builtins
+
+    def unicode_(s):
+        return unicode(s)
+
 else:
     import configparser as ConfigParser
     import builtins
+
+    def unicode_(s):
+        return str(s)
+
+
+def to_str(s):
+    return s.decode(ENCODING) if hasattr(s, 'decode') else s

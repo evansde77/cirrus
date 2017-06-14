@@ -431,19 +431,19 @@ def write_cirrus_conf(opts, version_file):
     config = ConfigParser.ConfigParser()
     config.add_section('package')
     config.set('package', 'name', pname)
-    config.set('package', 'version', opts.version)
-    config.set('package', 'description', opts.desc)
-    config.set('package', 'organization', opts.org)
+    config.set('package', 'version', str(opts.version))
+    config.set('package', 'description', str(opts.desc))
+    config.set('package', 'organization', str(opts.org))
     config.set('package', 'version_file', version_file)
     config.set('package', 'history_file', opts.history_file)
     config.set('package', 'author',  os.environ['USER'])
     config.set('package', 'author_email', 'EMAIL_HERE')
     config.set('package', 'url', 'PACKAGE_URL_HERE')
     if opts.source:
-        config.set('package', 'find_packages', opts.source)
+        config.set('package', 'find_packages', str(opts.source))
 
     config.add_section('gitflow')
-    config.set('gitflow', 'develop_branch', opts.develop)
+    config.set('gitflow', 'develop_branch', str(opts.develop))
     config.set('gitflow', 'release_branch_prefix', 'release/')
     config.set('gitflow', 'feature_branch_prefix', 'feature/')
     config.add_section('build')
@@ -462,10 +462,10 @@ def write_cirrus_conf(opts, version_file):
 
     config.add_section('test-default')
     config.set('test-default', 'where', 'tests/unit')
-    config.set('test-default', 'mode', opts.test_mode)
+    config.set('test-default', 'mode', str(opts.test_mode))
 
     config.add_section('quality')
-    config.set('quality', 'threshold', 10)
+    config.set('quality', 'threshold', str(10))
 
     with open(cirrus_conf, 'w') as handle:
         config.write(handle)
