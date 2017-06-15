@@ -24,7 +24,7 @@ class SCP(object):
     @property
     def scp_command(self):
         """build scp"""
-        command = "{} {} ".format(self.scp_binary, self.source)
+        command = "{}".format(self.scp_binary)
         host_url = "{}:{}".format(self.target_host, self.target_path)
         if self.username:
             host_url = "{}@{}".format(self.username, host_url)
@@ -35,7 +35,7 @@ class SCP(object):
             opts += " -i {} ".format(self.ssh_key)
         if self.ssh_options:
             opts += " {} ".format(self.ssh_options)
-        return "{} {} {}".format(command, opts, host_url)
+        return "{} {} {} {}".format(command, opts, self.source, host_url)
 
     def __call__(self):
         local(self.scp_command)
