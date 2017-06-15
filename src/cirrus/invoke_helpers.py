@@ -3,7 +3,8 @@
 invoke_helpers
 
 """
-import invoke
+from invoke import Context
+from invoke.exceptions import UnexpectedExit
 from .logger import get_logger
 
 
@@ -17,11 +18,11 @@ def local(command):
     fabric.operations local like command
 
     """
-    c = invoke.Context()
+    c = Context()
     LOGGER.info("local({})".format(command))
     try:
         result = c.run(command)
-    except invoke.exceptions.UnexpectedExit:
-        msg = "Error running command:\n{}\n{}".format(result.stdout, result.stderr)
+    except UnexpectedExit as ex:
+        msg = "Error running command:\n{}".format(ex)
         LOGGER.error(msg)
         raise
