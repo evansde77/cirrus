@@ -170,6 +170,9 @@ class Configuration(dict):
     def test_mode(self, suite):
         return self.get('test-{0}'.format(suite), {}).get('mode')
 
+    def test_suite(self, suite):
+        return self.get('test-{0}'.format(suite), {})
+
     def venv_name(self):
         return self.get('build', {}).get('virtualenv_name', 'venv')
 
