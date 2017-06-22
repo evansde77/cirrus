@@ -21,7 +21,7 @@ def build_parser(argslist):
     parser = ArgumentParser(
         description='git cirrus test command'
     )
-    
+
     parser.add_argument(
         '--suite',
         help=(
@@ -54,11 +54,16 @@ def nose_run(config, opts):
     Locally activate vitrualenv and run tests via nose
     """
     where = config.test_where(opts.suite)
+    suite_conf = config.test_suite(opts.suite)
+    test_opts = suite_conf.get('test_options')
+    if opts.options:
+        # command line overrides
+        test_opts = opts.options
     local(
         '. ./{0}/bin/activate && nosetests -w {1} {2}'.format(
             config.venv_name(),
             where,
-            opts.options
+            test_opts if test_opts else ""
         )
     )
 
@@ -70,10 +75,22 @@ def tox_run(config, opts):
     activate venv and run tox test suite
 
     """
+    suite_conf = config.test_suite(opts.suite)
+    tox_ini = suite_conf.get('tox_ini')
+    test_opts = suite_conf.get('test_options')
+    if opts.options:
+        # command line overrides
+        test_opts = opts.options
+    tox_command = "tox"
+    if tox_ini:
+        tox_command += " -c {}".format(tox_ini)
+    if test_opts:
+        tox_command += " {}".format(test_opts)
+
     local(
-        '. ./{0}/bin/activate && tox {1}'.format(
+        '. ./{0}/bin/activate && {1}'.format(
             config.venv_name(),
-            opts.options
+            tox_command
         )
     )
 
