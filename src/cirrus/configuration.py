@@ -13,6 +13,10 @@ conf = load_configuration()
 """
 import os
 import subprocess
+from exceptions import RuntimeError
+
+from cirrus.gitconfig import load_gitconfig
+from cirrus.environment import repo_directory
 
 import pluggage.registry
 
@@ -167,13 +171,18 @@ class Configuration(dict):
         return self.get('gitflow', {}).get('release_branch_prefix', 'release/')
 
     def test_where(self, suite):
-        return self.get('test-{0}'.format(suite), {}).get('where')
+        return self.test_suite(suite).get('where')
 
     def test_mode(self, suite):
-        return self.get('test-{0}'.format(suite), {}).get('mode')
+        return self.test_suite(suite).get('mode')
 
     def test_suite(self, suite):
-        return self.get('test-{0}'.format(suite), {})
+        prefix = 'test-'
+        key = '{0}{1}'.format(prefix, suite)
+        if key not in self.keys():
+            valid = [k[len(prefix):] for k in self.keys() if k.startswith(prefix)]
+            raise RuntimeError("invalid suite name '{0}', valid are {1}".format(suite, valid))
+        return self.get(key, {})
 
     def venv_name(self):
         return self.get('build', {}).get('virtualenv_name', 'venv')
