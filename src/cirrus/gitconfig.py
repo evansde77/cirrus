@@ -6,7 +6,7 @@ local gitconfig parser/updater since the lib on pypi seems to be busted
 
 """
 import os
-import operator
+import re
 import subprocess
 import contextlib
 from cirrus._2to3 import to_str
@@ -14,13 +14,13 @@ from cirrus._2to3 import to_str
 
 @contextlib.contextmanager
 def gitconfig(filename="~/.gitconfig"):
-    c = GitConfig(filename)
+    c = GitConfig(filename=filename)
     c.parse()
     yield c
 
 
 def load_gitconfig(filename="~/.gitconfig"):
-    c = GitConfig(filename)
+    c = GitConfig(filename=filename)
     c.parse()
     return c
 
@@ -82,6 +82,9 @@ class GitConfigSection(object):
         return '\n'.join(result)
 
 
+VALID_LINE = re.compile("^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+=")
+
+
 class GitConfig(dict):
     """
     Object to encapsulate/parse/update a gitconfig file
@@ -102,6 +105,9 @@ class GitConfig(dict):
         self.clear()
         result = shell_command(self.command + " -l")
         for line in result.split('\n'):
+            if not VALID_LINE.match(line):
+                # skip multiline commands, dont use them for cirrus
+                continue
             section, param_val = line.split('.', 1)
             sect_dict = self.setdefault(section, {})
             param, value = param_val.split('=', 1)

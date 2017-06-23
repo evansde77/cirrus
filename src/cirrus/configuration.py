@@ -13,15 +13,11 @@ conf = load_configuration()
 """
 import os
 import subprocess
-from exceptions import RuntimeError
 
 from cirrus.gitconfig import load_gitconfig
 from cirrus.environment import repo_directory
 
 import pluggage.registry
-
-from cirrus.gitconfig import load_gitconfig
-from cirrus.environment import repo_directory
 from cirrus._2to3 import ConfigParser
 
 

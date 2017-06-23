@@ -44,6 +44,10 @@ class GithubToolsTest(unittest.TestCase):
             }
         )
         self.patch_environ.start()
+        self.gitconf_str = "cirrus.credential-plugin=default"
+        self.patch_gitconfig = mock.patch('cirrus.gitconfig.shell_command')
+        self.mock_gitconfig = self.patch_gitconfig.start()
+        self.mock_gitconfig.return_value = self.gitconf_str
 
     def tearDown(self):
         """
@@ -51,6 +55,7 @@ class GithubToolsTest(unittest.TestCase):
         """
         self.patch_environ.stop()
         self.patch_get.stop()
+        self.patch_gitconfig.stop()
 
     def test_create_pull_request(self):
         """

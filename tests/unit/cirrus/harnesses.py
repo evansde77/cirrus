@@ -80,3 +80,4 @@ class CirrusConfigurationHarness(object):
     def tearDown(self):
         self.patch_environ.stop()
         self.mock_config.stop()
+        self.patch_gitconfig.stop()
