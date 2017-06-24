@@ -11,3 +11,4 @@ cirrus.sublime-workspace
 dist
 
 venv3
+containers/*/cirrus-cli-latest.tar.gz

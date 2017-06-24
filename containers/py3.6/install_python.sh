@@ -9,7 +9,8 @@ eval "$(pyenv init -)"
 
 pyenv install 3.6.1
 pyenv global 3.6.1
-curl -L https://bootstrap.pypa.io/get-pip.py | bash
+curl -O https://bootstrap.pypa.io/get-pip.py
+python3.6 get-pip.py
 pip install --upgrade pip setuptools virtualenv
 virtualenv -p python3.6 /opt/venv
 

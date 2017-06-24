@@ -38,7 +38,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         self.harness.setUp()
         self.patch_pull = mock.patch('cirrus.release.checkout_and_pull')
         self.patch_branch = mock.patch('cirrus.release.branch')
-        self.patch_commit = mock.patch('cirrus.release.commit_files')
+        self.patch_commit = mock.patch('cirrus.release.commit_files_optional_push')
         self.mock_pull = self.patch_pull.start()
         self.mock_branch = self.patch_branch.start()
         self.mock_commit = self.patch_commit.start()
@@ -78,7 +78,8 @@ class ReleaseNewCommandTest(unittest.TestCase):
         self.failUnless(self.mock_branch.called)
         self.assertEqual(self.mock_branch.call_args[0][1], 'release/1.2.4')
         self.failUnless(self.mock_commit.called)
-        self.assertEqual(self.mock_commit.call_args[0][2], 'cirrus.conf')
+        self.assertEqual(self.mock_commit.call_args[0][2], False)
+        self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
 
     @mock.patch('cirrus.release.has_unstaged_changes')
     def test_new_release_unstaged(self, mock_unstaged):

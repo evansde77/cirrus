@@ -70,6 +70,18 @@ class GitToolsTest(unittest.TestCase):
         """
         _test_checkout_and_pull_
         """
+        mock_remote = mock.Mock()
+        mock_remote.name = 'origin'
+        mock_remote.pull = mock.Mock()
+
+        class Remotes(list):
+            def __init__(self, m):
+                self.append(m)
+
+            def __getattr__(self, name):
+                return self[0]
+
+        self.mock_repo.remotes = Remotes(mock_remote)
         checkout_and_pull(None, 'master')
         self.failUnless(self.mock_git.Repo.called)
 

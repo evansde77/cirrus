@@ -31,7 +31,7 @@ git init
 
 
 # set up a new package
-git cirrus package init --bootstrap -p test_package -v 0.0.0 -s src --no-remote -o integ_test -d "this is a test"  --python python2.7
+git cirrus package init --bootstrap -p test_package -v 0.0.0 -s src --no-remote -o integ_test -d "this is a test"  --python python3.5
 # set up simple container templates
 #git cirrus package container-init  --local-install --base-image python:2.7 --no-remote
 git cirrus build   # build local dev virtualenv

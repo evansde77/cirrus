@@ -259,16 +259,16 @@ def build_parser(argslist):
         nargs='+',
         help='package versions (pkg==0.0.0) to update in requirements.txt'
     )
+    new_command.add_argument(
+        '--no-remote',
+        action='store_true',
+        default=False,
+        help="dont push release branch to remote"
+    )
 
     # borrow --micro/minor/major options from "new" command.
     subparsers.add_parser('trigger', parents=[new_command], add_help=False)
     new_version_command = subparsers.add_parser('new-version', parents=[new_command], add_help=False)
-    new_version_command.add_argument(
-        '--no-remote',
-        help='Do not push to remote if set',
-        default=False,
-        action='store_true'
-    )
 
     cleanup_command = subparsers.add_parser(
         'cleanup'
@@ -341,6 +341,12 @@ def build_parser(argslist):
         dest='log_status',
         default=False,
         help='log all status values for branches during command'
+    )
+    merge_command.add_argument(
+        '--no-remote',
+        help='Do not remove remote branch if set',
+        default=False,
+        action='store_true'
     )
 
     upload_command = subparsers.add_parser('upload')
@@ -502,7 +508,7 @@ def new_release(opts):
         raise RuntimeError(msg)
 
     main_branch = config.gitflow_branch_name()
-    checkout_and_pull(repo_dir,  main_branch)
+    checkout_and_pull(repo_dir,  main_branch, pull=not opts.no_remote)
 
     # create release branch
     branch(repo_dir, branch_name, main_branch)
@@ -552,7 +558,7 @@ def new_release(opts):
     msg = "cirrus release: new release created for {0}".format(branch_name)
     LOGGER.info('Committing files: {0}'.format(','.join(changes)))
     LOGGER.info(msg)
-    commit_files(repo_dir, msg, *changes)
+    commit_files_optional_push(repo_dir, msg, not opts.no_remote, *changes)
     return (new_version, field)
 
 
@@ -726,7 +732,7 @@ def merge_release(opts):
                 )
 
             LOGGER.info(u"Merging {} into {}".format(release_branch, master))
-            ghc.pull_branch(master)
+            ghc.pull_branch(master, remote=not opts.no_remote)
             ghc.merge_branch(release_branch)
             sha = ghc.repo.head.ref.commit.hexsha
 
@@ -764,14 +770,16 @@ def merge_release(opts):
                         ctx,
                         branch=sha
                     )
-            ghc.push_branch_with_retry(
-                attempts=rel_conf['push_retry_attempts'],
-                cooloff=rel_conf['push_retry_cooloff']
-            )
-            LOGGER.info(u"Tagging {} as {}".format(master, tag))
+            if not opts.no_remote:
+                ghc.push_branch_with_retry(
+                    attempts=rel_conf['push_retry_attempts'],
+                    cooloff=rel_conf['push_retry_cooloff']
+                )
+                LOGGER.info(u"Tagging {} as {}".format(master, tag))
             ghc.tag_release(
                 tag,
                 master,
+                push=not opts.no_remote,
                 attempts=rel_conf['push_retry_attempts'],
                 cooloff=rel_conf['push_retry_cooloff']
             )
@@ -780,7 +788,7 @@ def merge_release(opts):
         if opts.log_status:
             ghc.log_branch_status(develop)
         if not opts.skip_develop:
-            ghc.pull_branch(develop)
+            ghc.pull_branch(develop, remote=not opts.no_remote)
             ghc.merge_branch(release_branch)
             sha = ghc.repo.head.ref.commit.hexsha
 
@@ -817,12 +825,13 @@ def merge_release(opts):
                         ctx,
                         branch=sha
                     )
-            ghc.push_branch_with_retry(
-                attempts=rel_conf['push_retry_attempts'],
-                cooloff=rel_conf['push_retry_cooloff']
-            )
+            if not opts.no_remote:
+                ghc.push_branch_with_retry(
+                    attempts=rel_conf['push_retry_attempts'],
+                    cooloff=rel_conf['push_retry_cooloff']
+                )
         if opts.cleanup:
-            ghc.delete_branch(release_branch)
+            ghc.delete_branch(release_branch, remote=not opts.no_remote)
 
 
 def build_release(opts):

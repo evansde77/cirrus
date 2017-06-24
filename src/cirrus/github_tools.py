@@ -188,7 +188,7 @@ class GitHubContext(object):
             LOGGER.error(msg)
             raise RuntimeError(msg)
 
-    def pull_branch(self, branch_name=None):
+    def pull_branch(self, branch_name=None, remote=True):
         """
         _pull_branch_
 
@@ -197,8 +197,9 @@ class GitHubContext(object):
         """
         if branch_name is not None:
             self.repo.git.checkout(branch_name)
-        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_name)
-        return self.repo.remotes.origin.pull(ref)
+        if remote:
+            ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_name)
+            return self.repo.remotes.origin.pull(ref)
 
     def push_branch(self, branch_name=None):
         """

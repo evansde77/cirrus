@@ -47,7 +47,7 @@ LOGGER = get_logger()
 TOXFILE = \
 """
 [tox]
-envlist = py27
+envlist = {python}
 [testenv]
 deps=
   -r{requirements}
@@ -285,7 +285,6 @@ def build_parser(argslist):
 
     opts = parser.parse_args(argslist)
     return opts
-
 
 
 def setup_branches(opts):
@@ -624,12 +623,20 @@ def bootstrap_repo(opts):
         files.append(opts.test_requirements)
 
     if not os.path.exists('tox.ini'):
+        if opts.python is not None:
+            py_vers = opts.python.replace('python', 'py')
+        else:
+            py_vers = "py{}.{}".format(
+                sys.version_info.major,
+                sys.version_info.minor
+            )
         with open('tox.ini', 'w') as handle:
             handle.write(
                 TOXFILE.format(
                     requirements=opts.requirements,
                     test_requirements=opts.test_requirements,
-                    testdir=opts.tests
+                    testdir=opts.tests,
+                    python=py_vers
                 )
             )
 
