@@ -56,6 +56,7 @@ class FeatureCommandTest(unittest.TestCase):
         opts.command = 'new'
         opts.name = 'testbranch'
         opts.push = False
+        opts.no_remote = True
 
         new_feature_branch(opts)
         self.failUnless(self.mock_pull.called)
@@ -74,6 +75,7 @@ class FeatureCommandTest(unittest.TestCase):
         opts.command = 'new'
         opts.name = 'testbranch'
         opts.push = True
+        opts.no_remote = False
 
         new_feature_branch(opts)
         self.failUnless(self.mock_pull.called)

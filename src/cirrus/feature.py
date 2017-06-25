@@ -8,7 +8,9 @@ import sys
 from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration
+from cirrus.environment import repo_directory
 from cirrus.git_tools import checkout_and_pull, branch, push
+from cirrus.git_tools import has_unstaged_changes, current_branch
 from cirrus.github_tools import create_pull_request
 from cirrus.github_tools import GitHubContext
 from cirrus.logger import get_logger
@@ -33,8 +35,15 @@ def build_parser(argslist):
     new_command.add_argument('name', nargs='+')
     new_command.add_argument(
         '--push',
-        help='include this to push new feature to remote',
+        help='Deprecated, use --no-remote instead',
+        default=True,
         action='store_true')
+    new_command.add_argument(
+        '--no-remote',
+        help='Do not hit remote if set',
+        default=False,
+        action='store_true'
+    )
 
     pr_command = subparsers.add_parser('pull-request')
     pr_command.add_argument('-t', '--title', dest='title', required=True)
@@ -54,6 +63,14 @@ def build_parser(argslist):
         help='users you would like to be notified',
         required=False)
 
+    merge_command = subparsers.add_parser('merge')
+    merge_command.add_argument(
+        '--no-remote',
+        help='Do not hit remote if set',
+        default=False,
+        action='store_true'
+    )
+
     list_command = subparsers.add_parser('list')
 
     opts = parser.parse_args(argslist)
@@ -68,10 +85,12 @@ def new_feature_branch(opts):
     pushes new branch to remote
     """
     config = load_configuration()
-    repo_dir = os.getcwd()
+    repo_dir = repo_directory()
     checkout_and_pull(
         repo_dir,
-        config.gitflow_branch_name())
+        config.gitflow_branch_name(),
+        pull=not opts.no_remote
+    )
     LOGGER.info("Checked out and pulled {0}".format(
         config.gitflow_branch_name()))
     branch_name = ''.join((config.gitflow_feature_prefix(), opts.name[0]))
@@ -79,9 +98,35 @@ def new_feature_branch(opts):
            branch_name,
            config.gitflow_branch_name())
     LOGGER.info("Created branch {0}".format(branch_name))
-    if opts.push:
+    if not opts.no_remote:
         push(repo_dir)
         LOGGER.info("Branch {0} pushed to remote".format(branch_name))
+
+
+def merge_feature_branch(opts):
+    """
+    merge current feature branch into develop
+    """
+    config = load_configuration()
+    main_branch = config.gitflow_branch_name()
+    repo_dir = repo_directory()
+    curr_branch = current_branch(repo_dir)
+    LOGGER.info("Merging {} into {}".format(curr_branch, main_branch))
+    # make sure repo is clean
+    if has_unstaged_changes(repo_dir):
+        msg = (
+            "Error: Unstaged changes are present on the feature branch {}"
+            "Please commit them or clean up before proceeding"
+        ).format(curr_branch)
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+
+    checkout_and_pull(repo_dir,  main_branch, pull=not opts.no_remote)
+    with GitHubContext(repo_dir) as ghc:
+        ghc.merge_branch(curr_branch)
+        if not opts.no_remote:
+            ghc.push_branch(main_branch)
+            LOGGER.info("Branch {0} pushed to remote".format(main_branch))
 
 
 def new_pr(opts):
@@ -90,7 +135,7 @@ def new_pr(opts):
 
     Creates a pull request
     """
-    repo_dir = os.getcwd()
+    repo_dir = repo_directory()
     #parse notify adding '@' if necessary
     notifiees = []
     if opts.notify is not None:
@@ -112,7 +157,7 @@ def list_feature_branches(opts):
     """
     list unmerged feature branches
     """
-    repo_dir = os.getcwd()
+    repo_dir = repo_directory()
     print("unmerged feature branches:")
     with GitHubContext(repo_dir) as ghc:
         for x in ghc.iter_git_feature_branches(merged=False):
@@ -132,6 +177,8 @@ def main():
         list_feature_branches(opts)
     if opts.command in ('pull-request', 'pr'):
         new_pr(opts)
+    if opts.command == 'merge':
+        merge_feature_branch(opts)
     else:
         exit(1)
 

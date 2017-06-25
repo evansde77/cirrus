@@ -24,7 +24,8 @@ RUN /opt/install_python.sh
 
 COPY cirrus-cli-latest.tar.gz /opt/
 ADD scratch_test.sh /opt/scratch_test.sh
-RUN chmod +x /opt/scratch_test.sh
-ENTRYPOINT ["/opt/scratch_test.sh"]
+ADD clone_test.sh /opt/clone_test.sh
+RUN chmod +x /opt/scratch_test.sh /opt/clone_test.sh
+ENTRYPOINT ["/opt/clone_test.sh"]
 
 

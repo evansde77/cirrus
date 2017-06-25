@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# scratch_test
+# clone_test
 #
 git config --global user.name "some_user"
 git config --global user.email "some_email"
@@ -25,19 +25,32 @@ selfsetup --robot
 TIMESTAMP=`date +%s`
 REPO_DIR="test_${TIMESTAMP}"
 export USER=some_user
-mkdir -p $REPO_DIR
-cd $REPO_DIR
-git init
+export ORIGIN_REPO=`pwd`/cirrus_test_origin
+export TEST_REPO=`pwd`/cirrus_test
 
+git clone https://github.com/evansde77/cirrus_test.git ${ORIGIN_REPO}
+cd ${ORIGIN_REPO}
+git checkout -b develop origin/develop
 
-# set up a new package
-git cirrus package init --bootstrap -p test_package -v 0.0.0 -s src --no-remote -o integ_test -d "this is a test"  --python python3.5
-# set up simple container templates
-git cirrus build   # build local dev virtualenv
-git cirrus test                                     # run tests
-git cirrus feature new integ_test --no-remote
-git cirrus feature merge --no-remote
+git clone ${ORIGIN_REPO} ${TEST_REPO}
+cd ${TEST_REPO}
+git checkout -b develop origin/develop
+
+git cirrus build
+git cirrus test --test-options "-e py27"
+
+git cirrus feature new test_integ
+git cirrus feature merge
+
 git cirrus release new --micro --no-remote
 git cirrus release build                  # create a build artifact to add to the container
 git cirrus release merge --cleanup --no-remote
+
+
+
+
+
+
+
+
 
