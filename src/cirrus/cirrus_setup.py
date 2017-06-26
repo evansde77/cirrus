@@ -13,7 +13,7 @@ from argparse import ArgumentParser
 from cirrus.configuration import load_setup_configuration, get_creds_plugin
 from cirrus.logger import get_logger
 from cirrus.environment import is_anaconda, cirrus_bin
-
+from cirrus._2to3 import get_raw_input
 
 LOGGER = get_logger()
 GITHUB_AUTH_URL = "https://api.github.com/authorizations"
@@ -35,7 +35,7 @@ def ask_question(question, default=None, valid=None):
         to_ask += " [{0}]: ".format(default)
     else:
         to_ask += ": "
-    result = raw_input(to_ask)
+    result = get_raw_input(to_ask)
     if result.strip() == '':
         if default is not None:
             result = default

@@ -101,14 +101,3 @@ def virtualenv_home():
     home = cirrus_home()
     venv = posixpath.join(home, 'venv')
     return venv
-
-
-def cirrus_virtualenv_activate():
-    """
-    generate command to activate cirrus virtualenv
-
-    """
-    if is_anaconda():
-        return "source activate cirrus"
-    else:
-        return ". {}".format(virtualenv_home())

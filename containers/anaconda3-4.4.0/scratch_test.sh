@@ -9,19 +9,18 @@ git config --global user.email "some_email"
 export PATH=${PYENV_ROOT}/bin:${PATH}
 eval "$(pyenv init -)"
 
-  
-ACTIVATE_SCRIPT=${PYENV_ROOT}/versions/anaconda3-4.4.0/bin/activate 
-mkdir -p ~/.cirrus
-conda create -n venv -y 
 
+ACTIVATE_SCRIPT=${PYENV_ROOT}/versions/anaconda3-4.4.0/bin/activate
+mkdir -p ~/.cirrus
+conda create -y -m -p ~/.cirrus/venv pip
 
 
 (
 
-source ${ACTIVATE_SCRIPT} venv
+source ${ACTIVATE_SCRIPT} ~/.cirrus/venv
 export LOCATION=~/.cirrus
 pip install /opt/cirrus-cli-latest.tar.gz
-export CIRRUS_HOME=$LOCATION
+export CIRRUS_HOME=${LOCATION}
 selfsetup --robot
 )
 
@@ -38,9 +37,9 @@ git cirrus package init --bootstrap -p test_package -v 0.0.0 -s src --no-remote 
 git cirrus build   # build local dev virtualenv
 # this is where you would add code and tests
 git cirrus test                                     # run tests
-#git cirrus feature new integ_test --no-remote
-#git cirrus feature merge --no-remote
-#git cirrus release new --micro --no-remote
-#git cirrus release build                  # create a build artifact to add to the container
-#git cirrus release merge --cleanup --no-remote
+git cirrus feature new integ_test --no-remote
+git cirrus feature merge --no-remote
+git cirrus release new --micro --no-remote
+git cirrus release build                  # create a build artifact to add to the container
+git cirrus release merge --cleanup --no-remote
 

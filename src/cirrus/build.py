@@ -14,7 +14,7 @@ import sys
 from argparse import ArgumentParser
 
 from cirrus.documentation_utils import build_docs
-from cirrus.environment import cirrus_home
+from cirrus.environment import cirrus_bin, is_anaconda
 from cirrus.configuration import load_configuration, get_pypi_auth
 from cirrus.pypirc import PypircFile
 from cirrus.logger import get_logger
@@ -89,6 +89,51 @@ def build_parser(argslist):
     return opts
 
 
+def virtualenv_venv(venv_path, opts, python_bin):
+    venv_bin_path = os.path.join(venv_path, 'bin', 'python')
+    if opts.use_venv:
+        venv_command = opts.use_venv
+    else:
+        venv_command = 'virtualenv'
+    if python_bin:
+        venv_command += ' -p {} '.format(python_bin)
+
+    # remove existing virtual env if building clean
+    if opts.clean and os.path.exists(venv_path):
+        cmd = "rm -rf {0}".format(venv_path)
+        LOGGER.info("Removing existing virtualenv: {0}".format(venv_path))
+        local(cmd)
+
+    if not os.path.exists(venv_bin_path):
+        cmd = "{0} {1}".format(venv_command, venv_path)
+        LOGGER.info("Bootstrapping virtualenv: {0}".format(venv_path))
+        local(cmd)
+
+
+def conda_venv(venv_path, opts, python_bin):
+    bin_dir = cirrus_bin()
+    conda_bin = os.path.join(bin_dir, 'conda')
+    venv_command = "conda create -y -m -p {} pip virtualenv".format(venv_path)
+
+    # remove existing virtual env if building clean
+    if opts.clean and os.path.exists(venv_path):
+        cmd = "{} remove --all -y {}".format(conda_bin, venv_path)
+        LOGGER.info("Removing existing virtualenv: {0}".format(venv_path))
+        local(cmd)
+
+    if not os.path.exists(venv_path):
+        LOGGER.info("Bootstrapping conda env: {0}".format(venv_path))
+        local(venv_command)
+
+
+def activate_command(venv_path):
+    if is_anaconda():
+        command = "source {}/bin/activate {}".format(venv_path, venv_path)
+    else:
+        command = ". {}/bin/activate".format(venv_path)
+    return command
+
+
 def execute_build(opts):
     """
     _execute_build_
@@ -121,24 +166,10 @@ def execute_build(opts):
         extra_reqs = set(extra_reqs)  # dedupe
 
     venv_path = os.path.join(working_dir, venv_name)
-    venv_bin_path = os.path.join(venv_path, 'bin', 'python')
-    if opts.use_venv:
-        venv_command = opts.use_venv
+    if is_anaconda():
+        conda_venv(venv_path, opts, python_bin)
     else:
-        venv_command = 'virtualenv'
-    if python_bin:
-        venv_command += ' -p {} '.format(python_bin)
-
-    # remove existing virtual env if building clean
-    if opts.clean and os.path.exists(venv_path):
-        cmd = "rm -rf {0}".format(venv_path)
-        LOGGER.info("Removing existing virtualenv: {0}".format(venv_path))
-        local(cmd)
-
-    if not os.path.exists(venv_bin_path):
-        cmd = "{0} {1}".format(venv_command, venv_path)
-        LOGGER.info("Bootstrapping virtualenv: {0}".format(venv_path))
-        local(cmd)
+        virtualenv_venv(venv_path, opts, python_bin)
 
     # custom pypi server
     pypi_server = config.pypi_url()
@@ -229,9 +260,10 @@ def execute_build(opts):
         LOGGER.info(msg)
     else:
         LOGGER.info('running python setup.py develop...')
+        activate = activate_command(venv_path)
         local(
-            '. ./{0}/bin/activate && python setup.py develop'.format(
-                venv_name
+            '{} && python setup.py develop'.format(
+                activate
             )
         )
 
