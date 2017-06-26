@@ -5,4 +5,4 @@ _deployers_
 Plugins for the deploy command
 
 """
-import chef
+import cirrus.plugins.deployers.chef

@@ -11,6 +11,7 @@ from distutils.version import StrictVersion
 
 from argparse import ArgumentParser
 from cirrus.logger import get_logger
+from cirrus._2to3 import to_str
 from cirrus.configuration import load_configuration
 import dockerstache.dockerstache as ds
 
@@ -271,7 +272,7 @@ def find_image_id(base_tag):
     process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
     outp, err = process.communicate()
     LOGGER.info("Latest Container: {}".format(outp))
-    return outp.strip()
+    return to_str(outp.strip())
 
 
 def _docker_login(helper):

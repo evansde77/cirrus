@@ -5,7 +5,7 @@ import mock
 import os
 import json
 import tempfile
-import ConfigParser
+from cirrus._2to3 import ConfigParser, to_str
 
 from cirrus.package import (
     create_files,
@@ -18,7 +18,7 @@ from cirrus.package import (
 
 )
 
-from harnesses import CirrusConfigurationHarness
+from .harnesses import CirrusConfigurationHarness
 
 
 class BuildParserTest(unittest.TestCase):
@@ -44,7 +44,7 @@ class GitFunctionTests(unittest.TestCase):
         """
         set up for tests
         """
-        self.tempdir = tempfile.mkdtemp()
+        self.tempdir = to_str(tempfile.mkdtemp())
         self.repo = os.path.join(self.tempdir, 'throwaway')
         os.mkdir(self.repo)
         self.bak_file = os.path.join(self.repo, 'backmeup')
@@ -95,6 +95,7 @@ class GitFunctionTests(unittest.TestCase):
         opts.no_remote = False
         opts.repo = self.repo
         opts.master = 'master'
+        opts.develop = 'develop'
         opts.version = '0.0.0'
 
         #tag doesnt exist
@@ -128,19 +129,25 @@ class CreateFilesTest(unittest.TestCase):
         """
         set up for tests
         """
-        self.tempdir = tempfile.mkdtemp()
+        self.tempdir = to_str(tempfile.mkdtemp())
         self.repo = os.path.join(self.tempdir, 'throwaway')
         src_dir = os.path.join(self.repo, 'src')
         pkg_dir = os.path.join(self.repo, 'src', 'unittests')
         os.mkdir(self.repo)
         os.mkdir(src_dir)
         os.mkdir(pkg_dir)
+        self.patch_environ = mock.patch.dict(
+            os.environ,
+            {'HOME': self.tempdir, 'USER': 'steve'}
+        )
+        self.patch_environ.start()
         init_file = os.path.join(pkg_dir, '__init__.py')
         with open(init_file, 'w') as handle:
             handle.write('# initfile\n')
             handle.write('__version__=\'0.0.0\'\n')
 
     def tearDown(self):
+        self.patch_environ.stop()
         if os.path.exists(self.tempdir):
             os.system('rm -rf {}'.format(self.tempdir))
 
@@ -151,9 +158,13 @@ class CreateFilesTest(unittest.TestCase):
         opts.source = 'src'
         opts.version = '0.0.1'
         opts.version_file = None
+        opts.test_mode = False
         opts.templates = ['include steve/*']
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
+        opts.desc = "DESCRIPTION"
+        opts.org = "ORG"
+        opts.develop = 'develop'
         opts.requirements = 'requirements.txt'
         opts.test_requirements = 'test-requirements.txt'
         opts.pypi_package_name = None
@@ -196,12 +207,16 @@ class CreateFilesTest(unittest.TestCase):
         opts.create_version_file = True
         opts.source = 'src'
         opts.version = '0.0.1'
+        opts.org = "ORG"
         opts.version_file = None
+        opts.test_mode = 'False'
+        opts.desc = "DESCRIPTION"
         opts.templates = ['include steve/*']
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
         opts.requirements = 'requirements.txt'
         opts.pypi_package_name = None
+        opts.develop = 'develop'
         opts.python = None
         opts.test_requirements = 'test-requirements.txt'
         version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
@@ -243,9 +258,13 @@ class CreateFilesTest(unittest.TestCase):
         opts.source = 'src'
         opts.version = '0.0.1'
         opts.version_file = None
+        opts.org = "ORG"
+        opts.desc = "DESCRIPTION"
         opts.templates = []
+        opts.test_mode = False
         opts.history_file = 'HISTORY.md'
         opts.package = 'unittests'
+        opts.develop = 'develop'
         opts.requirements = 'requirements.txt'
         opts.pypi_package_name = 'pypi.package.unittest'
         opts.python = 'python3'
@@ -317,7 +336,7 @@ class PackageInitCommandIntegTest(unittest.TestCase):
         """
         set up for tests
         """
-        self.tempdir = tempfile.mkdtemp()
+        self.tempdir = to_str(tempfile.mkdtemp())
         self.repo = os.path.join(self.tempdir, 'throwaway')
         src_dir = os.path.join(self.repo, 'src')
         pkg_dir = os.path.join(self.repo, 'src', 'throwaway')

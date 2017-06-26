@@ -1,4 +1,4 @@
-import __builtin__
+from cirrus._2to3 import builtins
 import mock
 import os
 import tempfile
@@ -8,7 +8,7 @@ import pluggage.registry
 
 from cirrus.documentation_utils import doc_artifact_name
 
-from harnesses import CirrusConfigurationHarness, write_cirrus_conf
+from .harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
 
 class FileServerPublisherTests(unittest.TestCase):
@@ -61,8 +61,7 @@ class FileServerPublisherTests(unittest.TestCase):
             os.system('rm -rf {0}'.format(self.dir))
 
     @mock.patch('cirrus.plugins.publishers.doc_file_server.put')
-    @mock.patch('cirrus.plugins.publishers.doc_file_server.FabricHelper')
-    def test_docs_file_server(self, m_fabric, m_fabric_put):
+    def test_docs_file_server(self, m_fabric_put):
         """
         test docs_file_server publisher plugin makes put command with Fabric
         """
@@ -74,8 +73,6 @@ class FileServerPublisherTests(unittest.TestCase):
 
         plugin.publish(self.doc_artifact_name)
 
-        self.assertTrue(m_fabric.called_once_with(
-            'http://localhost:8080', 'username', '/path/to/ssh/keyfile'))
         self.assertTrue(m_fabric_put.called_once_with(
             self.doc_artifact_name, '/path/to/upload/dir', sudo=False))
 
@@ -148,7 +145,7 @@ class JenkinsPublisherTests(unittest.TestCase):
         m_resp.status_code = 201
         m_session.post = mock.Mock(return_value=m_resp)
 
-        with mock.patch('__builtin__.open') as m_open:
+        with mock.patch('cirrus.plugins.publishers.jenkins.builtins.open') as m_open:
 
             plugin.publish(self.doc_artifact_name)
 

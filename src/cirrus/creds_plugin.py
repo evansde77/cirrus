@@ -130,7 +130,3 @@ class CredsPlugin(PluggagePlugin):
         for m_name, m_func in self.credential_methods():
             result[m_name] = m_func()
         return result
-
-if __name__ == '__main__':
-    p = CredsPlugin()
-    print p.credential_map()

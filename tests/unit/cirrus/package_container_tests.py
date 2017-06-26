@@ -21,6 +21,7 @@ class InitContainerTests(unittest.TestCase):
         """set up fake package"""
         self.dir = tempfile.mkdtemp()
         self.cirrus_conf = os.path.join(self.dir, 'cirrus.conf')
+        self.gitconf_str = "cirrus.credential-plugin=default"
         with open(self.cirrus_conf, 'w') as handle:
             handle.write("[package]\n")
             handle.write("version=0.0.0\n")
@@ -28,6 +29,17 @@ class InitContainerTests(unittest.TestCase):
             handle.write("[pypi]\n")
             handle.write("pip_options=PIP_OPTS\n")
 
+        self.patch_environ = mock.patch.dict(
+            os.environ,
+            {
+                'HOME': self.dir,
+                'USER': 'steve',
+            }
+        )
+        self.patch_environ.start()
+        self.patch_gitconfig = mock.patch('cirrus.gitconfig.shell_command')
+        self.mock_gitconfig = self.patch_gitconfig.start()
+        self.mock_gitconfig.return_value = self.gitconf_str
         self.patch_unstaged = mock.patch('cirrus.package_container.has_unstaged_changes')
         self.patch_checkout = mock.patch('cirrus.package_container.checkout_and_pull')
         self.patch_commit = mock.patch('cirrus.package_container.commit_files_optional_push')
@@ -40,7 +52,9 @@ class InitContainerTests(unittest.TestCase):
         """clean up"""
         self.patch_unstaged.stop()
         self.patch_checkout.stop()
+        self.patch_gitconfig.stop()
         self.patch_commit.stop()
+        self.patch_environ.stop()
         if os.path.exists(self.dir):
             os.system('rm -rf {}'.format(self.dir))
 

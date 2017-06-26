@@ -41,8 +41,11 @@ class GitToolsTest(unittest.TestCase):
         self.mock_repo.head.commit.hexsha = 'HEAD_SHA'
         self.mock_repo.iter_commits = mock.Mock()
         self.mock_repo.iter_commits.return_value = self.mock_commits
+        self.mock_ret = mock.Mock()
+        self.mock_ret.flags = 1
+        self.mock_ret.ERROR = 10
         self.mock_repo.remotes.origin.push.side_effect = lambda x: [
-            mock.Mock()]
+            self.mock_ret]
         self.mock_repo.tags = self.mock_tags
         self.patch_git = mock.patch('cirrus.git_tools.git')
         self.mock_git = self.patch_git.start()
@@ -67,6 +70,18 @@ class GitToolsTest(unittest.TestCase):
         """
         _test_checkout_and_pull_
         """
+        mock_remote = mock.Mock()
+        mock_remote.name = 'origin'
+        mock_remote.pull = mock.Mock()
+
+        class Remotes(list):
+            def __init__(self, m):
+                self.append(m)
+
+            def __getattr__(self, name):
+                return self[0]
+
+        self.mock_repo.remotes = Remotes(mock_remote)
         checkout_and_pull(None, 'master')
         self.failUnless(self.mock_git.Repo.called)
 
@@ -137,7 +152,7 @@ class GitToolsTest(unittest.TestCase):
         prints plaintext release notes
         """
         msg = format_commit_messages(self.commit_info)
-        print "Plaintext release notes:\n{0}\n".format(msg)
+        print("Plaintext release notes:\n{0}\n".format(msg))
 
     def test_markdown_format(self):
         """
@@ -146,30 +161,30 @@ class GitToolsTest(unittest.TestCase):
         prints markdown release notes
         """
         msg = markdown_format(self.commit_info)
-        print "Markdown release notes:\n{0}\n".format(msg)
+        print("Markdown release notes:\n{0}\n".format(msg))
 
-    def test_get_commit_msgs(self):                            
-        """                                                    
-        _test_get_commit_msgs_                                 
-        """      
+    def test_get_commit_msgs(self):
+        """
+        _test_get_commit_msgs_
+        """
         result = get_commit_msgs(None, 'RANDOM_SHA')
-        self.failUnless('committer' in result[0])              
-        self.failUnless('message' in result[0])                
-        self.failUnless('date' in result[0])   
-        self.failUnless('committer' in result[1])              
-        self.failUnless('message' in result[1])                
-        self.failUnless('date' in result[1])   
+        self.failUnless('committer' in result[0])
+        self.failUnless('message' in result[0])
+        self.failUnless('date' in result[0])
+        self.failUnless('committer' in result[1])
+        self.failUnless('message' in result[1])
+        self.failUnless('date' in result[1])
 
-    def test_get_tags(self):                                   
-        """                                                    
-        _test_get_tags_                                        
-        """                                                    
-        result = get_tags(None)  
-        self.failUnlessEqual(result, ['orange', 'banana', 'apple'])  
+    def test_get_tags(self):
+        """
+        _test_get_tags_
+        """
+        result = get_tags(None)
+        self.failUnlessEqual(result, ['orange', 'banana', 'apple'])
 
-    def test_get_tags_with_sha(self):                          
-        """                                                    
-        _test_get_tags_with_sha_                               
+    def test_get_tags_with_sha(self):
+        """
+        _test_get_tags_with_sha_
         """
         result = get_tags_with_sha(None)
         self.assertEqual(result['orange'], 'ORANGE_SHA')

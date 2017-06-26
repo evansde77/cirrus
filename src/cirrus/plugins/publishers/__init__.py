@@ -5,5 +5,5 @@ _publishers_
 Documentation publisher plugins
 
 """
-import doc_file_server
-import jenkins
+import cirrus.plugins.publishers.doc_file_server
+import cirrus.plugins.publishers.jenkins

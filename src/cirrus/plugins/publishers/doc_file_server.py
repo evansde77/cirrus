@@ -5,11 +5,10 @@ _doc_file_server_
 Publisher plugin that uses fabric to do a remote put
 
 """
-from fabric.operations import put
-from cirrus.fabric_helpers import FabricHelper
+
 from cirrus.logger import get_logger
 from cirrus.publish_plugins import Publisher
-
+from cirrus.scp import put
 
 LOGGER = get_logger()
 
@@ -68,6 +67,9 @@ class Documentation(Publisher):
             use_sudo = True
 
         LOGGER.info("Uploading {0} to {1}".format(doc_artifact, fs_url))
-        with FabricHelper(fs_url, fs_username, fs_keyfile):
-            # fabric put the file onto the file server
-            put(doc_artifact, fs_upload_path, use_sudo=use_sudo)
+        put(doc_artifact,
+            fs_upload_path,
+            fs_url,
+            ssh_username=fs_username,
+            ssh_keyfile=fs_keyfile
+        )

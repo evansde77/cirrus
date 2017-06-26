@@ -4,12 +4,12 @@ tests for configuration module
 """
 import os
 import unittest
-import ConfigParser
 import tempfile
 import mock
 
 from cirrus.plugins.creds.default import Default
 from cirrus.configuration import load_configuration
+from cirrus._2to3 import ConfigParser
 
 
 class ConfigurationTests(unittest.TestCase):
@@ -22,6 +22,11 @@ class ConfigurationTests(unittest.TestCase):
         self.dir = tempfile.mkdtemp()
         self.test_file = os.path.join(self.dir, 'cirrus.conf')
         self.gitconfig = os.path.join(self.dir, '.gitconfig')
+        self.patch_env = mock.patch.dict(
+            os.environ,
+            {'HOME': self.dir, 'USER': 'unittests'}
+        )
+        self.patch_env.start()
 
         parser = ConfigParser.RawConfigParser()
         parser.add_section('package')
@@ -52,6 +57,7 @@ class ConfigurationTests(unittest.TestCase):
     def tearDown(self):
         """cleanup"""
         self.patcher.stop()
+        self.patch_env.stop()
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
 
