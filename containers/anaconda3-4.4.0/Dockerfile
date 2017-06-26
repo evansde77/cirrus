@@ -15,10 +15,18 @@ RUN yum install -y zlib-devel \
     libpcap-devel \
     xz-devel && yum clean all && rm -rf /var/cache/yum/*
 
+ENV PYENV_ROOT=/opt/pyenvy
+ENV USER=some_user
 ADD install_python.sh /opt/install_python.sh
 ADD entrypoint.sh /opt/entrypoint.sh 
 RUN chmod +x /opt/install_python.sh /opt/entrypoint.sh
 RUN /opt/install_python.sh
-ENTRYPOINT ["/opt/entrypoint.sh"]
+
+
+COPY cirrus-cli-latest.tar.gz /opt/
+ADD scratch_test.sh /opt/scratch_test.sh
+RUN chmod +x /opt/scratch_test.sh 
+ENTRYPOINT ["/opt/scratch_test.sh"]
+
 
 
