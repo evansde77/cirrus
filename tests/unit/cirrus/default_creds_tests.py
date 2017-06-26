@@ -5,10 +5,9 @@ tests for default credential manager using gitconfig
 import os
 import unittest
 import tempfile
-import ConfigParser
 
 from cirrus.plugins.creds.default import Default
-
+from cirrus._2to3 import ConfigParser
 
 class DefaultCredsTests(unittest.TestCase):
     """

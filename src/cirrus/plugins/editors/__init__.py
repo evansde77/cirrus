@@ -11,4 +11,4 @@ Eg:
  whatever the hell vi does...
 
 """
-import sublime
+import cirrus.plugins.editors.sublime

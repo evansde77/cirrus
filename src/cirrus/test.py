@@ -5,7 +5,7 @@ Command to run available test suites in a package
 '''
 import sys
 
-from fabric.operations import local
+from cirrus.invoke_helpers import local
 from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration

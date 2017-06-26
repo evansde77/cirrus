@@ -1,6 +1,7 @@
 '''
 tests for github_tools
 '''
+import os
 import json
 import mock
 import unittest
@@ -36,12 +37,25 @@ class GithubToolsTest(unittest.TestCase):
 
         self.patch_get = mock.patch('cirrus.github_tools.requests.get')
         self.mock_get = self.patch_get.start()
+        self.patch_environ = mock.patch.dict(os.environ,
+            {
+                'HOME': 'unittest',
+                'USER': 'steve'
+            }
+        )
+        self.patch_environ.start()
+        self.gitconf_str = "cirrus.credential-plugin=default"
+        self.patch_gitconfig = mock.patch('cirrus.gitconfig.shell_command')
+        self.mock_gitconfig = self.patch_gitconfig.start()
+        self.mock_gitconfig.return_value = self.gitconf_str
 
     def tearDown(self):
         """
         teardown mocks
         """
+        self.patch_environ.stop()
         self.patch_get.stop()
+        self.patch_gitconfig.stop()
 
     def test_create_pull_request(self):
         """
@@ -130,9 +144,10 @@ class GithubToolsTest(unittest.TestCase):
         mock_repo.remotes = mock.Mock()
         mock_ret = mock.Mock()
         mock_ret.flags = 1000
+        mock_ret.ERROR = 10000
+        mock_ret.summary = "SUMMARY"
         mock_repo.remotes.origin = mock.Mock()
         mock_repo.remotes.origin.push = mock.Mock(return_value=[mock_ret])
-
         ghc = GitHubContext('REPO')
 
         ghc.push_branch('womp')

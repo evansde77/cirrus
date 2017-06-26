@@ -1,4 +1,14 @@
 *.pyc
 venv/*
 cirrus.sublime-project
-src/cirrus.egg-info
+src/cirrus.egg-infocirrus.conf~ requirements.txt~ test_pkg.py~
+*.egg-info
+*~
+.coverage
+.tox
+.dist
+cirrus.sublime-workspace
+dist
+
+venv3
+containers/*/cirrus-cli-latest.tar.gz

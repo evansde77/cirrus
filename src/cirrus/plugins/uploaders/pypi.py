@@ -6,7 +6,7 @@ Upload plugin that does a pypi sdist upload
 
 """
 import os
-from fabric.operations import local
+from cirrus.invoke_helpers import local
 
 from cirrus.upload_plugins import Uploader
 from cirrus.logger import get_logger

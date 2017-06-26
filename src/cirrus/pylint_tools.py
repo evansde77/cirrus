@@ -10,7 +10,7 @@ Wrapper for pylint execution
 import os
 import re
 import sys
-from fabric.operations import local, settings, hide
+from cirrus.invoke_helpers import local
 
 from cirrus.logger import get_logger
 
@@ -34,12 +34,12 @@ def pylint_file(filenames, **kwargs):
 
     # we use fabric to run the pylint command, hiding the normal fab
     # output and warnings
-    with hide('output', 'running', 'warnings'), settings(warn_only=True):
-        result = local(command, capture=True)
+
+    result = local(command)
 
     score = 0.0
     # parse the output from pylint for the score
-    for line in result.split('\n'):
+    for line in result.stdout.split('\n'):
         if  re.match("E....:.", line):
             LOGGER.info(line)
         if "Your code has been rated at" in line:
@@ -60,11 +60,11 @@ def pyflakes_file(filenames, verbose=False):
 
     # we use fabric to run the pyflakes command, hiding the normal fab
     # output and warnings
-    with hide('output', 'running', 'warnings'), settings(warn_only=True):
-        result = local(command, capture=True)
+
+    result = local(command)
 
     flakes = 0
-    data = [x for x in result.split('\n') if x.strip()]
+    data = [x for x in result.stdout.split('\n') if x.strip()]
     if len(data) != 0:
         #We have at least one flake, find the rest
         flakes = count_flakes(data, verbose) + 1

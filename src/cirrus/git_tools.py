@@ -17,7 +17,7 @@ from cirrus.logger import get_logger
 LOGGER = get_logger()
 
 
-def checkout_and_pull(repo_dir, branch_from, pull=True):
+def checkout_and_pull(repo_dir, branch_from, pull=True, origin='origin'):
     """
     _checkout_and_pull_
 
@@ -33,8 +33,11 @@ def checkout_and_pull(repo_dir, branch_from, pull=True):
 
     # pull branch_from from remote
     if pull:
-        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_from)
-        return repo.remotes.origin.pull(ref)
+        ref = "refs/heads/{branch}:refs/remotes/{origin}/{branch}".format(
+            branch=branch_from, origin=origin
+        )
+        if origin in [x.name for x in repo.remotes]:
+            return repo.remotes.origin.pull(ref)
 
 
 def branch(repo_dir, branchname, branch_from):
@@ -75,7 +78,7 @@ def remote_branch_exists(repo_dir, branchname):
     """
     match = branchname
     if not match.startswith('origin/'):
-        match = "origin/{}".format(branchname)
+        match = "origin/{}".format(str(branchname))
     repo = git.Repo(repo_dir)
     resp = repo.git.branch('-r')
     remote_branches = [y for y in resp.split() if y.startswith('origin/')]

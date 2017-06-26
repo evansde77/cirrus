@@ -80,14 +80,14 @@ def main():
         args = sys.argv[1:]
         if len(args) == 0 or args[0] == '-h':
             # missing command or help
-            print format_help(commands)
+            print(format_help(commands))
             exit_code = 0
         else:
             command_path = "{0}/bin/{1}".format(home, args[0])
             if not os.path.exists(command_path):
                 msg = "Unknown command: {}".format(args[0])
-                print msg
-                print format_help(commands)
+                print(msg)
+                print(format_help(commands))
                 exit_code = 127
             else:
                 exit_code = run_command([command_path, ] + args[1:])

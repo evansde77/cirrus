@@ -13,6 +13,7 @@ from requests_toolbelt import MultipartEncoder
 from cirrus.logger import get_logger
 from cirrus.plugins.jenkins import JenkinsClient
 from cirrus.publish_plugins import Publisher
+from cirrus._2to3 import builtins
 
 LOGGER = get_logger()
 
@@ -88,7 +89,7 @@ class Documentation(Publisher):
         # stores values internally as strings
         if jenkins_config.get('extra_vars', 'False').lower() == 'true':
             extra_vars = self.package_conf.get('jenkins_docs_extra_vars', {})
-            for k, v in extra_vars.iteritems():
+            for k, v in iter(extra_vars.items()):
                 build_params['parameter'].append({"name": k, "value": v})
 
         payload = MultipartEncoder(

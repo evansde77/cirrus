@@ -1,6 +1,6 @@
 argparse
 arrow==0.4.2
-Fabric==1.11.1
+invoke
 GitPython==0.3.5
 mock==1.0.1
 nose==1.3.0

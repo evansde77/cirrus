@@ -14,7 +14,7 @@ from cirrus.documentation_utils import build_docs
 from cirrus.documentation_utils import build_doc_artifact
 from cirrus.documentation_utils import publish_documentation
 
-from harnesses import CirrusConfigurationHarness, write_cirrus_conf
+from .harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
 
 class TestDocumentationUtils(unittest.TestCase):

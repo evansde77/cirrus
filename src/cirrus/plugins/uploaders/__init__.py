@@ -5,5 +5,5 @@ _uploaders_
 Release uploader plugins
 
 """
-import fabric_put
-import pypi
+import cirrus.plugins.uploaders.fabric_put
+import cirrus.plugins.uploaders.pypi

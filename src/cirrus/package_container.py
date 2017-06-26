@@ -160,7 +160,6 @@ def init_container(opts):
         sys.exit(1)
 
     config = load_configuration(opts.repo)
-    print "cirrus_conf=", cirrus_conf
     template_dir = os.path.join(opts.repo, opts.template_dir)
     if not os.path.exists(template_dir):
         LOGGER.info("Creating Template in {}".format(template_dir))

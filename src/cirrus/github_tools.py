@@ -13,6 +13,7 @@ from git.exc import GitCommandError
 from cirrus.configuration import get_github_auth, load_configuration
 from cirrus.git_tools import get_active_branch
 from cirrus.git_tools import push
+from cirrus._2to3 import unicode_
 from cirrus.logger import get_logger
 
 
@@ -139,7 +140,7 @@ class GitHubContext(object):
             # probably be to push a detached head.
             push(self.repo_dir)
         except RuntimeError as ex:
-            if "rejected" not in unicode(ex):
+            if "rejected" not in unicode_(ex):
                 raise
 
         url = "https://api.github.com/repos/{org}/{repo}/statuses/{sha}".format(
@@ -187,7 +188,7 @@ class GitHubContext(object):
             LOGGER.error(msg)
             raise RuntimeError(msg)
 
-    def pull_branch(self, branch_name=None):
+    def pull_branch(self, branch_name=None, remote=True):
         """
         _pull_branch_
 
@@ -196,8 +197,9 @@ class GitHubContext(object):
         """
         if branch_name is not None:
             self.repo.git.checkout(branch_name)
-        ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_name)
-        return self.repo.remotes.origin.pull(ref)
+        if remote:
+            ref = "refs/heads/{0}:refs/remotes/origin/{0}".format(branch_name)
+            return self.repo.remotes.origin.pull(ref)
 
     def push_branch(self, branch_name=None):
         """
@@ -217,7 +219,7 @@ class GitHubContext(object):
         # Check to make sure that we haven't errored out.
         for r in ret:
             if r.flags >= r.ERROR:
-                raise RuntimeError(unicode(r.summary))
+                raise RuntimeError(unicode_(r.summary))
         return ret
 
     def push_branch_with_retry(self, branch_name=None, attempts=300, cooloff=2):
@@ -242,7 +244,7 @@ class GitHubContext(object):
                 time.sleep(cooloff)
         if error_flag is not None:
             msg = "Unable to push branch {} due to repeated failures: {}".format(
-                self.active_branch_name, str(ex)
+                self.active_branch_name, str(error_flag)
             )
             raise RuntimeError(msg)
 
@@ -290,7 +292,7 @@ class GitHubContext(object):
                 count += 1
             if error_flag is not None:
                 msg = "Unable to push tags {} due to repeated failures: {}".format(
-                    tag, str(ex)
+                    tag, str(error_flag)
                 )
                 raise RuntimeError(msg)
 
@@ -512,7 +514,7 @@ def current_branch_mark_status(repo_dir, state):
         # probably be to push a detached head.
         push(repo_dir)
     except RuntimeError as ex:
-        if "rejected" not in unicode(ex):
+        if "rejected" not in unicode_(ex):
             raise
 
     url = "https://api.github.com/repos/{org}/{repo}/statuses/{sha}".format(
