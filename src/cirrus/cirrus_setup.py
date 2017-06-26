@@ -12,6 +12,8 @@ from argparse import ArgumentParser
 
 from cirrus.configuration import load_setup_configuration, get_creds_plugin
 from cirrus.logger import get_logger
+from cirrus.environment import is_anaconda, cirrus_bin
+
 
 LOGGER = get_logger()
 GITHUB_AUTH_URL = "https://api.github.com/authorizations"
@@ -372,11 +374,19 @@ def main():
     # make sure gitconfig has a cirrus section
     if 'cirrus' not in config.gitconfig.sections:
         config.gitconfig.add_section('cirrus')
-    config.gitconfig.set_param(
-        'alias',
-        'cirrus',
-        '! {0}/bin/cirrus'.format(os.environ['VIRTUALENV_HOME'])
-    )
+
+    if is_anaconda():
+        config.gitconfig.set_param(
+            'alias',
+            'cirrus',
+            '! {0}/cirrus'.format(cirrus_bin())
+        )
+    else:
+        config.gitconfig.set_param(
+            'alias',
+            'cirrus',
+            '! {0}/bin/cirrus'.format(os.environ['VIRTUALENV_HOME'])
+        )
 
     # make sure the creds plugin value is set
     if opts.cred_plugin is not None:
