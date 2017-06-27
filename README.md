@@ -23,7 +23,7 @@ bash installer.sh
 Or if you are using anaconda:
 
 ```bash
-curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/installer.sh
+curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/conda-installer.sh
 bash conda-installer.sh
 ```
 
