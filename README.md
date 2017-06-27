@@ -8,7 +8,8 @@ python library build, test and devop like things assistant
 Installation Prerequisites
 ==========================
 
-* Cirrus requires python 2.7 (support for python 3 is in the pipeline) as well as pip and virtualenv installed.
+* Cirrus requires either python/pip/virtualenv or conda and has been tested with python2.7, 3.5 and 3.6 as of Release 0.2.0. 
+   * Since python3 support and conda support are fairly new, please report any problems as Issues in this project. 
 * Git tools are heavily used, git is a requirement as cirrus is accessed via git command aliases.
 
 Installation as a user:
@@ -19,10 +20,16 @@ curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/installer.sh
 bash installer.sh
 ```
 
+Or if you are using anaconda:
+
+```bash
+curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/installer.sh
+bash conda-installer.sh
+```
+
 The installer script will set up an install of cirrus for you in your home directory
 and prompt for some info so that it can set up some parameters in your .gitconfig
 The installer will create a virtualenv and install cirrus from pip via the cirrus-cli package, installing the latest available version.
-
 
 
 Installation for Development:

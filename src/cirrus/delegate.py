@@ -91,6 +91,10 @@ def main():
                 exit_code = 127
             else:
                 exit_code = run_command([command_path, ] + args[1:])
+    except Exception as ex:
+        msg = "Exception Details:\n{}".format(ex)
+        print(msg)
+        raise
     finally:
         # always return to previous dir
         os.chdir(old_dir)
