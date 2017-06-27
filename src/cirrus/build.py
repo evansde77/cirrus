@@ -14,7 +14,7 @@ import sys
 from argparse import ArgumentParser
 
 from cirrus.documentation_utils import build_docs
-from cirrus.environment import cirrus_bin, is_anaconda
+from cirrus.environment import cirrus_bin, is_anaconda, repo_directory
 from cirrus.configuration import load_configuration, get_pypi_auth
 from cirrus.pypirc import PypircFile
 from cirrus.logger import get_logger
@@ -149,7 +149,7 @@ def execute_build(opts):
 
     : param argparse.Namspace opts: A Namespace of build options
     """
-    working_dir = os.getcwd()
+    working_dir = repo_directory()
     config = load_configuration()
     build_params = config.get('build', {})
 
