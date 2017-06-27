@@ -7,6 +7,7 @@ Utils to get the cirrus environment settings
 """
 
 import os
+import sys
 import cirrus
 import inspect
 import posixpath
@@ -34,6 +35,26 @@ def repo_directory():
     if process.returncode:
         return None
     return to_str(outp.strip())
+
+
+def is_anaconda():
+    """
+    determine if this is a anaconda based python or not
+
+    """
+    return (
+        'anaconda' in sys.version.lower()
+    ) or (
+        'continuum analytics' in sys.version.lower()
+    )
+
+
+def cirrus_bin():
+    """
+    use sys.executable to determine the bin dir
+    for the active python.
+    """
+    return os.path.dirname(sys.executable)
 
 
 def cirrus_home():
@@ -74,6 +95,9 @@ def virtualenv_home():
     """
     if os.environ.get('VIRTUALENV_HOME') is not None:
         return os.environ['VIRTUALENV_HOME']
+
+    if is_anaconda():
+        return os.path.dirname(cirrus_bin())
     home = cirrus_home()
     venv = posixpath.join(home, 'venv')
     return venv

@@ -3,6 +3,7 @@ MAINTAINER dave.evans@imc.com
 
 RUN yum group install -y "Development Tools" && yum clean all && rm -rf /var/cache/yum/*
 RUN yum install -y zlib-devel \
+    which \
     bzip2-devel \
     openssl-devel \
     ncurses-devel \
