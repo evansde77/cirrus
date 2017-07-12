@@ -27,11 +27,10 @@ RE_OPERATORS = re.compile("|".join([
     REGEXP.format(op=op) for op in PIP_OPERATORS
 ]))
 
-SPLIT_OPS = {op: re.compile("({op}){{1}}".format(op=op)) for op in PIP_OPERATORS}
-
-# SPLIT_OPS = re.compile("|".join(
-#     ["({op}){{1}}".format(op=op) for op in PIP_OPERATORS]
-# ))
+SPLIT_OPS = {
+    op: re.compile("({op}){{1}}".format(op=op))
+    for op in PIP_OPERATORS
+}
 
 
 def find_operator(d):
@@ -40,9 +39,8 @@ def find_operator(d):
     ops = [k for k, v in d.items() if v is not None]
     if len(ops) == 1:
         return ops[0]
-    #lazily grab longest key
+    # lazily grab longest key
     return max(ops)
-
 
 
 class ReqFile(dict):
@@ -70,7 +68,9 @@ class ReqFile(dict):
 
     def process_line(self, line):
         if RE_OPERATORS.match(line):
-            op = find_operator({o: matcher.search(line) for o, matcher in SPLIT_OPS.items()})
+            op = find_operator({
+                o: matcher.search(line) for o, matcher in SPLIT_OPS.items()
+            })
             pkg = line.split(op, 1)[0]
             self[pkg] = line.split(op, 1)[1]
             self.operators[pkg] = op
@@ -91,18 +91,28 @@ class ReqFile(dict):
 
         """
         if not self.has_package(pkg):
-            msg = "Unable to find package {} in file {}".format(pkg, self.filename)
+            msg = "Unable to find package {} in file {}".format(
+                pkg,
+                self.filename
+            )
             raise KeyError(msg)
 
         if self.operators.get(pkg) is not None:
-            replacer = re.compile("^[\s]*({pkg}){{1}}[\s]*({op}){{1}}".format(pkg=pkg, op=self.operators[pkg]))
+            replacer = re.compile("^[\s]*({pkg}){{1}}[\s]*({op}){{1}}".format(
+                pkg=pkg,
+                op=self.operators[pkg])
+            )
         else:
             replacer = re.compile("^[\s]*({pkg}){{1}}$".format(pkg=pkg))
         output = []
         for line in self.read():
             if replacer.match(line.strip()):
                 op = self.operators[pkg] or '=='
-                line = "{pkg}{op}{version}".format(pkg=pkg, op=op, version=version)
+                line = "{pkg}{op}{version}".format(
+                    pkg=pkg,
+                    op=op,
+                    version=version
+                )
                 output.append(line)
             else:
                 output.append(line)
@@ -110,6 +120,7 @@ class ReqFile(dict):
             for line in output:
                 handle.write('{}\n'.format(line))
         self.parse()
+
 
 def bump_package(requirements_file, package, version):
     """
