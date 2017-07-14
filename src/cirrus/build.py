@@ -115,6 +115,9 @@ def conda_venv(venv_path, opts, python_bin):
     conda_bin = os.path.join(bin_dir, 'conda')
     venv_command = "conda create -y -m -p {} pip virtualenv".format(venv_path)
 
+    if python_bin:
+        venv_command += " python={}".format(python_bin)
+
     # remove existing virtual env if building clean
     if opts.clean and os.path.exists(venv_path):
         cmd = "{} remove --all -y {}".format(conda_bin, venv_path)

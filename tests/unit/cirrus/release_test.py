@@ -82,6 +82,39 @@ class ReleaseNewCommandTest(unittest.TestCase):
         self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
 
     @mock.patch('cirrus.release.has_unstaged_changes')
+    @mock.patch('cirrus.release.bump_package')
+    def test_new_release_bump(self, mock_bump, mock_unstaged):
+        """
+        _test_new_release_
+
+        """
+        mock_unstaged.return_value = False
+        opts = mock.Mock()
+        opts.micro = True
+        opts.major = False
+        opts.minor = False
+        opts.bump = [['womp', '1.2.3'], ['wibble', '3.4.5']]
+
+        # should create a new minor release, editing
+        # the cirrus config in the test dir
+        new_release(opts)
+
+        # verify new version
+        new_conf = Configuration(self.config)
+        new_conf.load()
+        self.assertEqual(new_conf.package_version(), '1.2.4')
+
+        self.failUnless(self.mock_pull.called)
+        self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
+        self.failUnless(self.mock_branch.called)
+        self.assertEqual(self.mock_branch.call_args[0][1], 'release/1.2.4')
+        self.failUnless(self.mock_commit.called)
+        self.assertEqual(self.mock_commit.call_args[0][2], False)
+        self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
+
+        self.assertEqual(mock_bump.call_count, 2)
+
+    @mock.patch('cirrus.release.has_unstaged_changes')
     def test_new_release_unstaged(self, mock_unstaged):
         """
         test new release fails on unstaged changes

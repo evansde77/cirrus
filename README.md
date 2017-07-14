@@ -12,6 +12,11 @@ Installation Prerequisites
    * Since python3 support and conda support are fairly new, please report any problems as Issues in this project. 
 * Git tools are heavily used, git is a requirement as cirrus is accessed via git command aliases.
 
+Documentation
+=============
+
+Expanded Docs are available on the [Package Wiki](https://github.com/evansde77/cirrus/wiki)
+
 Installation as a user:
 =======================
 
@@ -23,7 +28,7 @@ bash installer.sh
 Or if you are using anaconda:
 
 ```bash
-curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/installer.sh
+curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/conda-installer.sh
 bash conda-installer.sh
 ```
 

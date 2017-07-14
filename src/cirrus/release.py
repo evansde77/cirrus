@@ -26,6 +26,7 @@ from cirrus.github_tools import GitHubContext
 from cirrus.utils import update_file, update_version
 from cirrus.logger import get_logger
 from cirrus.plugins.jenkins import JenkinsClient
+from cirrus.req_utils import bump_package
 
 LOGGER = get_logger()
 
@@ -256,8 +257,9 @@ def build_parser(argslist):
     )
     new_command.add_argument(
         '--bump',
-        nargs='+',
-        help='package versions (pkg==0.0.0) to update in requirements.txt'
+        nargs=2,
+        action='append',
+        help='package versions to update in requirements.txt, eg --bump argparse 1.2.1 --bump womp 9.9.9'
     )
     new_command.add_argument(
         '--no-remote',
@@ -426,18 +428,11 @@ def make_new_version(opts):
     changes = ['cirrus.conf']
 
     if opts.bump:
-        for pkg in opts.bump:
-            if '==' not in pkg:
-                msg = 'Malformed version expression.  Please use "pkg==0.0.0"'
-                LOGGER.error(msg)
-                raise RuntimeError(msg)
-        try:
-            update_requirements('requirements.txt', opts.bump)
-            changes.append('requirements.txt')
-        except Exception as ex:
-            # halt on any problem updating requirements
-            LOGGER.exception('Failed to update requirements.txt -- {}'.format(ex))
-            raise RuntimeError(ex)
+        reqs_file = os.path.join(repo_dir, 'requirements.txt')
+        for pkg, version in opts.bump:
+            LOGGER.info("Bumping dependency {} to {}".format(pkg, version))
+            bump_package(reqs_file, pkg, version)
+        changes.append(reqs_file)
 
     # update __version__ or equivalent
     version_file, version_attr = config.version_file()
@@ -518,18 +513,11 @@ def new_release(opts):
     changes = ['cirrus.conf']
 
     if opts.bump:
-        for pkg in opts.bump:
-            if '==' not in pkg:
-                msg = 'Malformed version expression.  Please use "pkg==0.0.0"'
-                LOGGER.error(msg)
-                raise RuntimeError(msg)
-        try:
-            update_requirements('requirements.txt', opts.bump)
-            changes.append('requirements.txt')
-        except Exception as ex:
-            # halt on any problem updating requirements
-            LOGGER.exception('Failed to update requirements.txt -- {}'.format(ex))
-            raise RuntimeError(ex)
+        reqs_file = os.path.join(repo_dir, 'requirements.txt')
+        for pkg, version in opts.bump:
+            LOGGER.info("Bumping dependency {} to {}".format(pkg, version))
+            bump_package(reqs_file, pkg, version)
+        changes.append(reqs_file)
 
     # update release notes file
     relnotes_file, relnotes_sentinel = config.release_notes()
@@ -851,36 +839,6 @@ def build_release(opts):
         raise RuntimeError(msg)
     LOGGER.info("Release artifact created: {0}".format(build_artifact))
     return build_artifact
-
-
-def update_requirements(path, versions):
-    """
-    _update_requirements_
-
-    Update requirements.txt with the provided versions list, where each item in
-    such a list looks exactly like a version specifier in a requirements.txt
-    file.  Items without '==' are ignored.
-
-    Example:
-    ['foo==0.0.9', 'bar==1.2']
-    """
-    LOGGER.info('Updating {}'.format(path))
-
-    with open(path, 'r+') as fh:
-        # original requirements.txt in its pristine order
-        reqs = OrderedDict(tuple(pkg.split('=='))
-                           for pkg in fh.readlines() if '==' in pkg)
-
-        for pkg in versions:
-            new_pkg, new_version = pkg.split('==')
-            reqs[new_pkg] = '{}\n'.format(new_version)
-            LOGGER.info('{}=={}'.format(new_pkg, new_version))
-
-        # overwrite original requirements.txt with updated version
-        fh.seek(0)
-        fh.writelines(['{}=={}'.format(pkg, version)
-                      for pkg, version in reqs.iteritems()])
-        fh.truncate()
 
 
 def main():
