@@ -11,6 +11,6 @@ PyChef==0.2.3
 keyring==8.5.1
 virtualenv
 pluggage
-dockerstache>=0.0.10
+dockerstache>=0.0.12
 requests-toolbelt==0.6.2
 tox
