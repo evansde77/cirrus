@@ -187,7 +187,6 @@ def init_container(opts):
     LOGGER.info("checking out latest {} branch...".format(main_branch))
     checkout_and_pull(opts.repo,  main_branch, not opts.no_remote)
 
-
     venv_option = ""
     if opts.virtualenv:
         venv_option = ". {}/bin/activate".format(opts.virtualenv)
@@ -196,7 +195,9 @@ def init_container(opts):
         write_basic_dockerfile(opts, config, docker_file)
         write_json_file(dotfile, {
             "post_script": "post_script.sh",
-            "pre_script": "pre_script.sh"
+            "pre_script": "pre_script.sh",
+            "inclusive": True,
+            "excludes": ["post_script.sh", "post_script.sh", ".dockerstache"]
         })
         write_json_file(context, {})
         write_script(pre_script, DOCKER_PRE_SCRIPT)
