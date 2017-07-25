@@ -12,6 +12,7 @@ This command:
 import os
 import sys
 from argparse import ArgumentParser
+import pluggage.registry
 
 from cirrus.documentation_utils import build_docs
 from cirrus.environment import cirrus_bin, is_anaconda, repo_directory
@@ -21,6 +22,11 @@ from cirrus.logger import get_logger
 from cirrus.invoke_helpers import local
 
 LOGGER = get_logger()
+
+FACTORY = pluggage.registry.get_factory(
+    'builder',
+    load_modules=['cirrus.plugins.builders']
+)
 
 
 def build_parser(argslist):
@@ -50,6 +56,11 @@ def build_parser(argslist):
             '(Makefile path must be set in cirrus.conf.'
         )
     )
+    parser.add_argument(
+        '--builder', '-b',
+        help="Builder plugin to use to create dev environment",
+        default=None
+        )
 
     parser.add_argument(
         '-u',
@@ -64,16 +75,11 @@ def build_parser(argslist):
     parser.add_argument(
         '--extra-requirements',
         nargs="+",
-        type=str,
+        default=[],
         dest='extras',
         help='extra requirements files to install'
     )
-    parser.add_argument(
-        '--use-virtualenv',
-        dest='use_venv',
-        help='explicit virtualenv binary to use',
-        default=None
-        )
+
     parser.add_argument(
         '--no-setup-develop',
         dest='nosetupdevelop',
@@ -85,56 +91,8 @@ def build_parser(argslist):
         help='Which python to use to create venv',
         default=None
     )
-    opts = parser.parse_args(argslist)
-    return opts
-
-
-def virtualenv_venv(venv_path, opts, python_bin):
-    venv_bin_path = os.path.join(venv_path, 'bin', 'python')
-    if opts.use_venv:
-        venv_command = opts.use_venv
-    else:
-        venv_command = 'virtualenv'
-    if python_bin:
-        venv_command += ' -p {} '.format(python_bin)
-
-    # remove existing virtual env if building clean
-    if opts.clean and os.path.exists(venv_path):
-        cmd = "rm -rf {0}".format(venv_path)
-        LOGGER.info("Removing existing virtualenv: {0}".format(venv_path))
-        local(cmd)
-
-    if not os.path.exists(venv_bin_path):
-        cmd = "{0} {1}".format(venv_command, venv_path)
-        LOGGER.info("Bootstrapping virtualenv: {0}".format(venv_path))
-        local(cmd)
-
-
-def conda_venv(venv_path, opts, python_bin):
-    bin_dir = cirrus_bin()
-    conda_bin = os.path.join(bin_dir, 'conda')
-    venv_command = "conda create -y -m -p {} pip virtualenv".format(venv_path)
-
-    if python_bin:
-        venv_command += " python={}".format(python_bin)
-
-    # remove existing virtual env if building clean
-    if opts.clean and os.path.exists(venv_path):
-        cmd = "{} remove --all -y {}".format(conda_bin, venv_path)
-        LOGGER.info("Removing existing virtualenv: {0}".format(venv_path))
-        local(cmd)
-
-    if not os.path.exists(venv_path):
-        LOGGER.info("Bootstrapping conda env: {0}".format(venv_path))
-        local(venv_command)
-
-
-def activate_command(venv_path):
-    if is_anaconda():
-        command = "source {}/bin/activate {}".format(venv_path, venv_path)
-    else:
-        command = ". {}/bin/activate".format(venv_path)
-    return command
+    build_opts, plugin_opts = parser.parse_known_args(argslist)
+    return build_opts, plugin_opts
 
 
 def execute_build(opts):
@@ -271,14 +229,23 @@ def execute_build(opts):
         )
 
 
+def plugin_build(opts, extras):
+    if opts.builder is None:
+        if is_anaconda():
+            opts.builder = "CondaPip"
+        else:
+            opts.builder = "VirtualenvPip"
+    builder = FACTORY(opts.builder)
+    builder.create(**vars(opts))
+
 def main():
     """
     _main_
 
     Execute build command
     """
-    opts = build_parser(sys.argv)
-    execute_build(opts)
+    opts, extras = build_parser(sys.argv)
+    plugin_build(opts, extras)
 
     if opts.docs is not None:
         build_docs(make_opts=opts.docs)

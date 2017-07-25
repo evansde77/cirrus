@@ -5,6 +5,55 @@
 """
 import os
 from cirrus._2to3 import ConfigParser
+from cirrus.configuration import get_pypi_auth, load_configuration
+
+
+def build_pip_command(config, path, reqs_file, upgrade=False):
+    # custom pypi server
+    pypi_server = config.pypi_url()
+    pip_options = config.pip_options()
+    pip_command_base = None
+    if pypi_server is not None:
+        pypirc = PypircFile()
+        if pypi_server in pypirc.index_servers:
+            pypi_url = pypirc.get_pypi_url(pypi_server)
+        else:
+            pypi_conf = get_pypi_auth()
+            pypi_url = (
+                "https://{pypi_username}:{pypi_token}@{pypi_server}/simple"
+            ).format(
+                pypi_token=pypi_conf['token'],
+                pypi_username=pypi_conf['username'],
+                pypi_server=pypi_server
+            )
+
+        pip_command_base = (
+            '{0}/bin/pip install -i {1}'
+        ).format(path, pypi_url)
+
+        if upgrade:
+            cmd = (
+                '{0} --upgrade '
+                '-r {1}'
+            ).format(pip_command_base, reqs_file)
+        else:
+            cmd = (
+                '{0} '
+                '-r {1}'
+            ).format(pip_command_base, reqs_file)
+
+    else:
+        pip_command_base = '{0}/bin/pip install'.format(path)
+        # no pypi server
+        if upgrade:
+            cmd = '{0} --upgrade -r {1}'.format(pip_command_base, reqs_file)
+        else:
+            cmd = '{0} -r {1}'.format(pip_command_base, reqs_file)
+
+    if pip_options:
+        cmd += " {} ".format(pip_options)
+
+    return cmd
 
 
 class PypircFile(dict):
