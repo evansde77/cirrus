@@ -7,6 +7,7 @@ for managing virtualenvs of various flavours
 
 """
 import os
+import argparse
 
 from cirrus.configuration import load_configuration
 from cirrus.environment import repo_directory
@@ -17,11 +18,13 @@ from cirrus.invoke_helpers import local
 
 LOGGER = get_logger()
 
+
 class Builder(PluggagePlugin):
     PLUGGAGE_FACTORY_NAME = 'builder'
 
     def __init__(self):
         super(Builder, self).__init__()
+        self.plugin_parser = argparse.ArgumentParser()
         self.config = load_configuration()
         self.build_config = self.config.get('build', {})
         self.working_dir = repo_directory()
@@ -31,6 +34,10 @@ class Builder(PluggagePlugin):
         self.python_bin = self.build_config.get('python', None)
         self.extra_reqs = self.str_to_list(self.extra_reqs)
         self.venv_path = os.path.join(self.working_dir, self.venv_name)
+
+    def process_extra_args(self, extras):
+        opts, _ = self.plugin_parser.parse_known_args(extras)
+        return vars(opts)
 
     def create(self, **kwargs):
         """

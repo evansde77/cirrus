@@ -21,12 +21,27 @@ from cirrus.pypirc import PypircFile
 from cirrus.logger import get_logger
 from cirrus.invoke_helpers import local
 
+
 LOGGER = get_logger()
 
 FACTORY = pluggage.registry.get_factory(
     'builder',
     load_modules=['cirrus.plugins.builders']
 )
+
+
+def get_builder_plugin():
+    config = load_configuration()
+    build_config = config.get('build', {})
+    builder = build_config.get('builder')
+    if builder is None:
+        # fall back to old defaults
+        if is_anaconda():
+            builder = "CondaPip"
+        else:
+            builder = "VirtualenvPip"
+    return builder
+
 
 
 def build_parser(argslist):
@@ -95,148 +110,16 @@ def build_parser(argslist):
     return build_opts, plugin_opts
 
 
-def execute_build(opts):
-    """
-    _execute_build_
-
-    Execute the build in the current package context.
-
-    - reads the config to check for custom build parameters
-      - defaults to ./venv for virtualenv
-      - defaults to ./requirements.txt for reqs
-    - removes existing virtualenv if clean flag is set
-    - builds the virtualenv
-    - pip installs the requirements into it
-
-    : param argparse.Namspace opts: A Namespace of build options
-    """
-    working_dir = repo_directory()
-    config = load_configuration()
-    build_params = config.get('build', {})
-
-    # we have custom build controls in the cirrus.conf
-    venv_name = build_params.get('virtualenv_name', 'venv')
-    reqs_name = build_params.get('requirements_file', 'requirements.txt')
-    extra_reqs = build_params.get('extra_requirements', '')
-    python_bin = build_params.get('python', None)
-    if opts.python:
-        python_bin = opts.python
-    extra_reqs = [x.strip() for x in extra_reqs.split(',') if x.strip()]
-    if opts.extras:
-        extra_reqs.extend(opts.extras)
-        extra_reqs = set(extra_reqs)  # dedupe
-
-    venv_path = os.path.join(working_dir, venv_name)
-    if is_anaconda():
-        conda_venv(venv_path, opts, python_bin)
-    else:
-        virtualenv_venv(venv_path, opts, python_bin)
-
-    # custom pypi server
-    pypi_server = config.pypi_url()
-    pip_options = config.pip_options()
-    pip_command_base = None
-    if pypi_server is not None:
-
-        pypirc = PypircFile()
-        if pypi_server in pypirc.index_servers:
-            pypi_url = pypirc.get_pypi_url(pypi_server)
-        else:
-            pypi_conf = get_pypi_auth()
-            pypi_url = (
-                "https://{pypi_username}:{pypi_token}@{pypi_server}/simple"
-            ).format(
-                pypi_token=pypi_conf['token'],
-                pypi_username=pypi_conf['username'],
-                pypi_server=pypi_server
-            )
-
-        pip_command_base = (
-            '{0}/bin/pip install -i {1}'
-        ).format(venv_path, pypi_url)
-
-        if opts.upgrade:
-            cmd = (
-                '{0} --upgrade '
-                '-r {1}'
-            ).format(pip_command_base, reqs_name)
-        else:
-            cmd = (
-                '{0} '
-                '-r {1}'
-            ).format(pip_command_base, reqs_name)
-
-    else:
-        pip_command_base = '{0}/bin/pip install'.format(venv_path)
-        # no pypi server
-        if opts.upgrade:
-            cmd = '{0} --upgrade -r {1}'.format(pip_command_base, reqs_name)
-        else:
-            cmd = '{0} -r {1}'.format(pip_command_base, reqs_name)
-
-    if pip_options:
-        cmd += " {} ".format(pip_options)
-
-    try:
-        local(cmd)
-    except OSError as ex:
-        msg = (
-            "Error running pip install command during build\n"
-            "Error was {0}\n"
-            "Running command: {1}\n"
-            "Working Dir: {2}\n"
-            "Virtualenv: {3}\n"
-            "Requirements: {4}\n"
-        ).format(ex, cmd, working_dir, venv_path, reqs_name)
-        LOGGER.error(msg)
-        sys.exit(1)
-
-    if extra_reqs:
-        if opts.upgrade:
-            commands = [
-                "{0} --upgrade -r {1}".format(pip_command_base, reqfile)
-                for reqfile in extra_reqs
-            ]
-        else:
-            commands = [
-                "{0} -r {1}".format(pip_command_base, reqfile)
-                for reqfile in extra_reqs
-            ]
-
-        for cmd in commands:
-            LOGGER.info("Installing extra requirements... {}".format(cmd))
-            try:
-                local(cmd)
-            except OSError as ex:
-                msg = (
-                    "Error running pip install command extra "
-                    "requirements install: {}\n{}"
-                ).format(reqfile, ex)
-                LOGGER.error(msg)
-                sys.exit(1)
-
-    # setup for development
-    if opts.nosetupdevelop:
-        msg = "skipping python setup.py develop..."
-        LOGGER.info(msg)
-    else:
-        LOGGER.info('running python setup.py develop...')
-        activate = activate_command(venv_path)
-        local(
-            '{} && python setup.py develop'.format(
-                activate
-            )
-        )
-
-
 def plugin_build(opts, extras):
     if opts.builder is None:
-        if is_anaconda():
-            opts.builder = "CondaPip"
-        else:
-            opts.builder = "VirtualenvPip"
+        opts.builder = get_builder_plugin()
+    LOGGER.info("Using builder: {}".format(opts.builder))
     builder = FACTORY(opts.builder)
-    builder.create(**vars(opts))
+    extra_options = builder.process_extra_args(extras)
+    options = vars(opts)
+    options.update(extra_options)
+    builder.create(**options)
+
 
 def main():
     """
@@ -245,7 +128,10 @@ def main():
     Execute build command
     """
     opts, extras = build_parser(sys.argv)
-    plugin_build(opts, extras)
+    try:
+        plugin_build(opts, extras)
+    except Exception as ex:
+        sys.exit(1)
 
     if opts.docs is not None:
         build_docs(make_opts=opts.docs)

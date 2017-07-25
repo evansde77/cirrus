@@ -24,30 +24,41 @@ class VirtualenvPip(Builder):
     create a development environment and install dependencies
 
     """
-
     def __init__(self):
         super(VirtualenvPip, self).__init__()
         self.use_sitepackages = self.build_config.get('sitepackages', False)
+        self.plugin_parser.add_argument(
+            '--system-site-packages',
+            help='use system python site packages in virtualenv',
+            default=False,
+            action='store_true'
+        )
 
     def create(self, **kwargs):
         """
-
+        build the virtualenv
         """
         clean = kwargs.get('clean', False)
         if clean:
             self.clean(**kwargs)
 
+        site_packages = kwargs.get('system-site-packages', self.use_sitepackages)
         upgrade = kwargs.get('upgrade', False)
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
         venv = VirtualEnvironment(
             self.venv_path,
             python=self.python_bin,
-            system_site_packages=self.use_sitepackages
+            system_site_packages=site_packages
         )
         LOGGER.info("Bootstrapping virtualenv: {}".format(self.venv_path))
 
         venv.open_or_create()
-        cmd = build_pip_command(self.config, self.venv_path, self.reqs_name, upgrade=upgrade)
+        cmd = build_pip_command(
+            self.config,
+            self.venv_path,
+            self.reqs_name,
+            upgrade=upgrade
+        )
 
         try:
             local(cmd)

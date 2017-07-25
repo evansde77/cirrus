@@ -15,6 +15,11 @@ class CondaPip(Builder):
     def __init__(self):
         super(CondaPip, self).__init__()
         self.conda_bin = 'conda'
+        self.plugin_parser.add_argument(
+            '--conda',
+            help='conda binary to use if different from default conda',
+            default='conda'
+        )
 
     def create(self, **kwargs):
         python_bin = kwargs.get("python", self.python_bin)
