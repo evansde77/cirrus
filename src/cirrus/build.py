@@ -148,7 +148,7 @@ def main():
     opts, extras = build_parser(sys.argv)
     try:
         plugin_build(opts, extras)
-    except Exception as ex:
+    except Exception:
         sys.exit(1)
 
     if opts.docs is not None:

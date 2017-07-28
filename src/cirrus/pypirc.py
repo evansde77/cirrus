@@ -5,16 +5,20 @@
 """
 import os
 from cirrus._2to3 import ConfigParser
-from cirrus.configuration import get_pypi_auth, load_configuration
+from cirrus.configuration import get_pypi_auth
 
 
-def build_pip_command(config, path, reqs_file, upgrade=False):
-    # custom pypi server
+def build_pip_command(config, path, reqs_file, upgrade=False, pypirc=None):
+    """
+    given the package config, pypirc and various options,
+    build the pip install command for a requirements file
+
+    """
     pypi_server = config.pypi_url()
     pip_options = config.pip_options()
     pip_command_base = None
     if pypi_server is not None:
-        pypirc = PypircFile()
+        pypirc = PypircFile(pypirc)
         if pypi_server in pypirc.index_servers:
             pypi_url = pypirc.get_pypi_url(pypi_server)
         else:
