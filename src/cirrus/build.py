@@ -15,11 +15,9 @@ from argparse import ArgumentParser
 import pluggage.registry
 
 from cirrus.documentation_utils import build_docs
-from cirrus.environment import cirrus_bin, is_anaconda, repo_directory
-from cirrus.configuration import load_configuration, get_pypi_auth
-from cirrus.pypirc import PypircFile
+from cirrus.environment import is_anaconda
+from cirrus.configuration import load_configuration
 from cirrus.logger import get_logger
-from cirrus.invoke_helpers import local
 
 
 LOGGER = get_logger()
@@ -31,17 +29,37 @@ FACTORY = pluggage.registry.get_factory(
 
 
 def get_builder_plugin():
+    """
+    Get the builder plugin name default.
+
+    If not provided by CLI opt, start with
+    user pref in gitconfig,
+    Look for hint in cirrus conf or just resort
+    to a guess based on what python cirrus is using
+
+    """
+    # TODO look up in git config
     config = load_configuration()
+    builder = None
+    if config.has_gitconfig_param('builder'):
+        builder = str(config.get_gitconfig_param('builder'))
+    if builder:
+        LOGGER.info("Using Builder Plugin from gitconfig: {}".format(builder))
+        return builder
+
     build_config = config.get('build', {})
     builder = build_config.get('builder')
-    if builder is None:
-        # fall back to old defaults
-        if is_anaconda():
-            builder = "CondaPip"
-        else:
-            builder = "VirtualenvPip"
+    if builder is not None:
+        LOGGER.info("Using Builder Plugin from cirrus.conf: {}".format(builder))
+        return builder
+    # fall back to old defaults
+    if is_anaconda():
+        LOGGER.info("Using default CondaPip builder")
+        builder = "CondaPip"
+    else:
+        LOGGER.info("Using default VirtualenvPip builder")
+        builder = "VirtualenvPip"
     return builder
-
 
 
 def build_parser(argslist):
