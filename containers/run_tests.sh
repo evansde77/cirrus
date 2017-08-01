@@ -14,7 +14,7 @@ function run_test(){
 }
 
 
-declare -a VERSIONS=("py2.7" "py3.5" "py3.6")
+declare -a VERSIONS=("py2.7" "py3.5" "py3.6" "anaconda3-4.4.0")
 
 for i in "${VERSIONS[@]}"
 do

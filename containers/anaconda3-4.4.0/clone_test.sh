@@ -43,16 +43,19 @@ cd ${TEST_REPO}
 git checkout -b master origin/master
 git checkout -b develop origin/develop
 
+cp -rf  conda-cirrus.conf cirrus.conf
+
 echo "****************Test CondaEnv Builder**************"
 git cirrus build --clean --builder=CondaEnv --environment=conda-environment.yml
 echo "****************Test CondaPip Builder**************"
 git cirrus build --clean --builder=CondaPip
 echo "****************test Conda Builder*****************"
-git cirrus build --clean --builder=Conda 
+git cirrus build --clean --builder=Conda --extra-requirements=conda-test-requirements.txt
 
 
 git cirrus test --test-options "-e py36" 
 
+git add -A && git commit -m "cleanup unmerged files"
 git cirrus feature new test_integ
 git cirrus feature merge
 

@@ -33,12 +33,15 @@ class Conda(Builder):
         upgrade = kwargs.get('upgrade', False)
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
         clean = kwargs.get('clean', False)
-        channels = kwargs.get('conda_channels', self.str_to_list(self.build_config.get('conda_channels', [])))
+        channels = self.str_to_list(self.build_config.get('conda_channels', []))
+        LOGGER.info("channels from conf: {}".format(channels))
+        if kwargs.get('conda_channels'):
+            channels = kwargs['conda_channels']
         if clean:
             self.clean(**kwargs)
 
-        channels = ' -c '.join(c for c in channels)
-
+        channels = ''.join(' -c {}'.format(c) for c in channels)
+        LOGGER.info("channels: result={}".format(kwargs.get('conda_channels'), self.build_config.get('conda_channels'), channels))
         venv_command = "{} create -y -m {} -p {} pip virtualenv".format(
             conda,
             channels,

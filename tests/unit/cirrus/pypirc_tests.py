@@ -80,5 +80,6 @@ class PypircFileTest(unittest.TestCase):
         pip = build_pip_command(config, 'PATH', 'requirements.txt', upgrade=True, pypirc=self.file)
         self.assertEqual(pip, 'PATH/bin/pip install -i https://the_steve:stevespass@https://localhost:4000/simple --upgrade -r requirements.txt')
 
+
 if __name__ == '__main__':
     unittest.main()

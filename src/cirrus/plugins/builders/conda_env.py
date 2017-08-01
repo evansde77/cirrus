@@ -27,7 +27,6 @@ class CondaEnv(Builder):
     def create(self, **kwargs):
         python_bin = kwargs.get("python", self.python_bin)
         conda = kwargs.get('conda', self.conda_bin)
-        upgrade = kwargs.get('upgrade', False)
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
         environment = kwargs.get(
             'environment',
@@ -54,9 +53,8 @@ class CondaEnv(Builder):
             LOGGER.info("Bootstrapping conda env: {0}".format(self.venv_path))
             local(venv_command)
 
-        cmd = "conda install {} --yes --env {}".format(
-            '--update-dependencies' if upgrade else '--no-update-dependencies',
-            self.reqs_name
+        cmd = "conda env update --f {}".format(
+            environment
         )
         try:
             local(cmd)
