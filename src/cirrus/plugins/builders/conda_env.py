@@ -27,6 +27,7 @@ class CondaEnv(Builder):
     def create(self, **kwargs):
         python_bin = kwargs.get("python", self.python_bin)
         conda = kwargs.get('conda', self.conda_bin)
+        upgrade = kwargs.get('upgrade', False)
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
         environment = kwargs.get(
             'environment',
@@ -53,22 +54,25 @@ class CondaEnv(Builder):
             LOGGER.info("Bootstrapping conda env: {0}".format(self.venv_path))
             local(venv_command)
 
-        cmd = "conda env update --f {}".format(
-            environment
-        )
-        try:
-            local(cmd)
-        except OSError as ex:
-            msg = (
-                "Error running conda install command during build\n"
-                "Error was {0}\n"
-                "Running command: {1}\n"
-                "Working Dir: {2}\n"
-                "Conda env: {3}\n"
-                "Requirements: {4}\n"
-            ).format(ex, cmd, self.working_dir, self.venv_path, self.reqs_name)
-            LOGGER.error(msg)
-            raise
+        if upgrade:
+            cmd = "{activate} && conda env update {venv} -f {env}".format(
+                activate=self.activate(),
+                venv=self.venv_path,
+                env=environment
+            )
+            try:
+                local(cmd)
+            except OSError as ex:
+                msg = (
+                    "Error running conda env update command during build\n"
+                    "Error was {0}\n"
+                    "Running command: {1}\n"
+                    "Working Dir: {2}\n"
+                    "Conda env: {3}\n"
+                    "Requirements: {4}\n"
+                ).format(ex, cmd, self.working_dir, self.venv_path, self.reqs_name)
+                LOGGER.error(msg)
+                raise
 
         # setup for development
         if nosetupdevelop:

@@ -46,7 +46,7 @@ git checkout -b develop origin/develop
 cp -rf  conda-cirrus.conf cirrus.conf
 
 echo "****************Test CondaEnv Builder**************"
-git cirrus build --clean --builder=CondaEnv --environment=conda-environment.yml
+git cirrus build --clean --builder=CondaEnv --environment=conda-environment.yml --upgrade
 echo "****************Test CondaPip Builder**************"
 git cirrus build --clean --builder=CondaPip
 echo "****************test Conda Builder*****************"
