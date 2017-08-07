@@ -1,16 +1,15 @@
-'''
+"""
 _test_
 
 Command to run available test suites in a package
-'''
-import os
+"""
 import sys
 
 from cirrus.invoke_helpers import local
 from argparse import ArgumentParser
 
 from cirrus.configuration import load_configuration
-from cirrus.environment import repo_directory, is_anaconda
+from cirrus.build import get_builder_plugin, FACTORY
 
 
 def build_parser(argslist):
@@ -44,17 +43,14 @@ def build_parser(argslist):
         dest='options',
         help='Optional args to pass to test runner'
     )
+    parser.add_argument(
+        '--builder', '-b',
+        help="optional development environment builder to use",
+        default=None
+    )
 
     opts = parser.parse_args(argslist)
     return opts
-
-
-def activate_command(venv_path):
-    if is_anaconda():
-        command = "source {}/bin/activate {}".format(venv_path, venv_path)
-    else:
-        command = ". {}/bin/activate".format(venv_path)
-    return command
 
 
 def nose_run(config, opts):
@@ -66,11 +62,15 @@ def nose_run(config, opts):
     where = config.test_where(opts.suite)
     suite_conf = config.test_suite(opts.suite)
     test_opts = suite_conf.get('test_options')
-    venv_path = os.path.join(repo_directory(), config.venv_name())
     if opts.options:
         # command line overrides
         test_opts = opts.options
-    activate = activate_command(venv_path)
+
+    if opts.builder is None:
+        opts.builder = get_builder_plugin()
+
+    builder = FACTORY(opts.builder)
+    activate = builder.activate()
 
     local(
         '{0} && nosetests -w {1} {2}'.format(
@@ -91,7 +91,6 @@ def tox_run(config, opts):
     suite_conf = config.test_suite(opts.suite)
     tox_ini = suite_conf.get('tox_ini')
     test_opts = suite_conf.get('test_options')
-    venv_path = os.path.join(repo_directory(), config.venv_name())
     if opts.options:
         # command line overrides
         test_opts = opts.options
@@ -100,7 +99,12 @@ def tox_run(config, opts):
         tox_command += " -c {}".format(tox_ini)
     if test_opts:
         tox_command += " {}".format(test_opts)
-    activate = activate_command(venv_path)
+
+    if opts.builder is None:
+        opts.builder = get_builder_plugin()
+
+    builder = FACTORY(opts.builder)
+    activate = builder.activate()
     local(
         '{0} && {1}'.format(
             activate,
