@@ -20,13 +20,14 @@ from cirrus.environment import repo_directory
 from cirrus.git_tools import build_release_notes
 from cirrus.git_tools import has_unstaged_changes, current_branch
 from cirrus.git_tools import branch, checkout_and_pull
-from cirrus.git_tools import commit_files, remote_branch_exists
+from cirrus.git_tools import remote_branch_exists
 from cirrus.git_tools import commit_files_optional_push
 from cirrus.github_tools import GitHubContext
 from cirrus.utils import update_file, update_version
 from cirrus.logger import get_logger
 from cirrus.plugins.jenkins import JenkinsClient
 from cirrus.req_utils import bump_package
+from cirrus.release_status import release_status
 
 LOGGER = get_logger()
 
@@ -288,6 +289,13 @@ def build_parser(argslist):
     )
 
     subparsers.add_parser('build')
+
+    status_command = subparsers.add_parser('status')
+    status_command.add_argument(
+        '--release',
+        help='check status of the provided release',
+        required=True
+    )
 
     merge_command = subparsers.add_parser('merge')
     merge_command.add_argument(
@@ -822,6 +830,15 @@ def merge_release(opts):
             ghc.delete_branch(release_branch, remote=not opts.no_remote)
 
 
+def show_release_status(opts):
+    """check release status"""
+    release = opts.release
+    result = release_status(release)
+    if not result:
+        # unmerged/tagged release => exit as error status
+        sys.exit(1)
+
+
 def build_release(opts):
     """
     _build_release_
@@ -847,6 +864,9 @@ def main():
         new_release(opts)
     if opts.command == 'new-version':
         make_new_version(opts)
+
+    if opts.command == 'status':
+        show_release_status(opts)
 
     if opts.command == 'trigger':
         trigger_release(opts)
