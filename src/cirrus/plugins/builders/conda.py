@@ -85,7 +85,7 @@ class Conda(Builder):
                 local(cmd)
             except OSError as ex:
                 msg = (
-                    "Error running pip install command extra "
+                    "Error running conda install command extra "
                     "requirements install: {}\n{}"
                 ).format(req, ex)
                 LOGGER.error(msg)

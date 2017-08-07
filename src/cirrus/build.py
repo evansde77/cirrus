@@ -9,7 +9,6 @@ This command:
  - pip installs requirements.txt for the package into the venv
 
 """
-import os
 import sys
 from argparse import ArgumentParser
 import pluggage.registry
@@ -146,11 +145,7 @@ def main():
     Execute build command
     """
     opts, extras = build_parser(sys.argv)
-    try:
-        plugin_build(opts, extras)
-    except Exception:
-        sys.exit(1)
-
+    plugin_build(opts, extras)
     if opts.docs is not None:
         build_docs(make_opts=opts.docs)
 

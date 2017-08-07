@@ -53,14 +53,14 @@ echo "****************test Conda Builder*****************"
 git cirrus build --clean --builder=Conda --extra-requirements=conda-test-requirements.txt
 
 
-git cirrus test --test-options "-e py36" 
+git cirrus test --test-options "-e py36" -b Conda
 
 git add -A && git commit -m "cleanup unmerged files"
 git cirrus feature new test_integ
 git cirrus feature merge
 
 git cirrus release new --micro --no-remote
-git cirrus release build            
+git cirrus release build
 git cirrus release merge --cleanup --no-remote
 
 

@@ -14,9 +14,9 @@ class CondaBuilderTest(unittest.TestCase):
 
     @mock.patch('cirrus.builder_plugin.load_configuration')
     @mock.patch('cirrus.builder_plugin.repo_directory')
-    @mock.patch('cirrus.plugins.builders.conda_conda.local')
+    @mock.patch('cirrus.plugins.builders.conda.local')
     @mock.patch('cirrus.builder_plugin.local')
-    @mock.patch('cirrus.plugins.builders.conda_conda.os.path.exists')
+    @mock.patch('cirrus.plugins.builders.conda.os.path.exists')
     def test_builder(self, mock_ospe, mock_base_local, mock_local, mock_repo_dir, mock_load_conf):
         mock_repo_dir.return_value = "REPO"
         mock_ospe.return_value = True
@@ -46,9 +46,9 @@ class CondaBuilderTest(unittest.TestCase):
 
     @mock.patch('cirrus.builder_plugin.load_configuration')
     @mock.patch('cirrus.builder_plugin.repo_directory')
-    @mock.patch('cirrus.plugins.builders.conda_conda.local')
+    @mock.patch('cirrus.plugins.builders.conda.local')
     @mock.patch('cirrus.builder_plugin.local')
-    @mock.patch('cirrus.plugins.builders.conda_conda.os.path.exists')
+    @mock.patch('cirrus.plugins.builders.conda.os.path.exists')
     def test_builder_channels(self, mock_ospe, mock_base_local, mock_local, mock_repo_dir, mock_load_conf):
         mock_repo_dir.return_value = "REPO"
         mock_ospe.return_value = True
@@ -78,7 +78,7 @@ class CondaBuilderTest(unittest.TestCase):
 
     @mock.patch('cirrus.builder_plugin.load_configuration')
     @mock.patch('cirrus.builder_plugin.repo_directory')
-    @mock.patch('cirrus.plugins.builders.conda_conda.local')
+    @mock.patch('cirrus.plugins.builders.conda.local')
     @mock.patch('cirrus.builder_plugin.local')
     def test_builder_errors(self, mock_base_local, mock_local, mock_repo_dir, mock_load_conf):
         mock_repo_dir.return_value = "REPO"
