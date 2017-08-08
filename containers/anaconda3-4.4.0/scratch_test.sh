@@ -36,6 +36,8 @@ git init
 git cirrus package init --bootstrap -p test_package -v 0.0.0 -s src --no-remote -o integ_test -d "this is a test"  --python python3.6
 git cirrus build   # build local dev virtualenv
 # this is where you would add code and tests
+git cirrus build --clean --upgrade --builder=CondaPip
+
 git cirrus test                                     # run tests
 git cirrus feature new integ_test --no-remote
 git cirrus feature merge --no-remote
