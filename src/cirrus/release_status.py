@@ -22,6 +22,7 @@ def release_status(release):
     returns True if the release looks to be successfully merged and tagged
 
     """
+    result = False
     with GitHubContext(repo_directory()) as ghc:
         LOGGER.info("Checking release status for {}".format(release))
         # work out the branch and tag for the release
@@ -106,7 +107,9 @@ def release_status(release):
                 merge_on_master
             )
             LOGGER.error(msg)
-            return False
-        msg = "Release {} looks to be successfully merged and tagged\n".format(release_branch)
-        LOGGER.info(msg)
-        return True
+            result = False
+        else:
+            msg = "Release {} looks to be successfully merged and tagged\n".format(release_branch)
+            LOGGER.info(msg)
+            result = True
+    return result

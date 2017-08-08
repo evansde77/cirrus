@@ -293,8 +293,8 @@ def build_parser(argslist):
     status_command = subparsers.add_parser('status')
     status_command.add_argument(
         '--release',
-        help='check status of the provided release',
-        required=True
+        help='check status of the provided release, defaults to current branch',
+        default=None
     )
 
     merge_command = subparsers.add_parser('merge')
@@ -833,6 +833,8 @@ def merge_release(opts):
 def show_release_status(opts):
     """check release status"""
     release = opts.release
+    if release is None:
+        release = current_branch(repo_directory())
     result = release_status(release)
     if not result:
         # unmerged/tagged release => exit as error status
