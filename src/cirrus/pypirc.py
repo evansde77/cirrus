@@ -4,7 +4,7 @@
 
 """
 import os
-from cirrus._2to3 import ConfigParser
+from cirrus._2to3 import ConfigParser, urlparse
 from cirrus.configuration import get_pypi_auth
 
 
@@ -100,3 +100,26 @@ class PypircFile(dict):
             "https://{username}:{password}@{repository}/simple"
         ).format(**params)
         return url
+
+    def pip_options(self):
+        """
+        create pip options string using --extra-index-url and
+        --trusted-host for each index server
+        """
+        result = ""
+        hosts = set()
+        for idx in self.index_servers:
+            repo = self[idx].get('repository')
+            if not repo:
+                continue
+            result += ' --extra-index-url={}'.format(repo)
+            netloc = urlparse(repo).netloc
+            if ':' in netloc:
+                netloc = netloc.split(':', 1)[0]
+            hosts.add(netloc)
+
+        for host in hosts:
+            if host == 'localhost':
+                continue
+            result += ' --trusted-host={}'.format(host)
+        return result

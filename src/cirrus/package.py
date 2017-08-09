@@ -31,6 +31,7 @@ from cirrus.logger import get_logger
 from cirrus.utils import working_dir
 from cirrus.package_container import init_container
 from cirrus.utils import update_version
+from cirrus.pypirc import PypircFile
 from cirrus.git_tools import (
     branch,
     push,
@@ -49,6 +50,7 @@ TOXFILE = \
 [tox]
 envlist = {python}
 [testenv]
+{install_command}
 deps=
   -r{requirements}
   -r{test_requirements}
@@ -136,6 +138,12 @@ def build_parser(argslist):
         '--pypi-package-name',
         help='Name for package on upload to pypi, use if different from package option',
         default=None
+    )
+    init_command.add_argument(
+        '--use-pypirc',
+        help='Use pypirc to add install options to pip commands',
+        default=False,
+        action='store_true'
     )
 
     init_command.add_argument(
@@ -458,6 +466,19 @@ def write_cirrus_conf(opts, version_file):
             'python',
             opts.python
         )
+    if opts.use_pypirc:
+        rcfile = PypircFile()
+        config.set(
+            'build',
+            'pip-options',
+            rcfile.pip_options()
+        )
+        config.add_section('pypi')
+        config.set(
+            'pypi',
+            'pip-options',
+            rcfile.pip_options()
+        )
 
     config.add_section('test-default')
     config.set('test-default', 'where', 'tests/unit')
@@ -631,10 +652,17 @@ def bootstrap_repo(opts):
                 sys.version_info.minor
             )
         with open('tox.ini', 'w') as handle:
+
+            install_comm = ""
+            if opts.use_pypirc:
+                rcfile = PypircFile()
+                install_comm = "install_command = pip install {} {{opts}} {{package}}".format(rcfile.pip_options())
+
             handle.write(
                 TOXFILE.format(
                     requirements=opts.requirements,
                     test_requirements=opts.test_requirements,
+                    install_command=install_comm,
                     testdir=opts.tests,
                     python=py_vers
                 )
