@@ -46,9 +46,10 @@ git cirrus feature new test_integ
 git cirrus feature merge
 
 git cirrus release new --micro --no-remote
+git cirrus release status
 git cirrus release build                  # create a build artifact to add to the container
 git cirrus release merge --cleanup --no-remote
-
+git cirrus release status --release=release/0.0.5
 
 
 

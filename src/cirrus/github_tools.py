@@ -462,6 +462,56 @@ class GitHubContext(object):
         if plusone:
             self.plus_one_pull_request(pr_data=pr_data, context=plusonecontext)
 
+    def find_release_commit(self, release_branch_or_tag):
+        """
+        attempt to find a matching commit for a branch or tag
+
+        :returns: commit sha string or None if not found
+        """
+        try:
+            commit = self.repo.git.log(release_branch_or_tag, n=1, format="format:%H")
+            return commit.strip()
+        except git.exc.GitCommandError as ex:
+            if "unknown revision" in str(ex):
+                return None
+            raise
+
+    def commit_on_branches(self, commit):
+        """
+        return a list of branches that contain the provided commit
+        """
+
+        branches = self.repo.git.branch(a=True, contains=commit)
+        return branches
+
+    def is_commit_on_branch(self, commit, branch):
+        """
+        return True/False if commit SHA is on branch
+
+        """
+        return branch in self.commit_on_branches(commit)
+
+    def merge_base(self, tag, branch):
+        """
+        get the ancestor commit of tag and branch or None
+        if not found
+        """
+        try:
+            commit = self.repo.git.merge_base(tag, branch)
+            return str(commit).strip()
+        except git.exc.GitCommandError as ex:
+            if "Not a valid object" in str(ex):
+                return None
+            raise
+
+    def git_show_commit(self, commit):
+        """
+        get details string from git show for a given commit
+        """
+        details = self.repo.git.show(commit)
+        return str(details)
+
+
 
 def branch_status(branch_name):
     """
