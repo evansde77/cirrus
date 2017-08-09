@@ -51,7 +51,7 @@ def release_status(release):
                 "Are you sure this is a valid release?"
             ).format(release)
             LOGGER.error(msg)
-            return
+            return False
 
         # check the tag commit is present on master and remote master
         tag_present = False

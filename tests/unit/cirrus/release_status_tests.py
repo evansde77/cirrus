@@ -35,7 +35,7 @@ class ReleaseStatusTests(unittest.TestCase):
         self.mock_ghc.git_show_commit = mock.Mock(return_value=" this contains release/0.2.3 blah")
 
     def tearDown(self):
-        self.patch_ghc.start()
+        self.patch_ghc.stop()
 
     def test_release_status(self):
         """test succesful release status with tag name"""
