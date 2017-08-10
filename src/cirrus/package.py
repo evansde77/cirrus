@@ -29,8 +29,10 @@ from argparse import ArgumentParser
 
 from cirrus.logger import get_logger
 from cirrus.utils import working_dir
+from cirrus.environment import repo_directory
 from cirrus.package_container import init_container
 from cirrus.utils import update_version
+from cirrus.invoke_helpers import local
 from cirrus.pypirc import PypircFile
 from cirrus.git_tools import (
     branch,
@@ -144,6 +146,14 @@ def build_parser(argslist):
         help='Use pypirc to add install options to pip commands',
         default=False,
         action='store_true'
+    )
+    init_command.add_argument(
+        '--register-with-pypi',
+        help=(
+            "Set this to the name of a pypi repo in your pypirc "
+            "to register the new package with that server"
+        ),
+        default=None
     )
 
     init_command.add_argument(
@@ -468,16 +478,18 @@ def write_cirrus_conf(opts, version_file):
         )
     if opts.use_pypirc:
         rcfile = PypircFile()
+        pip_opts = rcfile.pip_options()
+        LOGGER.info("Adding pip options to cirrus.conf: {}".format(pip_opts))
         config.set(
             'build',
             'pip-options',
-            rcfile.pip_options()
+            pip_opts
         )
         config.add_section('pypi')
         config.set(
             'pypi',
             'pip-options',
-            rcfile.pip_options()
+            pip_opts
         )
 
     config.add_section('test-default')
@@ -656,7 +668,9 @@ def bootstrap_repo(opts):
             install_comm = ""
             if opts.use_pypirc:
                 rcfile = PypircFile()
-                install_comm = "install_command = pip install {} {{opts}} {{package}}".format(rcfile.pip_options())
+                pip_opts = rcfile.pip_options()
+                LOGGER.info("Adding pip options to tox.ini: {}".format(pip_opts))
+                install_comm = "install_command = pip install {} {{opts}} {{package}}".format(pip_opts)
 
             handle.write(
                 TOXFILE.format(
@@ -691,6 +705,15 @@ def bootstrap_repo(opts):
     )
 
 
+def setup_register(pypi_url):
+    LOGGER.info("Running setup.py sdist register...")
+    local(
+        'cd {} && python setup.py sdist register -r {}'.format(
+            repo_directory(), pypi_url
+        )
+    )
+
+
 def init_package(opts):
     """
     initialise a repo with a basic cirrus setup
@@ -704,6 +727,9 @@ def init_package(opts):
     files = create_files(opts)
     with working_dir(opts.repo):
         commit_and_tag(opts, *files)
+
+    if opts.register_with_pypi:
+        setup_register(opts.register_with_pypi)
 
     msg = (
         "\nA basic cirrus.conf file has been added to your package\n"
