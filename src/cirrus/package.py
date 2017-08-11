@@ -33,6 +33,7 @@ from cirrus.environment import repo_directory
 from cirrus.package_container import init_container
 from cirrus.utils import update_version
 from cirrus.invoke_helpers import local
+from cirrus.twine_helpers import register_package
 from cirrus.pypirc import PypircFile
 from cirrus.git_tools import (
     branch,
@@ -705,13 +706,19 @@ def bootstrap_repo(opts):
     )
 
 
-def setup_register(pypi_url):
-    LOGGER.info("Running setup.py sdist register...")
+def setup_sdist(opts):
+    LOGGER.info("Running setup.py sdist...")
     local(
-        'cd {} && python setup.py sdist register -r {}'.format(
-            repo_directory(), pypi_url
+        'cd {} && python setup.py sdist'.format(
+            repo_directory()
         )
     )
+    dist_dir = os.path.join(repo_directory(), 'dist')
+    pkg = opts.package
+    if opts.pypi_package_name:
+        pkg = opts.pypi_package_name
+    package = "{}-{}.tar.gz".format(pkg, opts.version)
+    return os.path.join(dist_dir, package)
 
 
 def init_package(opts):
@@ -729,7 +736,15 @@ def init_package(opts):
         commit_and_tag(opts, *files)
 
     if opts.register_with_pypi:
-        setup_register(opts.register_with_pypi)
+        # run setup.py sdist and then
+        # call register_package with dist file
+        package = setup_sdist(opts)
+        LOGGER.info(
+            "Registering package {} with pypi {}".format(
+                package, opts.register_with_pypi
+            )
+        )
+        register_package(package, opts.register_with_pypi)
 
     msg = (
         "\nA basic cirrus.conf file has been added to your package\n"
