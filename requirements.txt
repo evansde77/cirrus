@@ -15,4 +15,4 @@ twine==1.9.1
 pluggage==0.0.4
 dockerstache>=0.0.12
 requests-toolbelt==0.8.0
-tox=2.7.0
+tox==2.7.0
