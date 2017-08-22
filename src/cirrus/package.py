@@ -483,13 +483,13 @@ def write_cirrus_conf(opts, version_file):
         LOGGER.info("Adding pip options to cirrus.conf: {}".format(pip_opts))
         config.set(
             'build',
-            'pip-options',
+            'pip_options',
             pip_opts
         )
         config.add_section('pypi')
         config.set(
             'pypi',
-            'pip-options',
+            'pip_options',
             pip_opts
         )
 

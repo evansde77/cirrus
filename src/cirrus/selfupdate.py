@@ -15,7 +15,7 @@ import requests
 import inspect
 import contextlib
 
-from fabric.operations import local
+from cirrus.invoke_helpers import local
 
 import cirrus
 from cirrus.configuration import load_configuration
