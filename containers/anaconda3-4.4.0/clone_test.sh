@@ -9,21 +9,25 @@ git config --global user.email "some_email"
 export PATH=${PYENV_ROOT}/bin:${PATH}
 eval "$(pyenv init -)"
 
-mkdir -p ~/.cirrus
-virtualenv ~/.cirrus/venv
-(
+export PATH=${PYENV_ROOT}/bin:${PATH}
+eval "$(pyenv init -)"
 
-. ~/.cirrus/venv/bin/activate
+
+ACTIVATE_SCRIPT=${PYENV_ROOT}/versions/anaconda3-4.4.0/bin/activate
+mkdir -p ~/.cirrus
+conda create -y -m -p ~/.cirrus/venv pip
+
+
+(
+source ${ACTIVATE_SCRIPT} ~/.cirrus/venv
 export LOCATION=~/.cirrus
 pip install /opt/cirrus-cli-latest.tar.gz
-export CIRRUS_HOME=$LOCATION
-export VIRTUALENV_HOME=$LOCATION/venv
+export CIRRUS_HOME=${LOCATION}
 selfsetup --robot
-
 )
 
-TIMESTAMP=`date +%s`
-REPO_DIR="test_${TIMESTAMP}"
+
+
 export USER=some_user
 export ORIGIN_REPO=`pwd`/cirrus_test_origin
 export TEST_REPO=`pwd`/cirrus_test
@@ -39,17 +43,26 @@ cd ${TEST_REPO}
 git checkout -b master origin/master
 git checkout -b develop origin/develop
 
-git cirrus build
-git cirrus test --test-options "-e py27"
+cp -rf  conda-cirrus.conf cirrus.conf
 
+echo "****************Test CondaEnv Builder**************"
+git cirrus build --clean --builder=CondaEnv --environment=conda-environment.yml --upgrade
+echo "****************Test CondaPip Builder**************"
+git cirrus build --clean --builder=CondaPip
+echo "****************test Conda Builder*****************"
+git cirrus build --clean --builder=Conda --extra-requirements=conda-test-requirements.txt
+
+
+git cirrus test --test-options "-e py36" -b Conda
+
+git add -A && git commit -m "cleanup unmerged files"
 git cirrus feature new test_integ
 git cirrus feature merge
 
 git cirrus release new --micro --no-remote
-git cirrus release status
-git cirrus release build                  # create a build artifact to add to the container
+git cirrus release build
 git cirrus release merge --cleanup --no-remote
-git cirrus release status --release=release/0.0.5
+
 
 
 

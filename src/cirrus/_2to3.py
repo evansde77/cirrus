@@ -34,6 +34,7 @@ if PY2:
     import ConfigParser
     import __builtin__ as builtins
     get_raw_input = raw_input
+    from urlparse import urlparse
 
     def unicode_(s):
         return unicode(s)
@@ -42,6 +43,7 @@ else:
     import configparser as ConfigParser
     import builtins
     get_raw_input = input
+    from urllib.parse import urlparse
 
     def unicode_(s):
         return str(s)

@@ -160,6 +160,9 @@ class Configuration(dict):
     def gitflow_master_name(self):
         return self.get('gitflow', {}).get('master_branch', 'master')
 
+    def gitflow_origin_name(self):
+        return self.get('gitflow', {}).get('remote_origin', 'origin')
+
     def gitflow_feature_prefix(self):
         return self.get('gitflow', {}).get('feature_branch_prefix', 'feature/')
 

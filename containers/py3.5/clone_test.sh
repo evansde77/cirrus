@@ -28,10 +28,13 @@ export TEST_REPO=`pwd`/cirrus_test
 
 git clone https://github.com/evansde77/cirrus_test.git ${ORIGIN_REPO}
 cd ${ORIGIN_REPO}
+git fetch
+git checkout -b master origin/master
 git checkout -b develop origin/develop
 
 git clone ${ORIGIN_REPO} ${TEST_REPO}
 cd ${TEST_REPO}
+git checkout -b master origin/master
 git checkout -b develop origin/develop
 
 git cirrus build
@@ -41,9 +44,10 @@ git cirrus feature new test_integ
 git cirrus feature merge
 
 git cirrus release new --micro --no-remote
+git cirrus release status 
 git cirrus release build            
 git cirrus release merge --cleanup --no-remote
-
+git cirrus release status --release=release/0.0.5
 
 
 

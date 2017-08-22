@@ -12,13 +12,13 @@ INSTALL_DIR="${HOME}/.cirrus"
 DEFAULT_USER="${USER}"
 
 # prerequisites are pip and virtualenv
-pip --version
+pip --version 2>/dev/null
 if [ $? -eq 127 ]; then
     echo "pip binary not found, cannot proceed"
     exit 127
 fi
 
-virtualenv --version
+virtualenv --version 2>/dev/null
 if [ $? -eq 127 ]; then
     echo "virtualenv binary not found, cannot proceed"
     exit 127
