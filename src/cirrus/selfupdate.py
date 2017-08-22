@@ -15,7 +15,7 @@ import requests
 import inspect
 import contextlib
 
-from fabric.operations import local
+from cirrus.invoke_helpers import local
 
 import cirrus
 from cirrus.configuration import load_configuration
@@ -80,14 +80,12 @@ def build_parser(argslist):
     return opts
 
 
-def sort_by_date(d1, d2):
+def sort_by_date(d1):
     """
     cmp function to sort by datetime string
     that is second element of tuples in list
     """
-    date1 = arrow.get(d1[1])
-    date2 = arrow.get(d2[1])
-    return date1 > date2
+    return arrow.get(d1[1])
 
 
 def latest_release(config):
@@ -100,7 +98,7 @@ def latest_release(config):
     """
     releases = get_releases(config.organisation_name(), config.package_name())
     tags = [(release['tag_name'], release['published_at']) for release in releases]
-    sorted(tags, cmp=sort_by_date)
+    sorted(tags, key=sort_by_date)
     most_recent_tag = tags[0][0]
     return most_recent_tag
 
