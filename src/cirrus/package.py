@@ -671,7 +671,7 @@ def bootstrap_repo(opts):
                 rcfile = PypircFile()
                 pip_opts = rcfile.pip_options()
                 LOGGER.info("Adding pip options to tox.ini: {}".format(pip_opts))
-                install_comm = "install_command = pip install {} {{opts}} {{package}}".format(pip_opts)
+                install_comm = "install_command = pip install {} {{opts}} {{packages}}".format(pip_opts)
 
             handle.write(
                 TOXFILE.format(
