@@ -32,10 +32,7 @@ curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/conda-install
 bash conda-installer.sh
 ```
 
-The installer script will set up an install of cirrus for you in your home directory
-and prompt for some info so that it can set up some parameters in your .gitconfig
-The installer will create a virtualenv and install cirrus from pip via the cirrus-cli package, installing the latest available version.
-
+See the 
 
 Installation for Development:
 =============================
@@ -49,6 +46,7 @@ cd cirrus
 git cirrus build
 ```
 
+For more detailed docs see the [Installation Docs](https://github.com/evansde77/cirrus/wiki/Installation) 
 
 User Configuration File:
 ========================
@@ -57,11 +55,7 @@ As cirrus works as a git extension, it will use your gitconfig file. The install
 
 1. *github-user* - Your Github Username
 1. *github-token* - A github access token
-1. *pypi-user* - Username of your pypi server
-1. *pypi-token* - Token/password to access your pypi server
-1. *pypi-ssh-key* - SSH key used for scp-like uploads to your pypi server (if HTTP upload isnt supported)
 
-*Protip:* If you require a different username for ssh access to your pypi server, you can add an optional *pypi-ssh-user* setting.
 
 Package Configuration Files:
 ============================
@@ -81,62 +75,6 @@ Usage:
 git cirrus hello
 ```
 
-#### cirrus package 
-
-`Beta: new in Release 1.6 and above`
-
-The cirrus package command provides support for setting up cirrus to work in a new package.
-Assuming a starting point of a git repo with at least one commit on the master branch, you can run the git cirrus package init command 
-to add the various configuration and packaging files used by cirrus. This is intended to provide a minimal working template, so some configuration post init will be needed to take advantage of other features. 
-
-The init command will do the following:
-
-1. set up the develop/master branches for gitflow style work 
-2. generate a MANIFEST.in file containing the necessary include statements for packaging with setuptools 
-3. adds the default cirrus setup.py file 
-4. Generates a basic cirrus.conf file for the package
-5. sets up the version number management and history file generation
-
-For example:
-```bash 
-# create a minimal repo 
-mkdir test_repo
-cd test_repo
-git init 
-echo 'readme' > README
-git add README
-git commit -m 'add README; first commit on master'
-git checkout -b develop 
-mkdir -p src/throwaway
-echo "__version__ = '0.0.0'" > src/throwaway/__init__.py
-echo "requests" > requirements.txt
-git add src/throwaway/__init__.py requirements.txt
-git commit -m "make a package"
-git checkout master
-git merge develop
-
-# run the package init command
-git cirrus package init -p test_repo --no-remote -v 0.0.0 -s src --version-file=src/throwaway/__init__.py 
-# can now use cirrus in the package, eg build:  
-git cirrus build
-
-```
-
-Options available for the package init command:
-
-* --repo, -r - Path to repo, defaults to pwd
-* --source-dir -s Additional directory structure within package for source code eg if you put your source code in a src subdir in the repo. Assumes repo top level directory if not set
-* --package, -p cirrus package name (Required)
-* --version, -v initial package version
-* --organization, -o Organization name to include in package (Eg, Github org or username) 
-* --description, -d Package description 
-* --templates, additional template rules to include in MANIFEST, eg include src/templates/*.json
-* --version-file, Version file, defaults to package __init__.py, where to update the \_\_version\_\_ attribute
-* --history-file, changelog history filename, defaults to HISTORY.md
-* --requirements, requirements file for pip defaults to requirements.txt
-* --master-branch, GitFlow master branch, defaults to master 
-* --develop-branch, GitFlow develop branch, defaults to develop
-* --no-remote, disable pushing changes to remote, commit locally only
 
 
 #### cirrus build
