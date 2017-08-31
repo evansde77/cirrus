@@ -92,6 +92,18 @@ class GitHubContext(object):
         for d in data:
             yield d
 
+    def commit_files_optional_push(self, commit_msg, push=True, *filenames):
+        """
+        commit files to the repo, push remote if required.
+
+        """
+        self.repo.index.add(filenames)
+        # commits with message
+        self.repo.index.commit(commit_msg)
+        # push branch to origin
+        if push:
+            return self.repo.remotes.origin.push(self.repo.head)
+
     def log_branch_status(self, branch):
         """
         _log_branch_status_

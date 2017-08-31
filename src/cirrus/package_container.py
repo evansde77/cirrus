@@ -8,6 +8,7 @@ templates for docker-image command
 """
 import sys
 import os
+import git
 import json
 
 from cirrus.logger import get_logger
@@ -61,8 +62,7 @@ ENTRYPOINT ["{entrypoint}"]
 """
 
 LOCAL_INSTALL_SCRIPT = \
-"""
-#!/bin/bash
+"""#!/bin/bash
 
 {virtualenv}
 pip install /opt/{{{{cirrus.configuration.package.name}}}}-{{{{cirrus.configuration.package.version}}}}.tar.gz
@@ -70,18 +70,21 @@ pip install /opt/{{{{cirrus.configuration.package.name}}}}-{{{{cirrus.configurat
 """
 
 PYPI_INSTALL_SCRIPT = \
-"""
-#!/bin/bash
+"""#!/bin/bash
 
 {virtualenv}
 pip install {pip_options} {{{{cirrus.configuration.package.name}}}}=={{{{cirrus.configuration.package.version}}}}
 
 """
 
-def make_executable(path):
+
+def make_executable(path, repo):
     mode = os.stat(path).st_mode
     mode |= (mode & 0o444) >> 2    # copy R bits to X
     os.chmod(path, mode)
+    r = git.Repo(repo)
+    r.git.update_index(path, chmod='+x')
+
 
 
 def write_basic_dockerfile(opts, config, path):
@@ -123,7 +126,7 @@ def write_json_file(path, data):
         json.dump(data, handle)
 
 
-def write_script(path, content, **extras):
+def write_script(repo, path, content, **extras):
     """write script content to a file"""
     LOGGER.info("writing script {}".format(path))
 
@@ -131,7 +134,7 @@ def write_script(path, content, **extras):
     with open(path, 'w') as handle:
         handle.write(script)
     # run chmod +x on new script
-    make_executable(path)
+    make_executable(path, repo)
 
 
 def edit_cirrus_conf(opts, config):
@@ -200,13 +203,15 @@ def init_container(opts):
             "excludes": ["post_script.sh", "post_script.sh", ".dockerstache"]
         })
         write_json_file(context, {})
-        write_script(pre_script, DOCKER_PRE_SCRIPT)
+        write_script(opts.repo, pre_script, DOCKER_PRE_SCRIPT)
         write_script(
+            opts.repo,
             local_install,
             LOCAL_INSTALL_SCRIPT,
             virtualenv=venv_option
         )
         write_script(
+            opts.repo,
             pypi_install,
             PYPI_INSTALL_SCRIPT,
             virtualenv=venv_option,
@@ -214,12 +219,13 @@ def init_container(opts):
         )
         if opts.local_install:
             write_script(
+                opts.repo,
                 post_script,
                 DOCKER_POST_SCRIPT,
                 copy_dist=LOCAL_INSTALL_COMMAND.format(package=config.package_name())
             )
         else:
-            write_script(post_script, DOCKER_POST_SCRIPT, copy_dist="")
+            write_script(opts.repo, post_script, DOCKER_POST_SCRIPT, copy_dist="")
         edit_cirrus_conf(opts, config)
 
         modified = [
