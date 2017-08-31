@@ -474,6 +474,7 @@ def new_release(opts):
     """
     LOGGER.info("Creating new release...")
     config = load_configuration()
+    current_version = config.package_version()
     if opts.nightly:
         msg = "creating new nightly release..."
         new_version = rel_utils.new_nightly()
@@ -487,7 +488,6 @@ def new_release(opts):
         fields = ['major', 'minor', 'micro']
         mask = [opts.major, opts.minor, opts.micro]
         field = [x for x in itertools.compress(fields, mask)][0]
-        current_version = config.package_version()
         new_version = bump_version_field(current_version, field)
 
     # release branch

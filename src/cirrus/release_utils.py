@@ -27,12 +27,13 @@ def nightly_config(conf=None):
     return result
 
 
-def is_nightly(conf, version):
+def is_nightly(version):
     """
     return True/False if the version string
     provided matches a nightly format.
 
     """
+    conf = nightly_config()
     reg = "^[0-9]+\.[0-9]+\.[0-9]+{}".format(conf['nightly_separator'])
     matcher = re.compile(reg)
     elems = matcher.split(version, 1)
@@ -67,7 +68,7 @@ def remove_nightly(ghc):
     cirrus_conf = load_configuration()
     nightly_conf = nightly_config(cirrus_conf)
     current = cirrus_conf.package_version()
-    if is_nightly(nightly_conf, current):
+    if is_nightly(current):
         new_version = current.split(nightly_conf['nightly_separator'], 1)[0]
         cirrus_conf.update_package_version(new_version)
         ghc.commit_files_optional_push(
