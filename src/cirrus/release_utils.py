@@ -77,13 +77,3 @@ def remove_nightly(ghc):
             "cirrus.conf"
         )
     return
-
-
-if __name__ == '__main__':
-    c = nightly_config()
-
-
-    print is_nightly(c, '0.0.0-nightly-20170818')
-    print is_nightly(c, '0.0.0')
-    print new_nightly()
-

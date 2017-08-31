@@ -126,12 +126,12 @@ def write_json_file(path, data):
         json.dump(data, handle)
 
 
-def write_script(repo, path,content, **extras):
+def write_script(repo, path, content, **extras):
     """write script content to a file"""
     LOGGER.info("writing script {}".format(path))
 
     script = content.format(**extras)
-    with open(path, 'wb') as handle:
+    with open(path, 'w') as handle:
         handle.write(script)
     # run chmod +x on new script
     make_executable(path, repo)
