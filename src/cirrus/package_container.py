@@ -61,8 +61,7 @@ ENTRYPOINT ["{entrypoint}"]
 """
 
 LOCAL_INSTALL_SCRIPT = \
-"""
-#!/bin/bash
+"""#!/bin/bash
 
 {virtualenv}
 pip install /opt/{{{{cirrus.configuration.package.name}}}}-{{{{cirrus.configuration.package.version}}}}.tar.gz
@@ -70,13 +69,13 @@ pip install /opt/{{{{cirrus.configuration.package.name}}}}-{{{{cirrus.configurat
 """
 
 PYPI_INSTALL_SCRIPT = \
-"""
-#!/bin/bash
+"""#!/bin/bash
 
 {virtualenv}
 pip install {pip_options} {{{{cirrus.configuration.package.name}}}}=={{{{cirrus.configuration.package.version}}}}
 
 """
+
 
 def make_executable(path):
     mode = os.stat(path).st_mode
