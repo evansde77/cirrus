@@ -36,6 +36,8 @@ class ReleaseNewCommandTest(unittest.TestCase):
             )
         self.harness = CirrusConfigurationHarness('cirrus.release.load_configuration', self.config)
         self.harness.setUp()
+        self.harness_utils = CirrusConfigurationHarness('cirrus.release_utils.load_configuration', self.config)
+        self.harness_utils.setUp()
         self.patch_pull = mock.patch('cirrus.release.checkout_and_pull')
         self.patch_branch = mock.patch('cirrus.release.branch')
         self.patch_commit = mock.patch('cirrus.release.commit_files_optional_push')
@@ -48,6 +50,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         self.patch_branch.stop()
         self.patch_commit.stop()
         self.harness.tearDown()
+        self.harness_utils.tearDown()
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
 
@@ -62,6 +65,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.micro = True
         opts.major = False
         opts.minor = False
+        opts.nightly = False
         opts.bump = None
 
         # should create a new minor release, editing
@@ -82,6 +86,44 @@ class ReleaseNewCommandTest(unittest.TestCase):
         self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
 
     @mock.patch('cirrus.release.has_unstaged_changes')
+    @mock.patch('cirrus.release_utils.datetime')
+    def test_new_nightly_release(self, mock_dt, mock_unstaged):
+        """
+        _test_new_release_
+
+        """
+        mock_ts = mock.Mock()
+        mock_ts.strftime = mock.Mock(return_value="TIMESTAMP")
+        mock_now = mock.Mock(return_value=mock_ts)
+        mock_dt.datetime=mock.Mock()
+        mock_dt.datetime.now = mock_now
+        mock_unstaged.return_value = False
+        opts = mock.Mock()
+        opts.micro = False
+        opts.major = False
+        opts.minor = False
+        opts.nightly = True
+        opts.bump = None
+
+        # should create a new minor release, editing
+        # the cirrus config in the test dir
+        new_release(opts)
+
+        # verify new version
+        new_conf = Configuration(self.config)
+        new_conf.load()
+        self.assertEqual(new_conf.package_version(), '1.2.3-nightly-TIMESTAMP')
+
+        self.failUnless(self.mock_pull.called)
+        self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
+        self.failUnless(self.mock_branch.called)
+        self.assertEqual(self.mock_branch.call_args[0][1], 'release/1.2.3-nightly-TIMESTAMP')
+        self.failUnless(self.mock_commit.called)
+        self.assertEqual(self.mock_commit.call_args[0][2], False)
+        self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
+
+
+    @mock.patch('cirrus.release.has_unstaged_changes')
     @mock.patch('cirrus.release.bump_package')
     def test_new_release_bump(self, mock_bump, mock_unstaged):
         """
@@ -93,6 +135,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.micro = True
         opts.major = False
         opts.minor = False
+        opts.nightly = False
         opts.bump = [['womp', '1.2.3'], ['wibble', '3.4.5']]
 
         # should create a new minor release, editing
@@ -125,6 +168,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.micro = True
         opts.major = False
         opts.minor = False
+        opts.nightly = False
         opts.bump = None
         self.assertRaises(RuntimeError, new_release, opts)
 

@@ -28,6 +28,7 @@ from cirrus.logger import get_logger
 from cirrus.plugins.jenkins import JenkinsClient
 from cirrus.req_utils import bump_package
 from cirrus.release_status import release_status
+import cirrus.release_utils as rel_utils
 
 LOGGER = get_logger()
 
@@ -257,6 +258,12 @@ def build_parser(argslist):
         dest='major'
     )
     new_command.add_argument(
+        '--nightly',
+        action='store_true',
+        dest='nightly',
+        default=False
+    )
+    new_command.add_argument(
         '--bump',
         nargs=2,
         action='append',
@@ -466,20 +473,22 @@ def new_release(opts):
 
     """
     LOGGER.info("Creating new release...")
-    if not highlander([opts.major, opts.minor, opts.micro]):
-        msg = "Can only specify one of --major, --minor or --micro"
-        LOGGER.error(msg)
-        raise RuntimeError(msg)
-
-    fields = ['major', 'minor', 'micro']
-    mask = [opts.major, opts.minor, opts.micro]
-    field = [x for x in itertools.compress(fields, mask)][0]
-
     config = load_configuration()
+    if opts.nightly:
+        msg = "creating new nightly release..."
+        new_version = rel_utils.new_nightly()
+        field = 'nightly'
+    else:
+        if not highlander([opts.major, opts.minor, opts.micro]):
+            msg = "Can only specify one of --major, --minor or --micro"
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
 
-    # version bump:
-    current_version = config.package_version()
-    new_version = bump_version_field(current_version, field)
+        fields = ['major', 'minor', 'micro']
+        mask = [opts.major, opts.minor, opts.micro]
+        field = [x for x in itertools.compress(fields, mask)][0]
+        current_version = config.package_version()
+        new_version = bump_version_field(current_version, field)
 
     # release branch
     branch_name = "{0}{1}".format(
@@ -786,6 +795,8 @@ def merge_release(opts):
         if not opts.skip_develop:
             ghc.pull_branch(develop, remote=not opts.no_remote)
             ghc.merge_branch(release_branch)
+            if rel_utils.is_nightly(tag):
+                rel_utils.remove_nightly(ghc)
             sha = ghc.repo.head.ref.commit.hexsha
 
             if rel_conf['wait_on_ci_develop']:
@@ -864,6 +875,7 @@ def main():
     opts = build_parser(sys.argv)
     if opts.command == 'new':
         new_release(opts)
+
     if opts.command == 'new-version':
         make_new_version(opts)
 
