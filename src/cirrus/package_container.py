@@ -83,8 +83,7 @@ def make_executable(path, repo):
     mode |= (mode & 0o444) >> 2    # copy R bits to X
     os.chmod(path, mode)
     r = git.Repo(repo)
-    r.git.update_index(path, chmod='+x')
-
+    r.git.update_index(path, chmod='+x', add=True)
 
 
 def write_basic_dockerfile(opts, config, path):

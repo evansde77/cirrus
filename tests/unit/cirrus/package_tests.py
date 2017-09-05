@@ -170,7 +170,8 @@ class CreateFilesTest(unittest.TestCase):
         opts.pypi_package_name = None
         opts.python = None
         opts.create_version_file = False
-
+        opts.gitignore_url = "GIT_IGNORE_URL"
+        opts.add_gitignore = False
         create_files(opts)
 
         dir_list = os.listdir(self.repo)
@@ -218,6 +219,8 @@ class CreateFilesTest(unittest.TestCase):
         opts.pypi_package_name = None
         opts.develop = 'develop'
         opts.python = None
+        opts.gitignore_url = "GIT_IGNORE_URL"
+        opts.add_gitignore = False
         opts.test_requirements = 'test-requirements.txt'
         version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
         os.system('rm -f {}'.format(version))
@@ -268,6 +271,8 @@ class CreateFilesTest(unittest.TestCase):
         opts.requirements = 'requirements.txt'
         opts.pypi_package_name = 'pypi.package.unittest'
         opts.python = 'python3'
+        opts.gitignore_url = "GIT_IGNORE_URL"
+        opts.add_gitignore = False
         opts.test_requirements = 'test-requirements.txt'
         version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
         os.system('rm -f {}'.format(version))
@@ -285,6 +290,50 @@ class CreateFilesTest(unittest.TestCase):
         self.assertEqual(config.get('package', 'name'), opts.pypi_package_name)
         self.assertEqual(config.get('package', 'version'), opts.version)
         self.assertEqual(config.get('build', 'python'), 'python3')
+
+    @mock.patch("cirrus.package.requests.get")
+    def test_create_files_with_gitignore(self, mock_get):
+        """test create_files call and content of files"""
+
+        mock_resp = mock.Mock()
+        mock_resp.raise_for_status = mock.Mock()
+        mock_resp.content = "IGNORE ME\n"
+        mock_get.return_value = mock_resp
+
+        opts = mock.Mock()
+        opts.repo = self.repo
+        opts.create_version_file = True
+        opts.source = 'src'
+        opts.version = '0.0.1'
+        opts.version_file = None
+        opts.org = "ORG"
+        opts.desc = "DESCRIPTION"
+        opts.templates = []
+        opts.test_mode = False
+        opts.history_file = 'HISTORY.md'
+        opts.package = 'unittests'
+        opts.develop = 'develop'
+        opts.requirements = 'requirements.txt'
+        opts.pypi_package_name = 'pypi.package.unittest'
+        opts.python = 'python3'
+        opts.gitignore_url = "GIT_IGNORE_URL"
+        opts.add_gitignore = True
+        opts.test_requirements = 'test-requirements.txt'
+        version = os.path.join(self.repo, 'src', 'unittests', '__init__.py')
+        os.system('rm -f {}'.format(version))
+        create_files(opts)
+
+        dir_list = os.listdir(self.repo)
+        self.failUnless('cirrus.conf' in dir_list)
+        self.failUnless('HISTORY.md' in dir_list)
+        self.failUnless('MANIFEST.in' in dir_list)
+        self.failUnless('setup.py' in dir_list)
+        self.failUnless('.gitignore' in dir_list)
+
+        gitignore = os.path.join(self.repo, '.gitignore')
+        with open(gitignore, 'r') as handle:
+            content = handle.read()
+            self.assertEqual(content.strip(), "IGNORE ME")
 
 
 @unittest.skip("Integ test not unit test")

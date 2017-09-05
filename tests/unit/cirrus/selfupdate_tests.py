@@ -37,15 +37,70 @@ class SelfupdateTests(unittest.TestCase):
         if os.path.exists(self.dir):
             os.system('rm -rf {}'.format(self.dir))
 
-    def test_pip_update(self):
+    @mock.patch('cirrus.selfupdate.is_anaconda')
+    def test_pip_update(self, mock_ana):
+        """test pip update"""
+        mock_ana.return_value=False
         opts = mock.Mock()
         opts.version = "0.2.3"
+        opts.upgrade_setuptools = True
+        pip_update(opts)
+
+        self.failUnless(self.mock_local.called)
+        self.mock_local.assert_has_calls([
+            mock.call(' . ./venv/bin/activate && pip install --upgrade setuptools'),
+            mock.call(' . ./venv/bin/activate && pip install --upgrade cirrus-cli==0.2.3')
+        ])
+
+    @mock.patch('cirrus.selfupdate.is_anaconda')
+    def test_pip_update_no_st(self, mock_ana):
+        """test pip update no setuptools"""
+        mock_ana.return_value=False
+        opts = mock.Mock()
+        opts.version = "0.2.3"
+        opts.upgrade_setuptools = False
         pip_update(opts)
 
         self.failUnless(self.mock_local.called)
         self.mock_local.assert_has_calls([
             mock.call(' . ./venv/bin/activate && pip install --upgrade cirrus-cli==0.2.3')
         ])
+
+    @mock.patch('cirrus.selfupdate.is_anaconda')
+    def test_conda_update(self, mock_ana):
+        """test pip update"""
+        mock_ana.return_value=True
+        opts = mock.Mock()
+        opts.version = "0.2.3"
+        opts.upgrade_setuptools = True
+        pip_update(opts)
+
+        venv_path = "{}/venv".format(self.dir)
+        venv_activate = "{}/bin/activate".format(venv_path)
+
+        self.failUnless(self.mock_local.called)
+        self.mock_local.assert_has_calls([
+            mock.call('source {} {} && pip install --upgrade setuptools'.format(venv_activate, venv_path)),
+            mock.call('source {} {} && pip install --upgrade cirrus-cli==0.2.3'.format(venv_activate, venv_path))
+        ])
+
+    @mock.patch('cirrus.selfupdate.is_anaconda')
+    def test_conda_update_no_st(self, mock_ana):
+        """test pip update"""
+        mock_ana.return_value=True
+        opts = mock.Mock()
+        opts.version = "0.2.3"
+        opts.upgrade_setuptools = False
+        pip_update(opts)
+
+        venv_path = "{}/venv".format(self.dir)
+        venv_activate = "{}/bin/activate".format(venv_path)
+
+        self.failUnless(self.mock_local.called)
+        self.mock_local.assert_has_calls([
+            mock.call('source {} {} && pip install --upgrade cirrus-cli==0.2.3'.format(venv_activate, venv_path))
+        ])
+
 
     @mock.patch('cirrus.selfupdate.get_releases')
     def test_latest_release(self, mock_gr):
