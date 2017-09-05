@@ -19,7 +19,7 @@ from cirrus.invoke_helpers import local
 
 import cirrus
 from cirrus.configuration import load_configuration
-from cirrus.environment import cirrus_home, virtualenv_home
+from cirrus.environment import cirrus_home, virtualenv_home, is_anaconda
 from cirrus.github_tools import get_releases
 from cirrus.git_tools import update_to_branch, update_to_tag
 from cirrus.logger import get_logger
@@ -60,6 +60,12 @@ def build_parser(argslist):
         required=False,
         default=None,
 
+    )
+    parser.add_argument(
+        '--upgrade-setuptools',
+        help="upgrade setuptools in cirrus installation (needed for some conda installations)",
+        default=False,
+        action='store_true'
     )
     parser.add_argument(
         '--branch',
@@ -149,16 +155,38 @@ def setup_develop(config):
     return
 
 
-def pip_install(version):
+def pip_install(version, update_setuptools=False):
     """pip install the version of cirrus requested"""
     pip_req = 'cirrus-cli=={0}'.format(version)
-    venv_name = os.path.basename(virtualenv_home())
+    venv_path = virtualenv_home()
+    venv_name = os.path.basename(venv_path)
     LOGGER.info("running pip upgrade...")
-    local(
-        ' . ./{0}/bin/activate && pip install --upgrade {1}'.format(
-            venv_name, pip_req
+
+    if is_anaconda():
+        if update_setuptools:
+            local(
+                'source {0}/bin/activate {1} && pip install --upgrade setuptools'.format(
+                    venv_path, venv_path
+                )
+            )
+        local(
+            'source {0}/bin/activate {1} && pip install --upgrade {2}'.format(
+                venv_path, venv_path, pip_req
+            )
         )
-    )
+    else:
+        if update_setuptools:
+            local(
+                ' . ./{0}/bin/activate && pip install --upgrade setuptools'.format(
+                    venv_name
+                )
+            )
+
+        local(
+            ' . ./{0}/bin/activate && pip install --upgrade {1}'.format(
+                venv_name, pip_req
+            )
+        )
 
 
 def legacy_update(opts):
@@ -196,7 +224,7 @@ def pip_update(opts):
             # should probably be a pip call now...
             tag = latest_pypi_release()
             LOGGER.info("Retrieved latest tag: {0}".format(tag))
-        pip_install(tag)
+        pip_install(tag, opts.upgrade_setuptools)
 
 
 def main():
