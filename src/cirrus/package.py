@@ -16,6 +16,7 @@ package sublime-project - Assistant to set up a sublime project for a cirrus
 """
 import contextlib
 import inspect
+import requests
 import os
 import sys
 
@@ -155,6 +156,17 @@ def build_parser(argslist):
             "to register the new package with that server"
         ),
         default=None
+    )
+    init_command.add_argument(
+        '--add-gitignore',
+        help="Add a git ignore file to the repo",
+        default=False,
+        action='store_true'
+    )
+    init_command.add_argument(
+        '--gitignore-url',
+        help='URL of gitignore file to add',
+        default='https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore'
     )
 
     init_command.add_argument(
@@ -435,6 +447,18 @@ def write_history(opts):
     return history
 
 
+def write_gitignore(opts):
+    """get gitignore template from url and add to repo"""
+    url = opts.gitignore_url
+    resp = requests.get(url, verify=False)
+    resp.raise_for_status()
+    data = resp.content
+    gitignore = os.path.join(opts.repo, '.gitignore')
+    with open(gitignore, 'w') as handle:
+        handle.write(data)
+    return gitignore
+
+
 def write_cirrus_conf(opts, version_file):
     """
     build the basic cirrus config file and write it out
@@ -552,7 +576,8 @@ def create_files(opts):
     files.append(write_manifest(opts))
     files.append(write_setup_py(opts))
     files.append(write_history(opts))
-
+    if opts.add_gitignore:
+        files.append(write_gitignore(opts))
     vers_file = update_package_version(opts)
     files.append(vers_file)
     files.append(write_cirrus_conf(opts, vers_file))
