@@ -93,7 +93,7 @@ class InitContainerTests(unittest.TestCase):
         self.failUnless(mock_repo.git.update_index.called)
         for call in mock_repo.git.update_index.call_args_list:
             self.failUnless(os.path.basename(call[0][0]) in expected_files)
-            self.assertEqual(call[1], {'chmod': '+x'})
+            self.assertEqual(call[1], {'chmod': '+x', 'add': True})
 
         dockerfile = os.path.join(templates, 'Dockerfile.mustache')
         with open(dockerfile, 'r') as handle:
