@@ -117,6 +117,7 @@ class InitContainerTests(unittest.TestCase):
         with open(local_install, 'r') as handle:
             local = handle.read()
             self.failUnless('. /pyenvy/venvs/data_py2/bin/activate' in local)
+            self.failUnless('pip install PIP_OPTS' in local)
         pypi_install = os.path.join(
             templates,
             'pypi_pip_install.sh.mustache'
