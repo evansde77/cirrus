@@ -65,7 +65,7 @@ LOCAL_INSTALL_SCRIPT = \
 """#!/bin/bash
 
 {virtualenv}
-pip install /opt/{{{{cirrus.configuration.package.name}}}}-{{{{cirrus.configuration.package.version}}}}.tar.gz
+pip install {pip_options} /opt/{{{{cirrus.configuration.package.name}}}}-{{{{cirrus.configuration.package.version}}}}.tar.gz
 
 """
 
@@ -207,7 +207,8 @@ def init_container(opts):
             opts.repo,
             local_install,
             LOCAL_INSTALL_SCRIPT,
-            virtualenv=venv_option
+            virtualenv=venv_option,
+            pip_options=config.pip_options() if config.pip_options() else ""
         )
         write_script(
             opts.repo,
