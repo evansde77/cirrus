@@ -33,9 +33,14 @@ def checkout_and_pull(repo_dir, branch_from, pull=True, origin='origin'):
 
     # pull branch_from from remote
     if pull:
-        ref = "refs/heads/{branch}:refs/remotes/{origin}/{branch}".format(
-            branch=branch_from, origin=origin
+        remote_branch = "remotes/{origin}/{branch}".format(origin=origin, branch=branch_from)
+        ref = "refs/heads/{branch}:refs/{remote_branch}".format(
+            branch=branch_from, remote_branch=remote_branch
         )
+        branches = [str(x.strip()) for x in repo.git.branch(all=True).split() if x.strip()]
+        if remote_branch not in branches:
+            LOGGER.info("couldnt find remote for {} in {}, skipping pull...".format(branch_from, branches))
+            return
         if origin in [x.name for x in repo.remotes]:
             return repo.remotes.origin.pull(ref)
 
