@@ -26,7 +26,7 @@ import pluggage.registry
 
 import cirrus.templates
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 
 from cirrus.logger import get_logger
 from cirrus.utils import working_dir
@@ -60,6 +60,22 @@ deps=
   -r{test_requirements}
 commands=nosetests -w {testdir}/unit
 """
+
+
+def validate_package_name(value):
+    """
+    ensure package names dont cause problems
+    with bad characters
+    """
+    if "-" in value:
+        raise ArgumentTypeError(
+            "Package name: {} contains a - character".format(value)
+        )
+    if " " in value:
+        raise ArgumentTypeError(
+            "Package name: {} contains a space ".format(value)
+        )
+    return value
 
 
 def get_plugin(plugin_name):
@@ -115,6 +131,7 @@ def build_parser(argslist):
         '--package', '-p',
         help="name of package being bootstrapped",
         dest='package',
+        type=validate_package_name,
         required=True
     )
     init_command.add_argument(
@@ -141,7 +158,8 @@ def build_parser(argslist):
     init_command.add_argument(
         '--pypi-package-name',
         help='Name for package on upload to pypi, use if different from package option',
-        default=None
+        default=None,
+        type=validate_package_name
     )
     init_command.add_argument(
         '--use-pypirc',
