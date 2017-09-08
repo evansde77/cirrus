@@ -5,6 +5,7 @@ import mock
 import os
 import json
 import tempfile
+import argparse
 from cirrus._2to3 import ConfigParser, to_str
 
 from cirrus.package import (
@@ -34,6 +35,11 @@ class BuildParserTest(unittest.TestCase):
         self.assertEqual(opts.package, 'throwaway')
         self.assertEqual(opts.master, 'master')
         self.assertEqual(opts.develop, 'develop')
+
+    def test_build_parser_bad_package(self):
+        argslist = ['init', '-p', 'th-row-away', '-s', 'src']
+        with self.assertRaises(SystemExit):
+            build_parser(argslist)
 
 
 class GitFunctionTests(unittest.TestCase):
