@@ -72,25 +72,36 @@ class GitFunctionTests(unittest.TestCase):
         self.failUnless('backmeup' in files)
         self.failUnless('backmeup.BAK' in files)
 
-    @mock.patch('cirrus.package.branch')
-    @mock.patch('cirrus.package.push')
+    @mock.patch('cirrus.package.RepoInitializer')
     @mock.patch('cirrus.package.get_active_branch')
-    def test_setup_branches(self, mock_active, mock_push, mock_branch):
+    def test_setup_branches(self, mock_active, mock_init):
         """test setup_branches"""
         opts = mock.Mock()
         opts.no_remote = False
         opts.repo = self.repo
-        mock_active.return_value = 'mock_develop'
+        opts.origin = 'origin'
+        opts.develop = 'develop'
+        opts.master = 'master'
+        mock_active.return_value = 'develop'
 
+        mock_initializer = mock.Mock()
+        mock_initializer.init_branch = mock.Mock()
+        mock_init.return_value = mock_initializer
         setup_branches(opts)
-        self.assertEqual(mock_branch.call_count, 2)
-        self.failUnless(mock_push.called)
-        self.failUnless(mock_active.called)
-
-        mock_push.reset_mock()
+        mock_initializer.init_branch.assert_has_calls([
+            mock.call('master', 'origin', remote=True),
+            mock.call('develop', 'origin', remote=True)
+        ])
+        self.assertTrue(mock_active.called)
         opts.no_remote = True
+        mock_initializer.reset_mocks()
+
         setup_branches(opts)
-        self.failUnless(not mock_push.called)
+        mock_initializer.init_branch.assert_has_calls([
+            mock.call('master', 'origin', remote=True),
+            mock.call('develop', 'origin', remote=True)
+        ])
+
 
     @mock.patch('cirrus.package.commit_files_optional_push')
     @mock.patch('cirrus.package.get_tags')
