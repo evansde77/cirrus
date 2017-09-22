@@ -67,7 +67,7 @@ class RepoInitializer(object):
             if not self.branch_exists_origin(branch_name, origin_name):
                 LOGGER.info("Pushing {} to {}".format(branch_name, origin_name))
                 rem = self.repo.remotes[origin_name]
-                ret = rem.push(self.repo.head)
+                ret = rem.push(branch_name)
                 # Check to make sure that we haven't errored out.
                 for r in ret:
                     if r.flags >= r.ERROR:
