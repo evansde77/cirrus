@@ -248,11 +248,16 @@ class RepoInitializerTest(unittest.TestCase):
                     if x.name == name:
                         return x
 
+
+        mock_result = mock.Mock()
+        mock_result.flags = 1
+        mock_result.ERROR = 10
+
         self.mock_remote = mock.Mock()
         self.mock_remote.name = 'origin'
         self.mock_remote.fetch = mock.Mock()
         self.mock_remote.refs = {'develop': mock.Mock(name="develop_ref"),'master': mock.Mock(name="master_ref")}
-        self.mock_remote.push = mock.Mock(return_value=[mock.Mock()])
+        self.mock_remote.push = mock.Mock(return_value=[mock_result])
 
         mock_head1 = mock.Mock()
         mock_head1.name = 'master'
