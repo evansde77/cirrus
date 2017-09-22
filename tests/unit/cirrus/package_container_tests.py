@@ -58,13 +58,9 @@ class InitContainerTests(unittest.TestCase):
         if os.path.exists(self.dir):
             os.system('rm -rf {}'.format(self.dir))
 
-    @mock.patch('cirrus.package_container.git')
-    def test_init_container(self, mock_git):
+    def test_init_container(self):
         """test init_container call"""
-        mock_repo = mock.Mock()
-        mock_repo.git = mock.Mock()
-        mock_repo.git.update_index = mock.Mock()
-        mock_git.Repo = mock.Mock(return_value=mock_repo)
+
         opts = mock.Mock()
         opts.repo = self.dir
         opts.template_dir = "container-template"
@@ -90,11 +86,6 @@ class InitContainerTests(unittest.TestCase):
         found = os.listdir(templates)
         for exp in expected_files:
             self.failUnless(exp in found)
-        self.failUnless(mock_repo.git.update_index.called)
-        for call in mock_repo.git.update_index.call_args_list:
-            self.failUnless(os.path.basename(call[0][0]) in expected_files)
-            self.assertEqual(call[1], {'chmod': '+x', 'add': True})
-
         dockerfile = os.path.join(templates, 'Dockerfile.mustache')
         with open(dockerfile, 'r') as handle:
             content = handle.read()

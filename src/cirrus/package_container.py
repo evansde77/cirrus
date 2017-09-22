@@ -8,7 +8,6 @@ templates for docker-image command
 """
 import sys
 import os
-import git
 import json
 
 from cirrus.logger import get_logger
@@ -82,8 +81,6 @@ def make_executable(path, repo):
     mode = os.stat(path).st_mode
     mode |= (mode & 0o444) >> 2    # copy R bits to X
     os.chmod(path, mode)
-    r = git.Repo(repo)
-    r.git.update_index(path, chmod='+x', add=True)
 
 
 def write_basic_dockerfile(opts, config, path):

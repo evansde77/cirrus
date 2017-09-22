@@ -64,7 +64,7 @@ class RepoInitializer(object):
             self.repo.git.checkout(branch_name)
         local_branch = self.repo.heads[branch_name]
         if remote:
-            if self.branch_exists_origin(branch_name, origin_name):
+            if not self.branch_exists_origin(branch_name, origin_name):
                 LOGGER.info("Pushing {} to {}".format(branch_name, origin_name))
                 rem = self.repo.remotes[origin_name]
                 ret = rem.push(self.repo.head)
@@ -246,7 +246,10 @@ def commit_files_optional_push(repo_dir, commit_msg, push=True, *filenames):
     """
     repo = git.Repo(repo_dir)
     repo.index.add(filenames)
-
+    for f in filenames:
+        if os.access(f, os.X_OK):
+            LOGGER.info("Setting Executable bit on {}".format(f))
+            repo.git.update_index(f, chmod='+x')
     # commits with message
     new_commit = repo.index.commit(commit_msg)
     # push branch to origin

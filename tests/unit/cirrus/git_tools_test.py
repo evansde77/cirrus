@@ -278,7 +278,7 @@ class RepoInitializerTest(unittest.TestCase):
 
     def test_repo_init(self):
         repo_init = RepoInitializer()
-        repo_init.branch_exists_origin = mock.Mock(return_value=True)
+        repo_init.branch_exists_origin = mock.Mock(return_value=False)
         repo_init.init_branch('master', 'origin', True)
         repo_init.init_branch('develop', 'origin', True)
 

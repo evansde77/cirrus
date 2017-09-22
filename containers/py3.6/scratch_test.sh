@@ -35,6 +35,10 @@ git cirrus package init --bootstrap -p test_package -v 0.0.0 -s src --no-remote 
 git cirrus build   # build local dev virtualenv
 # this is where you would add code and tests
 git cirrus test                                     # run tests
+
+git cirrus package container-init  --local-install --base-image python:2.7 --no-remote 
+
+
 git cirrus feature new integ_test --no-remote
 git cirrus feature merge --no-remote
 git cirrus release new --micro --no-remote
