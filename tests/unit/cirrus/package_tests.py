@@ -94,8 +94,6 @@ class GitFunctionTests(unittest.TestCase):
             mock.call('develop', 'origin', remote=True)
         ])
         self.assertTrue(mock_active.called)
-        print mock_branch.called
-        print mock_branch.call_args_list
 
         opts.no_remote = True
         mock_initializer.reset_mocks()
