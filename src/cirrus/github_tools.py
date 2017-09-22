@@ -266,8 +266,32 @@ class GitHubContext(object):
 
         merge branch_name into current branch using no-ff option
         """
-        result = self.repo.git.merge('--no-ff', branch_name)
+        try:
+            result = self.repo.git.merge('--no-ff', branch_name)
+        except GitCommandError as ex:
+            LOGGER.error(
+                "Error merging branch {} onto {}".format(
+                    branch_name, self.active_branch_name
+                )
+            )
+            self.conflict_check()
+            LOGGER.exception("Error: ".format(ex))
+            raise
         return result
+
+    def conflict_check(self):
+        """log potential conflicts on current branch"""
+        found_a_conflict = False
+        unmerged_blobs = self.repo.index.unmerged_blobs()
+        for path in unmerged_blobs:
+            # file with unmerged blobs
+            list_of_blobs = unmerged_blobs[path]
+            for (stage, blob) in list_of_blobs:
+                # Now we can check each stage to see whether there were any conflicts
+                if stage != 0:
+                    LOGGER.info("conflict in {}: {}".format(path, blob))
+                    found_a_conflict = True
+        return found_a_conflict
 
     def tag_release(self, tag, master='master', push=True, attempts=1, cooloff=2):
         """

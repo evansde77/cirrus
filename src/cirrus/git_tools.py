@@ -17,6 +17,87 @@ from cirrus.logger import get_logger
 LOGGER = get_logger()
 
 
+class RepoInitializer(object):
+    """
+    Helper class to initialise a repo from scratch with
+    a master and develop branch plus remote syncing with
+    origin and tracking
+
+
+    """
+    def __init__(self, repo=None):
+        self.repo = git.Repo(repo)
+
+    def check_origin(self, origin_name='origin'):
+        """verify that origin exists in this repo"""
+        return origin_name in [x.name for x in self.repo.remotes]
+
+    def branch_exists_locally(self, branch):
+        """check if branch exists locally"""
+        return branch in self.repo.heads
+
+    def branch_exists_origin(self, branch, origin='origin'):
+        """check if branch exists at the origin"""
+        if not self.branch_exists_locally(branch):
+            return False
+        if not self.check_origin(origin):
+            return False
+        tb = self.repo.heads[branch].tracking_branch()
+        if not tb:
+            return False
+        return True
+
+    def verify_branch(self, branch_name, origin_name='origin', remote=True):
+        """
+        standardise a branch/origin setup ensuring that a commit exists
+        in a new repo
+        """
+        if remote and self.check_origin(origin_name):
+            LOGGER.info("Fetching from {}".format(origin_name))
+            self.repo.remotes[origin_name].fetch()
+        if not self.branch_exists_locally(branch_name):
+            LOGGER.info("creating new branch {}".format(branch_name))
+            self.repo.git.commit(allow_empty=True, message="initialise repo")
+            self.repo.create_head(branch_name, 'HEAD')
+        else:
+            LOGGER.info("checking out existing branch {}".format(branch_name))
+            self.repo.git.checkout(branch_name)
+        local_branch = self.repo.heads[branch_name]
+        if remote:
+            if self.branch_exists_origin(branch_name, origin_name):
+                LOGGER.info("Pushing {} to {}".format(branch_name, origin_name))
+                rem = self.repo.remotes[origin_name]
+                ret = rem.push(self.repo.head)
+                # Check to make sure that we haven't errored out.
+                for r in ret:
+                    if r.flags >= r.ERROR:
+                        LOGGER.error("Unable to push to remote")
+                        raise RuntimeError(unicode(r.summary))
+            tracking_branch = local_branch.tracking_branch()
+            if not tracking_branch:
+                LOGGER.info("Setting tracking branch for {}".format(branch_name))
+                rref = self.repo.remotes[origin_name].refs[branch_name]
+                local_branch.set_tracking_branch(rref)
+        else:
+            LOGGER.info(
+                "No remote option used, may need to git push {} {}".format(
+                    origin_name, branch_name
+                )
+            )
+
+    def branch_status(self):
+        for head in self.repo.heads:
+            LOGGER.info("local branch={} commit={} tracking={}".format(
+                head.name, head.commit, head.tracking_branch()
+                )
+            )
+
+    def init_branch(self, branch, origin='origin', remote=True):
+        LOGGER.info("Initialising Repo Branch {}".format(branch))
+        self.verify_branch(branch, origin, remote)
+        self.branch_status()
+
+
 def checkout_and_pull(repo_dir, branch_from, pull=True, origin='origin'):
     """
     _checkout_and_pull_

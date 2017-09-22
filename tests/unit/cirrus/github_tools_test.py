@@ -94,10 +94,8 @@ class GithubToolsTest(unittest.TestCase):
         _test_get_releases_
         """
         resp_json = [
-            {
-             'tag_name': self.release
-             }
-                     ]
+            {'tag_name': self.release}
+        ]
         mock_req = mock.Mock()
         mock_req.raise_for_status.return_value = False
         mock_req.json.return_value = resp_json
@@ -131,7 +129,6 @@ class GithubToolsTest(unittest.TestCase):
 
         self.failUnless(mock_post.called)
 
-
     @mock.patch('cirrus.github_tools.git')
     def test_push_branch(self, mock_git):
         mock_repo = mock.Mock()
@@ -156,8 +153,6 @@ class GithubToolsTest(unittest.TestCase):
 
         mock_repo.remotes.origin.push = mock.Mock(side_effect=GitCommandError('A', 128))
         self.assertRaises(RuntimeError, ghc.push_branch, 'womp2')
-
-
 
     @mock.patch('cirrus.github_tools.git')
     @mock.patch('cirrus.github_tools.time.sleep')
@@ -254,6 +249,35 @@ class GithubToolsTest(unittest.TestCase):
         self.assertEqual(mock_repo.remotes.origin.push.call_count, 5)
         self.assertEqual(mock_time.sleep.call_count, 5)
         self.failUnless(mock_repo.create_tag.called)
+
+    @mock.patch('cirrus.github_tools.git')
+    def test_merge_branch(self, mock_git):
+        """test merge branch"""
+        mock_repo = mock.Mock()
+        mock_repo.git = mock.Mock()
+        mock_repo.git.merge = mock.Mock()
+        mock_git.Repo = mock.Mock(return_value=mock_repo)
+        ghc = GitHubContext('REPO')
+        ghc.merge_branch('develop')
+        self.assertTrue(mock_repo.git.merge.called)
+
+    @mock.patch('cirrus.github_tools.git')
+    def test_merge_branch_conflict(self, mock_git):
+        """test merge branch"""
+        mock_repo = mock.Mock()
+        mock_repo.git = mock.Mock()
+        mock_repo.git.merge = mock.Mock(side_effect=GitCommandError(mock.Mock(), mock.Mock(), mock.Mock()))
+        mock_repo.active_branch = mock.Mock()
+        mock_repo.active_branch.name = "ACTIVE"
+        mock_repo.index = mock.Mock()
+        mock_repo.index.unmerged_blobs = mock.Mock(
+            return_value={'file1': [(1, "BLOB1")], 'file2': [(2, "BLOB2")]}
+        )
+        mock_git.Repo = mock.Mock(return_value=mock_repo)
+        ghc = GitHubContext('REPO')
+        self.assertRaises(GitCommandError, ghc.merge_branch, 'develop')
+
+
 
 if __name__ == "__main__":
     unittest.main()
