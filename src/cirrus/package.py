@@ -357,7 +357,7 @@ def setup_branches(opts):
         initializer = RepoInitializer(opts.repo)
         initializer.init_branch(opts.master, opts.origin, remote=do_push)
         initializer.init_branch(opts.develop, opts.origin, remote=do_push)
-
+        branch(opts.repo, opts.develop, opts.master)
     LOGGER.info("Working on {}".format(get_active_branch(opts.repo)))
 
 

@@ -74,7 +74,8 @@ class GitFunctionTests(unittest.TestCase):
 
     @mock.patch('cirrus.package.RepoInitializer')
     @mock.patch('cirrus.package.get_active_branch')
-    def test_setup_branches(self, mock_active, mock_init):
+    @mock.patch('cirrus.package.branch')
+    def test_setup_branches(self, mock_branch, mock_active, mock_init):
         """test setup_branches"""
         opts = mock.Mock()
         opts.no_remote = False
@@ -93,6 +94,7 @@ class GitFunctionTests(unittest.TestCase):
             mock.call('develop', 'origin', remote=True)
         ])
         self.assertTrue(mock_active.called)
+
         opts.no_remote = True
         mock_initializer.reset_mocks()
 
@@ -101,6 +103,7 @@ class GitFunctionTests(unittest.TestCase):
             mock.call('master', 'origin', remote=True),
             mock.call('develop', 'origin', remote=True)
         ])
+
 
 
     @mock.patch('cirrus.package.commit_files_optional_push')
