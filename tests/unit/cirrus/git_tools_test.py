@@ -287,8 +287,8 @@ class RepoInitializerTest(unittest.TestCase):
         self.assertTrue(self.mock_remote.push.called)
         self.assertTrue(self.mock_remote.fetch.called)
         self.mock_remote.push.assert_has_calls([
-            mock.call('HEAD'),
-            mock.call('HEAD')
+            mock.call('master'),
+            mock.call('develop')
         ])
 
         self.mock_repo.create_head.assert_has_calls([
