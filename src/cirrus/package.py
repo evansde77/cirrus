@@ -37,6 +37,7 @@ from cirrus.invoke_helpers import local
 from cirrus.twine_helpers import register_package
 from cirrus.pypirc import PypircFile
 from cirrus.git_tools import (
+    RepoInitializer,
     branch,
     push,
     get_tags,
@@ -239,6 +240,12 @@ def build_parser(argslist):
         dest='develop'
     )
     init_command.add_argument(
+        '--origin-name',
+        default='origin',
+        help="Git repo remote name",
+        dest='origin'
+    )
+    init_command.add_argument(
         '--no-remote',
         help='disable pushing changes to remote, commit locally only',
         default=False,
@@ -347,11 +354,9 @@ def setup_branches(opts):
         )
     )
     with working_dir(opts.repo):
-        branch(opts.repo, opts.master, opts.master)
-        branch(opts.repo, opts.develop, opts.master)
-        if do_push:
-            LOGGER.info("Pushing {}...".format(opts.develop))
-            push(opts.repo)
+        initializer = RepoInitializer(opts.repo)
+        initializer.init_branch(opts.master, opts.origin, remote=do_push)
+        initializer.init_branch(opts.develop, opts.origin, remote=do_push)
 
     LOGGER.info("Working on {}".format(get_active_branch(opts.repo)))
 
@@ -503,6 +508,7 @@ def write_cirrus_conf(opts, version_file):
         config.set('package', 'find_packages', str(opts.source))
 
     config.add_section('gitflow')
+    config.set('gitflow', 'origin_name', str(opts.origin))
     config.set('gitflow', 'develop_branch', str(opts.develop))
     config.set('gitflow', 'release_branch_prefix', 'release/')
     config.set('gitflow', 'feature_branch_prefix', 'feature/')

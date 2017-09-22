@@ -16,6 +16,8 @@ from cirrus.git_tools import get_commit_msgs
 from cirrus.git_tools import get_tags
 from cirrus.git_tools import get_tags_with_sha
 from cirrus.git_tools import markdown_format
+from cirrus.git_tools import RepoInitializer
+
 
 class GitToolsTest(unittest.TestCase):
 
@@ -219,6 +221,81 @@ class GitToolsTest(unittest.TestCase):
         self.assertEqual(result['orange'], 'ORANGE_SHA')
         self.assertEqual(result['apple'], 'APPLE_SHA')
         self.assertEqual(result['banana'], 'BANANA_SHA')
+
+
+class RepoInitializerTest(unittest.TestCase):
+    """tests for RepoInitializer"""
+    def setUp(self):
+        self.patch_git = mock.patch('cirrus.git_tools.git')
+        self.mock_git = self.patch_git.start()
+        self.mock_repo = mock.Mock()
+        self.mock_repo.head = "HEAD"
+        self.mock_repo.create_head = mock.Mock()
+        self.mock_repo.git = mock.Mock()
+        self.mock_repo.git.commit = mock.Mock()
+
+        class Heads(list):
+            def __init__(self, *m):
+                self.extend(list(m))
+
+            def __getattr__(self, name):
+                for x in self:
+                    if x.name == name:
+                        return x
+
+            def __getitem__(self, name):
+                for x in self:
+                    if x.name == name:
+                        return x
+
+
+        mock_result = mock.Mock()
+        mock_result.flags = 1
+        mock_result.ERROR = 10
+
+        self.mock_remote = mock.Mock()
+        self.mock_remote.name = 'origin'
+        self.mock_remote.fetch = mock.Mock()
+        self.mock_remote.refs = {'develop': mock.Mock(name="develop_ref"),'master': mock.Mock(name="master_ref")}
+        self.mock_remote.push = mock.Mock(return_value=[mock_result])
+
+        mock_head1 = mock.Mock()
+        mock_head1.name = 'master'
+        mock_head1.commit = "COMMIT1"
+        mock_head2 = mock.Mock()
+        mock_head2.name = 'develop'
+        mock_head1.commit = "COMMIT2"
+        mock_head1.tracking_branch = mock.Mock(return_value=None)
+        mock_head2.tracking_branch = mock.Mock(return_value=None)
+
+        self.mock_repo.remotes = Heads(self.mock_remote)
+        self.mock_repo.heads = Heads(mock_head1, mock_head2)
+        self.mock_git.Repo = mock.Mock()
+        self.mock_git.Repo.return_value = self.mock_repo
+
+    def tearDown(self):
+        self.patch_git.stop()
+
+    def test_repo_init(self):
+        repo_init = RepoInitializer()
+        repo_init.branch_exists_origin = mock.Mock(return_value=True)
+        repo_init.init_branch('master', 'origin', True)
+        repo_init.init_branch('develop', 'origin', True)
+
+        self.assertTrue(self.mock_repo.git.commit.called)
+        self.assertTrue(self.mock_repo.create_head.called)
+        self.assertTrue(self.mock_remote.push.called)
+        self.assertTrue(self.mock_remote.fetch.called)
+        self.mock_remote.push.assert_has_calls([
+            mock.call('HEAD'),
+            mock.call('HEAD')
+        ])
+
+        self.mock_repo.create_head.assert_has_calls([
+            mock.call('master', 'HEAD'),
+            mock.call('develop', 'HEAD')
+        ])
+
 
 if __name__ == "__main__":
     unittest.main()
