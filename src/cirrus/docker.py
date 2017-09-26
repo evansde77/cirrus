@@ -9,7 +9,7 @@ import sys
 import subprocess
 from distutils.version import StrictVersion
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Action
 from cirrus.logger import get_logger
 from cirrus._2to3 import to_str
 from cirrus.configuration import load_configuration
@@ -85,12 +85,28 @@ class BuildOptionHelper(OptionHelper):
         self['template'] = config.get_param('docker', 'dockerstache_template', None)
         self['context'] = config.get_param('docker', 'dockerstache_context', None)
         self['defaults'] = config.get_param('docker', 'dockerstache_defaults', None)
+        self['build_arg'] = {}
         if cli_opts.docker_repo:
             self['docker_repo'] = cli_opts.docker_repo
         if cli_opts.directory:
             self['directory'] = cli_opts.directory
         if cli_opts.dockerstache_template:
             self['template'] = cli_opts.dockerstache_template
+        if cli_opts.build_arg:
+            self['build_arg'].update(cli_opts.build_arg)
+
+
+class StoreDictKeyPair(Action):
+     _DICT = {}
+     def __init__(self, option_strings, dest, nargs=None, **kwargs):
+         self._nargs = nargs
+         super(StoreDictKeyPair, self).__init__(option_strings, dest, nargs=nargs, **kwargs)
+     def __call__(self, parser, namespace, values, option_string=None):
+         for kv in values:
+             k,v = kv.split("=")
+             self._DICT[k] = v
+         setattr(namespace, self.dest, self._DICT)
+
 
 
 def build_parser():
@@ -144,6 +160,12 @@ def build_parser():
         default=None,
         help='path to dockerstache defaults file'
     )
+    build_command.add_argument(
+        '--build-arg', 
+        help='build arg key=value pairs to pass to docker build as build-arg options',
+        nargs='+',
+        action=StoreDictKeyPair
+    )
 
     push_command = subparsers.add_parser('push')
     push_command.add_argument(
@@ -166,7 +188,7 @@ def build_parser():
     return opts
 
 
-def _docker_build(path, tags, base_tag):
+def _docker_build(path, tags, base_tag, build_helper):
     """
     execute docker build <path> in a subprocess
 
@@ -178,7 +200,11 @@ def _docker_build(path, tags, base_tag):
     :param tags: sequence of tag strings to apply to the image
     :param base_tag: full repository repo/tag string (repository/tag:0)
     """
-    command = ['docker', 'build'] + _build_tag_opts(tags) + [path]
+    command = ['docker', 'build'] + _build_tag_opts(tags)
+    if build_helper['build_arg']:
+        for k,v in build_helper['build_arg'].items():
+            command.extend(["--build-arg", "{}={}".format(k, v)])
+    command.append(path)
     LOGGER.info("Executing docker build command: {}".format(' '.join(command)))
 
     try:
@@ -378,7 +404,7 @@ def docker_build(opts, config):
                 latest=True
             )
         )
-    _docker_build(path, tags, tag_base(config))
+    _docker_build(path, tags, tag_base(config), helper)
 
 
 def docker_push(opts, config):
