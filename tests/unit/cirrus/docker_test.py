@@ -37,6 +37,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.dockerstache_context = None
         self.opts.dockerstache_defaults = None
         self.opts.docker_repo = None
+        self.opts.build_arg = {}
 
         self.config = Configuration(None)
         self.config['package'] = {
@@ -67,6 +68,23 @@ class DockerFunctionTests(unittest.TestCase):
         self.mock_check_output.assert_has_calls(
             mock.call(
                 ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
+            )
+        )
+
+    def test_docker_build_args(self):
+        """test straight docker build call"""
+        self.opts.build_arg = {"OPTION1": "VALUE1", "OPTION2": "VALUE2"}
+        dckr.docker_build(self.opts, self.config)
+        self.failUnless(self.mock_check_output.called)
+        self.mock_check_output.assert_has_calls(
+            mock.call(
+                [
+                    'docker', 'build',
+                    '-t', 'unittesting/unittesting:latest',
+                    '-t', 'unittesting/unittesting:1.2.3',
+                    '--build-arg', 'OPTION2=VALUE2',
+                    '--build-arg', 'OPTION1=VALUE1',
+                    'vm/docker_image']
             )
         )
 
