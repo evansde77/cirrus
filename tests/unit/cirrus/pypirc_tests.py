@@ -60,6 +60,10 @@ class PypircFileTest(unittest.TestCase):
             "https://the_steve:stevespass@https://localhost:4000/simple"
         )
 
+    def test_pypircfile_uses_default_filename_when_passed_none(self):
+        pypirc = PypircFile(filename=None)
+        self.assertTrue(pypirc.config_file.endswith('.pypirc'))
+
     def test_bad_pypi_name(self):
         pypirc = PypircFile(self.file)
         self.assertRaises(RuntimeError, pypirc.get_pypi_url, 'WOMP')
