@@ -65,7 +65,9 @@ class PypircFile(dict):
     wrapper object for a pypirc file
 
     """
-    def __init__(self, filename='~/.pypirc'):
+    def __init__(self, filename=None):
+        if filename is None:
+            filename = '~/.pypirc'
         self.config_file = os.path.expanduser(filename)
         if self.exists():
             self.load()
