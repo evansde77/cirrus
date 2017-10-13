@@ -8,8 +8,11 @@
 # installs git alias commands
 # gets token for github access & updates .gitconfig
 
-INSTALL_DIR="${HOME}/.cirrus"
-DEFAULT_USER="${USER}"
+: ${CIRRUS_PYPI_URL?"is not set! Hint: https://user:password@pypi.cloudant.com)"}
+
+CIRRUS_PACKAGE="cirrus-cli==0.1.7"
+CIRRUS_INSTALL_DIR="${HOME}/.cirrus"
+CIRRUS_DEFAULT_USER="${USER}"
 
 # prerequisites are pip and virtualenv
 pip --version 2>/dev/null
@@ -24,39 +27,21 @@ if [ $? -eq 127 ]; then
     exit 127
 fi
 
-read -p "Installation directory [${INSTALL_DIR}]: " LOCATION
-LOCATION=${LOCATION:-$INSTALL_DIR}
+read -p "Installation directory [${CIRRUS_INSTALL_DIR}]: " LOCATION
+LOCATION=${LOCATION:-$CIRRUS_INSTALL_DIR}
 
 echo "Installing cirrus in ${LOCATION}..."
-mkdir -p $LOCATION
+mkdir -p ${LOCATION}
 
 echo "Installing cirrus to LOCATION=${LOCATION}" > ${LOCATION}/install.log
-cd $LOCATION
-
-CUSTOM_PYPI_SERVER=${CIRRUS_PYPI_URL:-""}
-CIRRUS_VERSION=${CIRRUS_VERSION_OVERRIDE:-""}
-
-CIRRUS_PIP_REQ="cirrus-cli"
-if [ "x$CIRRUS_PIP_REQ" != "x" ];then
-	CIRRUS_PIP_REQ+="$CIRRUS_VERSION"
-fi
+cd ${LOCATION}
 
 # bootstrap virtualenv
 virtualenv venv
 . venv/bin/activate
 
-if [ "x$CUSTOM_PYPI_SERVER" == "x" ];then
-    pip install ${CIRRUS_PIP_REQ} 1>> ${LOCATION}/install.log    
-else
-	pip install --index-url=${CUSTOM_PYPI_SERVER} ${CIRRUS_PIP_REQ} 1>> ${LOCATION}/install.log
-fi
+pip install --index-url=${CIRRUS_PYPI_URL} ${CIRRUS_PACKAGE} 1>> ${LOCATION}/install.log
 
-
-export CIRRUS_HOME=$LOCATION
-export VIRTUALENV_HOME=$LOCATION/venv
+export CIRRUS_HOME=${LOCATION}
+export VIRTUALENV_HOME=${LOCATION}/venv
 selfsetup
-
-
-
-
-
