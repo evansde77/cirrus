@@ -37,6 +37,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.dockerstache_context = None
         self.opts.dockerstache_defaults = None
         self.opts.docker_repo = None
+        self.opts.no_cache = False
         self.opts.build_arg = {}
 
         self.config = Configuration(None)
@@ -74,6 +75,7 @@ class DockerFunctionTests(unittest.TestCase):
     def test_docker_build_args(self):
         """test straight docker build call"""
         self.opts.build_arg = {"OPTION1": "VALUE1"}
+        self.opts.no_cache = False
         dckr.docker_build(self.opts, self.config)
         self.failUnless(self.mock_check_output.called)
         self.mock_check_output.assert_has_calls(
@@ -82,6 +84,24 @@ class DockerFunctionTests(unittest.TestCase):
                     'docker', 'build',
                     '-t', 'unittesting/unittesting:latest',
                     '-t', 'unittesting/unittesting:1.2.3',
+                    '--build-arg', 'OPTION1=VALUE1',
+                    'vm/docker_image']
+            )
+        )
+
+    def test_docker_build_no_cache(self):
+        """test straight docker build call with --no-cache"""
+        self.opts.build_arg = {"OPTION1": "VALUE1"}
+        self.opts.no_cache = True
+        dckr.docker_build(self.opts, self.config)
+        self.failUnless(self.mock_check_output.called)
+        self.mock_check_output.assert_has_calls(
+            mock.call(
+                [
+                    'docker', 'build',
+                    '-t', 'unittesting/unittesting:latest',
+                    '-t', 'unittesting/unittesting:1.2.3',
+                    '--no-cache',
                     '--build-arg', 'OPTION1=VALUE1',
                     'vm/docker_image']
             )
@@ -117,6 +137,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.dockerstache_template = 'template'
         self.opts.dockerstache_context = 'context'
         self.opts.dockerstache_defaults = 'defaults'
+        self.opts.no_cache = False
         dckr.docker_build(self.opts, self.config)
         self.failUnless(mock_ds.run.called)
 

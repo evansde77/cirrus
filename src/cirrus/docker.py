@@ -86,6 +86,7 @@ class BuildOptionHelper(OptionHelper):
         self['context'] = config.get_param('docker', 'dockerstache_context', None)
         self['defaults'] = config.get_param('docker', 'dockerstache_defaults', None)
         self['build_arg'] = {}
+        self['no_cache'] = config.get_param('docker', 'no_cache', None)
         if cli_opts.docker_repo:
             self['docker_repo'] = cli_opts.docker_repo
         if cli_opts.directory:
@@ -94,6 +95,8 @@ class BuildOptionHelper(OptionHelper):
             self['template'] = cli_opts.dockerstache_template
         if cli_opts.build_arg:
             self['build_arg'].update(cli_opts.build_arg)
+        if cli_opts.no_cache:
+            self['no_cache'] = True
 
 
 class StoreDictKeyPair(Action):
@@ -161,10 +164,16 @@ def build_parser():
         help='path to dockerstache defaults file'
     )
     build_command.add_argument(
-        '--build-arg', 
+        '--build-arg',
         help='build arg key=value pairs to pass to docker build as build-arg options',
         nargs='+',
         action=StoreDictKeyPair
+    )
+    build_command.add_argument(
+        '--no-cache',
+        help='Dont use cached docker layers for build, build from scratch',
+        default=False,
+        action='store_true'
     )
 
     push_command = subparsers.add_parser('push')
@@ -201,8 +210,10 @@ def _docker_build(path, tags, base_tag, build_helper):
     :param base_tag: full repository repo/tag string (repository/tag:0)
     """
     command = ['docker', 'build'] + _build_tag_opts(tags)
+    if build_helper['no_cache']:
+        command.append('--no-cache')
     if build_helper['build_arg']:
-        for k,v in build_helper['build_arg'].items():
+        for k, v in build_helper['build_arg'].items():
             command.extend(["--build-arg", "{}={}".format(k, v)])
     command.append(path)
     LOGGER.info("Executing docker build command: {}".format(' '.join(command)))
