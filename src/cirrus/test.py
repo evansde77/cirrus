@@ -33,7 +33,7 @@ def build_parser(argslist):
     )
     parser.add_argument(
         '--mode',
-        choices=['nosetests', 'tox'],
+        choices=['nosetests', 'tox', 'pytest'],
         default=None,
         help='Choose test runner framework'
     )
@@ -113,6 +113,33 @@ def tox_run(config, opts):
     )
 
 
+def pytest_run(config, opts):
+    """
+    activate venv and run pytest
+    """
+    suite_conf = config.test_suite(opts.suite)
+    test_opts = suite_conf.get('test_options')
+    where = suite_conf.get('where', 'tests/unit')
+    if opts.options:
+        # command line overrides
+        test_opts = opts.options
+    command = "pytest {}".format(where)
+    if test_opts:
+        command += " {}".format(test_opts)
+
+    if opts.builder is None:
+        opts.builder = get_builder_plugin()
+
+    builder = FACTORY(opts.builder)
+    activate = builder.activate()
+    local(
+        '{0} && {1}'.format(
+            activate,
+            command
+        )
+    )
+
+
 def main():
     """
     _main_
@@ -134,6 +161,9 @@ def main():
         sys.exit(0)
     if mode == 'tox':
         tox_run(config, opts)
+        sys.exit(0)
+    if mode == 'pytest':
+        pytest_run(config, opts)
         sys.exit(0)
 
 
