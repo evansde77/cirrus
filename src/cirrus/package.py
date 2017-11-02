@@ -703,6 +703,7 @@ def bootstrap_repo(opts):
             handle.write("coverage\n")
             handle.write("mock\n")
             handle.write("pep8\n")
+            handle.write("pytest\n")
         files.append(opts.test_requirements)
 
     if not os.path.exists('tox.ini'):
