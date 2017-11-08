@@ -288,7 +288,7 @@ def match_docker_version(raw_version_string):
         "Docker version 1.12.0, build 8eab29e"
     :returns: the docker version string, cleaned up as xx.yy.zz
     """
-    match = re.search('[0-9]+\.[0-9]+\.[0-9]+', raw_version_string)
+    match = re.search('[0-9]+\.[0-9]+\.[0-9]+', to_str(raw_version_string))
     if match is None:
         raise DockerVersionError(
             "Installed Docker version cannot be determined. "
