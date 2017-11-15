@@ -39,6 +39,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.docker_repo = None
         self.opts.no_cache = False
         self.opts.build_arg = {}
+        self.opts.image = None
 
         self.config = Configuration(None)
         self.config['package'] = {
@@ -49,6 +50,10 @@ class DockerFunctionTests(unittest.TestCase):
             'directory': 'vm/docker_image',
             'repo': 'unittesting'
 
+        }
+        self.config['docker-IMAGE'] = {
+            'directory': 'vm/other_image',
+            'repo': 'unittesting2'
         }
         self.config.credentials = mock.Mock()
         self.config.credentials.credential_map = mock.Mock()
@@ -69,6 +74,17 @@ class DockerFunctionTests(unittest.TestCase):
         self.mock_check_output.assert_has_calls(
             mock.call(
                 ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
+            )
+        )
+
+    def test_docker_build_image(self):
+        """test straight docker build call"""
+        self.opts.image = "IMAGE"
+        dckr.docker_build(self.opts, self.config)
+        self.failUnless(self.mock_check_output.called)
+        self.mock_check_output.assert_has_calls(
+            mock.call(
+                ['docker', 'build', '-t', 'unittesting2/unittesting:latest', '-t', 'unittesting2/unittesting:1.2.3', 'vm/other_image']
             )
         )
 
@@ -181,6 +197,19 @@ class DockerFunctionTests(unittest.TestCase):
         self.mock_check_output.assert_has_calls(
             [
                 mock.call(['docker', 'push', 'unittesting/unittesting:1.2.3']),
+            ]
+        )
+
+    def test_docker_push_image(self):
+        """test plain docker push"""
+        self.opts.tag = None
+        self.opts.latest = False
+        self.opts.image = "IMAGE"
+        dckr.docker_push(self.opts, self.config)
+
+        self.mock_check_output.assert_has_calls(
+            [
+                mock.call(['docker', 'push', 'unittesting2/unittesting:1.2.3']),
             ]
         )
 

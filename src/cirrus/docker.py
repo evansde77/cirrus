@@ -59,14 +59,15 @@ class OptionHelper(dict):
 
     def __init__(self, cli_opts, config):
         super(OptionHelper, self).__init__()
-        self['username'] = config.get_param('docker', 'docker_login_username', None)
-        self['email'] = config.get_param('docker', 'docker_login_email', None)
-        self['password'] = config.get_param('docker', 'docker_login_password', None)
+        section_name = "docker-{}".format(cli_opts.image) if cli_opts.image else 'docker'
+        self['username'] = config.get_param(section_name, 'docker_login_username', None)
+        self['email'] = config.get_param(section_name, 'docker_login_email', None)
+        self['password'] = config.get_param(section_name, 'docker_login_password', None)
         self['login'] = config.get_param(
-            'docker', 'docker_login_username', None
+            section_name, 'docker_login_username', None
         ) is not None
-        self['docker_repo'] = config.get_param('docker', 'repo', None)
-        addl_repos = config.get_param('docker', 'additional_repos', None)
+        self['docker_repo'] = config.get_param(section_name, 'repo', None)
+        addl_repos = config.get_param(section_name, 'additional_repos', None)
         self['additional_repos'] = []
         if addl_repos:
             self['additional_repos'] = parse_config_list(addl_repos)
@@ -80,13 +81,14 @@ class BuildOptionHelper(OptionHelper):
 
     def __init__(self, cli_opts, config):
         super(BuildOptionHelper, self).__init__(cli_opts, config)
-        self['docker_repo'] = config.get_param('docker', 'repo', None)
-        self['directory'] = config.get_param('docker', 'directory', None)
-        self['template'] = config.get_param('docker', 'dockerstache_template', None)
-        self['context'] = config.get_param('docker', 'dockerstache_context', None)
-        self['defaults'] = config.get_param('docker', 'dockerstache_defaults', None)
+        section_name = "docker-{}".format(cli_opts.image) if cli_opts.image else 'docker'
+        self['docker_repo'] = config.get_param(section_name, 'repo', None)
+        self['directory'] = config.get_param(section_name, 'directory', None)
+        self['template'] = config.get_param(section_name, 'dockerstache_template', None)
+        self['context'] = config.get_param(section_name, 'dockerstache_context', None)
+        self['defaults'] = config.get_param(section_name, 'dockerstache_defaults', None)
         self['build_arg'] = {}
-        self['no_cache'] = config.get_param('docker', 'no_cache', None)
+        self['no_cache'] = config.get_param(section_name, 'no_cache', None)
         if cli_opts.docker_repo:
             self['docker_repo'] = cli_opts.docker_repo
         if cli_opts.directory:
@@ -100,16 +102,17 @@ class BuildOptionHelper(OptionHelper):
 
 
 class StoreDictKeyPair(Action):
-     _DICT = {}
-     def __init__(self, option_strings, dest, nargs=None, **kwargs):
-         self._nargs = nargs
-         super(StoreDictKeyPair, self).__init__(option_strings, dest, nargs=nargs, **kwargs)
-     def __call__(self, parser, namespace, values, option_string=None):
-         for kv in values:
-             k,v = kv.split("=")
-             self._DICT[k] = v
-         setattr(namespace, self.dest, self._DICT)
+    _DICT = {}
 
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        self._nargs = nargs
+        super(StoreDictKeyPair, self).__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        for kv in values:
+            k, v = kv.split("=")
+            self._DICT[k] = v
+        setattr(namespace, self.dest, self._DICT)
 
 
 def build_parser():
@@ -175,6 +178,11 @@ def build_parser():
         default=False,
         action='store_true'
     )
+    build_command.add_argument(
+        '--image', '-i',
+        help="select an alternative image template from the cirrus conf corresponding to the [docker-<image>] section",
+        default=None
+    )
 
     push_command = subparsers.add_parser('push')
     push_command.add_argument(
@@ -190,6 +198,11 @@ def build_parser():
         dest='latest',
         help='include the image tagged "latest" in the docker push command',
         default=False
+    )
+    push_command.add_argument(
+        '--image', '-i',
+        help="select an alternative image template from the cirrus conf corresponding to the [docker-<image>] section",
+        default=None
     )
 
     subparsers.add_parser('test', help='test docker connection')
@@ -345,20 +358,20 @@ def _docker_push(tag):
     LOGGER.info(stdout)
 
 
-def tag_base(config):
+def tag_base(config, section_name='docker'):
     pname = config.package_name()
-    docker_repo = config.get_param('docker', 'repo', None)
+    docker_repo = config.get_param(section_name, 'repo', None)
     if docker_repo is None:
         docker_repo = config.organisation_name()
     return "{}/{}".format(docker_repo, pname)
 
 
-def tag_name(config):
+def tag_name(config, section_name='docker'):
     """
     build the docker tag string
     """
     pversion = config.package_version()
-    return "{}:{}".format(tag_base(config), pversion)
+    return "{}:{}".format(tag_base(config, section_name), pversion)
 
 
 def additional_repo_tags(config, repos, latest=False):
@@ -373,8 +386,8 @@ def additional_repo_tags(config, repos, latest=False):
     return result
 
 
-def latest_tag_name(config):
-    return "{}:latest".format(tag_base(config))
+def latest_tag_name(config, section_name='docker'):
+    return "{}:latest".format(tag_base(config, section_name))
 
 
 def docker_build(opts, config):
@@ -385,8 +398,9 @@ def docker_build(opts, config):
     dockerstache using that template and the build directory
     as output
     """
-    tag = tag_name(config)
-    latest = latest_tag_name(config)
+    section_name = "docker-{}".format(opts.image) if opts.image else 'docker'
+    tag = tag_name(config, section_name)
+    latest = latest_tag_name(config, section_name)
     helper = BuildOptionHelper(opts, config)
     templ = helper['template']
     path = helper['directory']
@@ -423,6 +437,7 @@ def docker_push(opts, config):
     run a docker push command to upload the
     tagged image to a registry
     """
+    section_name = "docker-{}".format(opts.image) if opts.image else 'docker'
     helper = OptionHelper(opts, config)
     if helper['login']:
         if not _docker_login(helper):
@@ -430,11 +445,11 @@ def docker_push(opts, config):
             LOGGER.error(msg)
             sys.exit(1)
 
-    tag = tag_name(config)
+    tag = tag_name(config, section_name)
     _docker_push(tag)
 
     if opts.latest:
-        _docker_push(latest_tag_name(config))
+        _docker_push(latest_tag_name(config, section_name))
 
     if helper['additional_repos']:
         tags = additional_repo_tags(config, helper['additional_repos'], opts.latest)
@@ -466,11 +481,14 @@ def main():
     """
     opts = build_parser()
     config = load_configuration()
-    if not config.has_section('docker'):
+    section_name = 'docker'
+    if opts.image is not None:
+        section_name = "docker-{}".format(opts.image)
+    if not config.has_section(section_name):
         msg = (
-            "Unable to find docker section in cirrus.conf"
+            "Unable to find {} section in cirrus.conf"
             #TODO: Link to docs here
-            )
+            ).format(section_name)
         LOGGER.error(msg)
         sys.exit(1)
 
