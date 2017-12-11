@@ -22,7 +22,10 @@ class CondaPip(Builder):
         )
 
     def create(self, **kwargs):
-        python_bin = kwargs.get("python", self.python_bin)
+        python_bin = kwargs.get("python")
+        if python_bin is not None:
+            self.python_bin = python_bin
+            LOGGER.info("Overriding python bin from command line: {}".format(python_bin))
         conda = kwargs.get('conda', self.conda_bin)
         upgrade = kwargs.get('upgrade', False)
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
@@ -34,7 +37,8 @@ class CondaPip(Builder):
             conda,
             self.venv_path
         )
-        if python_bin:
+        if self.python_bin:
+            LOGGER.info("using python bin: {}".format(self.python_bin))
             # should probably check this is int or int.int format
             venv_command += " python={}".format(self.python_bin)
 
