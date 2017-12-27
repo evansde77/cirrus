@@ -266,7 +266,7 @@ class GithubToolsTest(unittest.TestCase):
         """test merge branch"""
         mock_repo = mock.Mock()
         mock_repo.git = mock.Mock()
-        mock_repo.git.merge = mock.Mock(side_effect=GitCommandError(mock.Mock(), mock.Mock(), mock.Mock()))
+        mock_repo.git.merge = mock.Mock(side_effect=GitCommandError(["git", "command"], "stdout", "stderr"))
         mock_repo.active_branch = mock.Mock()
         mock_repo.active_branch.name = "ACTIVE"
         mock_repo.index = mock.Mock()
