@@ -7,6 +7,7 @@ for managing virtualenvs of various flavours
 
 """
 import os
+import re
 import argparse
 
 from cirrus.configuration import load_configuration
@@ -17,6 +18,35 @@ from cirrus.logger import get_logger
 from cirrus.invoke_helpers import local
 
 LOGGER = get_logger()
+
+
+CONDA_VERSION_FORMAT = re.compile('^[0-9]{1}\.[0-9]{1}$')
+PYTHON_VERSION_FORMAT = re.compile('^python[0-9]{1}\.[0-9]{1}$')
+
+
+def normalise_version(v):
+    if v is None:
+        return None
+    result = str(v)
+    if CONDA_VERSION_FORMAT.match(str(v)):
+        result = 'python{}'.format(v)
+    if not PYTHON_VERSION_FORMAT.match(result):
+        msg = (
+            "Unable to reconcile python version from cirrus.conf build section:\n"
+            "Value in cirrus.conf [build]: python={v}\n"
+            "Expected either pythonX.Y or X.Y format"
+        )
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+    return result
+
+
+def py_version_to_conda(v):
+    return v.replace('python', '')
+
+
+def conda_version_to_py(v):
+    return 'python{}'.format(v)
 
 
 class Builder(PluggagePlugin):
@@ -73,6 +103,20 @@ class Builder(PluggagePlugin):
                 activate
             )
         )
+
+    @property
+    def python_bin_for_venv(self):
+        if not self.python_bin:
+            return self.python_bin
+        v = normalise_version(self.python_bin)
+        return v
+
+    @property
+    def python_bin_for_conda(self):
+        if not self.python_bin:
+            return self.python_bin
+        v = normalise_version(self.python_bin)
+        return py_version_to_conda(v)
 
     @classmethod
     def str_to_list(cls, s, delim=','):

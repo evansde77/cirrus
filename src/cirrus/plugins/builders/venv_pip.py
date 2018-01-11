@@ -47,7 +47,7 @@ class VirtualenvPip(Builder):
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
         venv = VirtualEnvironment(
             self.venv_path,
-            python=self.python_bin,
+            python=self.python_bin_for_venv,
             system_site_packages=site_packages
         )
         LOGGER.info("Bootstrapping virtualenv: {}".format(self.venv_path))

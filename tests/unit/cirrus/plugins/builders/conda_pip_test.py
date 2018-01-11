@@ -52,6 +52,47 @@ class CondaPipBuilderTest(unittest.TestCase):
     @mock.patch('cirrus.plugins.builders.conda_pip.local')
     @mock.patch('cirrus.builder_plugin.local')
     @mock.patch('cirrus.plugins.builders.conda_pip.build_pip_command')
+    @mock.patch('cirrus.plugins.builders.conda_pip.os.path.exists')
+    def test_builder_python_bin(self, mock_ospe, mock_pip, mock_base_local, mock_local, mock_repo_dir, mock_load_conf):
+        mock_pip.return_value = "PIP_COMMAND"
+        mock_repo_dir.return_value = "REPO"
+        mock_ospe.return_value = False
+        mock_conf = mock.Mock(name="load_configuration")
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt'],
+            'python': '6.7'
+        })
+        mock_load_conf.return_value = mock_conf
+        plugin = FACTORY('CondaPip')
+        self.assertEqual(plugin.python_bin, '6.7')
+        self.assertEqual(plugin.python_bin_for_conda, '6.7')
+        plugin.create()
+        mock_local.assert_has_calls([
+            mock.call('conda create -y -m -p REPO/venv pip virtualenv python=6.7')
+        ])
+
+        # verify that pythonX.Y format also works
+        mock_local.reset_mock()
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt'],
+            'python': 'python6.7'
+        })
+        mock_load_conf.return_value = mock_conf
+        plugin2 = FACTORY('CondaPip')
+        self.assertEqual(plugin2.python_bin, 'python6.7')
+        self.assertEqual(plugin2.python_bin_for_conda, '6.7')
+        plugin2.create()
+        mock_local.assert_has_calls([
+            mock.call('conda create -y -m -p REPO/venv pip virtualenv python=6.7')
+        ])
+
+    @mock.patch('cirrus.builder_plugin.load_configuration')
+    @mock.patch('cirrus.builder_plugin.repo_directory')
+    @mock.patch('cirrus.plugins.builders.conda_pip.local')
+    @mock.patch('cirrus.builder_plugin.local')
+    @mock.patch('cirrus.plugins.builders.conda_pip.build_pip_command')
     def test_builder_errors(self, mock_pip, mock_base_local, mock_local, mock_repo_dir, mock_load_conf):
         mock_pip.return_value = "PIP_COMMAND"
         mock_repo_dir.return_value = "REPO"

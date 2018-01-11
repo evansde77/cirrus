@@ -51,7 +51,7 @@ class Conda(Builder):
         )
         if self.python_bin:
             # should probably check this is int or int.int format
-            venv_command += " python={}".format(self.python_bin)
+            venv_command += " python={}".format(self.python_bin_for_conda)
 
         if not os.path.exists(self.venv_path):
             LOGGER.info("Bootstrapping conda env: {0}".format(self.venv_path))

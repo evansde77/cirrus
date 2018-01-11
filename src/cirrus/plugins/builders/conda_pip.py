@@ -38,9 +38,9 @@ class CondaPip(Builder):
             self.venv_path
         )
         if self.python_bin:
-            LOGGER.info("using python bin: {}".format(self.python_bin))
+            LOGGER.info("using python bin: {}".format(self.python_bin_for_conda))
             # should probably check this is int or int.int format
-            venv_command += " python={}".format(self.python_bin)
+            venv_command += " python={}".format(self.python_bin_for_conda)
 
         if not os.path.exists(self.venv_path):
             LOGGER.info("Bootstrapping conda env: {0}".format(self.venv_path))
