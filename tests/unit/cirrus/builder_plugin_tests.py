@@ -41,6 +41,36 @@ class BuilderPluginTest(unittest.TestCase):
         self.assertEqual(extras['w'], 1)
         self.assertEqual(plug.str_to_list('a,b,c'), ['a', 'b', 'c'])
 
+    @mock.patch('cirrus.builder_plugin.load_configuration')
+    @mock.patch('cirrus.builder_plugin.repo_directory')
+    @mock.patch('cirrus.builder_plugin.local')
+    def test_python_bin(self, mock_local, mock_repo_dir, mock_load_conf):
+        mock_conf = mock.Mock()
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt'],
+            'python': 'python6.7'
+        })
+        mock_load_conf.return_value = mock_conf
+        mock_repo_dir.return_value = "REPO"
+
+        plug = Builder()
+        self.assertEqual(plug.python_bin, 'python6.7')
+        self.assertEqual(plug.python_bin_for_venv, 'python6.7')
+        self.assertEqual(plug.python_bin_for_conda, '6.7')
+
+        mock_conf = mock.Mock()
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt'],
+            'python': '6.7'
+        })
+        mock_load_conf.return_value = mock_conf
+        plug2 = Builder()
+        self.assertEqual(plug2.python_bin, '6.7')
+        self.assertEqual(plug2.python_bin_for_venv, 'python6.7')
+        self.assertEqual(plug2.python_bin_for_conda, '6.7')
+
 
 if __name__ == '__main__':
     unittest.main()

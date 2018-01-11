@@ -75,7 +75,14 @@ class CondaEnv(Builder):
         )
         if self.python_bin:
             # should probably check this is int or int.int format
-            venv_command += " python={}".format(self.python_bin)
+            venv_command += " python={}".format(self.python_bin_for_conda)
+            msg = (
+                "Passing python version {} to conda env setup: "
+                "Usually it is safer to set this in the environment yaml"
+            ).format(
+                self.python_bin_for_conda
+            )
+            LOGGER.warning(msg)
 
         if not os.path.exists(self.venv_path):
             LOGGER.info("Bootstrapping conda env: {0}".format(self.venv_path))
