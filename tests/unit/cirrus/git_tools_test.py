@@ -125,6 +125,17 @@ class GitToolsTest(unittest.TestCase):
         branch(None, self.mock_repo.active_branch, 'master')
         self.failUnless(self.mock_git.Repo.called)
 
+    def test_push_error(self):
+        """
+        _test_push_
+        """
+        mock_ret = mock.Mock()
+        mock_ret.flags = 100
+        mock_ret.ERROR = 10
+        self.mock_repo.remotes.origin.push.side_effect = lambda x: [
+            mock_ret]
+        self.assertRaises(RuntimeError, push, None)
+
     def test_push(self):
         """
         _test_push_
