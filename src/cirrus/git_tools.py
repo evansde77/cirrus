@@ -12,6 +12,7 @@ import git
 import arrow
 
 from cirrus.logger import get_logger
+from cirrus._2to3 import unicode_
 
 
 LOGGER = get_logger()
@@ -72,7 +73,7 @@ class RepoInitializer(object):
                 for r in ret:
                     if r.flags >= r.ERROR:
                         LOGGER.error("Unable to push to remote")
-                        raise RuntimeError(unicode(r.summary))
+                        raise RuntimeError(unicode_(r.summary))
             tracking_branch = local_branch.tracking_branch()
             if not tracking_branch:
                 LOGGER.info("Setting tracking branch for {}".format(branch_name))
@@ -282,7 +283,7 @@ def push(repo_dir):
     # Check to make sure that we haven't errored out.
     for r in ret:
         if r.flags >= r.ERROR:
-            raise RuntimeError(unicode(r.summary))
+            raise RuntimeError(unicode_(r.summary))
     return ret
 
 
