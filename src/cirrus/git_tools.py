@@ -223,6 +223,14 @@ def get_active_branch(repo_dir):
     return repo.active_branch
 
 
+def get_active_commit_sha(repo_dir):
+    """
+    Return short commit sha of HEAD for the active branch.
+    """
+    head = get_active_branch(repo_dir)
+    return head.commit.hexsha[:7]
+
+
 def merge(repo_dir, source, destination):
     """
     _merge_

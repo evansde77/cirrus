@@ -21,6 +21,7 @@ from cirrus.git_tools import build_release_notes
 from cirrus.git_tools import has_unstaged_changes
 from cirrus.git_tools import branch, checkout_and_pull
 from cirrus.git_tools import commit_files, remote_branch_exists
+from cirrus.git_tools import get_active_commit_sha, get_active_branch
 from cirrus.github_tools import GitHubContext
 from cirrus.utils import update_file, update_version
 from cirrus.logger import get_logger
@@ -258,10 +259,16 @@ def build_parser(argslist):
         nargs='+',
         help='package versions (pkg==0.0.0) to update in requirements.txt'
     )
+    new_command.add_argument(
+        '--rc',
+        action='store_true',
+        dest='release_candidate'
+    )
 
     # borrow --micro/minor/major options from "new" command.
     subparsers.add_parser('trigger', parents=[new_command], add_help=False)
     subparsers.add_parser('build')
+    subparsers.add_parser('rc')
 
     merge_command = subparsers.add_parser('merge')
     merge_command.add_argument(
@@ -356,6 +363,19 @@ def build_parser(argslist):
     return opts
 
 
+def get_release_candidate_version():
+    sha = get_active_commit_sha('.')
+    version = 'rc{}'.format(sha)
+    return version
+
+
+def get_release_version(opts):
+    fields = ['major', 'minor', 'micro']
+    mask = [opts.major, opts.minor, opts.micro]
+    field = [x for x in itertools.compress(fields, mask)][0]
+    return field
+
+
 def new_release(opts):
     """
     _new_release_
@@ -366,20 +386,37 @@ def new_release(opts):
 
     """
     LOGGER.info("Creating new release...")
-    if not highlander([opts.major, opts.minor, opts.micro]):
-        msg = "Can only specify one of --major, --minor or --micro"
-        LOGGER.error(msg)
-        raise RuntimeError(msg)
-
-    fields = ['major', 'minor', 'micro']
-    mask = [opts.major, opts.minor, opts.micro]
-    field = [x for x in itertools.compress(fields, mask)][0]
-
     config = load_configuration()
 
-    # version bump:
+    if opts.release_candidate:
+        protected_branches = [
+            config.gitflow_branch_name(),
+            config.gitflow_master_name(),
+        ]
+        head = get_active_branch('.')
+        if head.name in protected_branches:
+            msg = (
+                "Release candidates cannot be made from {} branches."
+                .format(protected_branches)
+            )
+            LOGGER.error(msg)
+            raise RuntimeErro(msg)
+    else:
+        if not highlander([opts.major, opts.minor, opts.micro]):
+            msg = "Can only specify one of --major, --minor or --micro"
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
+
     current_version = config.package_version()
-    new_version = bump_version_field(current_version, field)
+
+    # version bump:
+    if opts.release_candidate:
+        field = 'rc'
+        new_version = get_release_candidate_version()
+    else:
+        field = get_release_version(opts)
+        new_version = bump_version_field(current_version, field)
+
 
     # release branch
     branch_name = "{0}{1}".format(
@@ -433,20 +470,21 @@ def new_release(opts):
             raise RuntimeError(ex)
 
     # update release notes file
-    relnotes_file, relnotes_sentinel = config.release_notes()
-    if (relnotes_file is not None) and (relnotes_sentinel is not None):
-        LOGGER.info('Updating release notes in {0}'.format(relnotes_file))
-        relnotes = "Release: {0} Created: {1}\n".format(
-            new_version,
-            datetime.datetime.utcnow().isoformat()
-        )
-        relnotes += build_release_notes(
-            repo_dir,
-            current_version,
-            config.release_notes_format()
-        )
-        update_file(relnotes_file, relnotes_sentinel, relnotes)
-        changes.append(relnotes_file)
+    if not opts.release_candidate:
+        relnotes_file, relnotes_sentinel = config.release_notes()
+        if (relnotes_file is not None) and (relnotes_sentinel is not None):
+            LOGGER.info('Updating release notes in {0}'.format(relnotes_file))
+            relnotes = "Release: {0} Created: {1}\n".format(
+                new_version,
+                datetime.datetime.utcnow().isoformat()
+            )
+            relnotes += build_release_notes(
+                repo_dir,
+                current_version,
+                config.release_notes_format()
+            )
+            update_file(relnotes_file, relnotes_sentinel, relnotes)
+            changes.append(relnotes_file)
 
     # update __version__ or equivalent
     version_file, version_attr = config.version_file()
