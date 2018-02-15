@@ -10,7 +10,7 @@
 
 : ${CIRRUS_PYPI_URL?"is not set! Hint: https://user:password@pypi.cloudant.com)"}
 
-CIRRUS_PACKAGE="cirrus-cli==0.1.7"
+CIRRUS_PACKAGE="cirrus-cli==1.0.0"
 CIRRUS_INSTALL_DIR="${HOME}/.cirrus"
 CIRRUS_DEFAULT_USER="${USER}"
 
