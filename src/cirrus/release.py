@@ -400,7 +400,7 @@ def new_release(opts):
                 .format(protected_branches)
             )
             LOGGER.error(msg)
-            raise RuntimeErro(msg)
+            raise RuntimeError(msg)
     else:
         if not highlander([opts.major, opts.minor, opts.micro]):
             msg = "Can only specify one of --major, --minor or --micro"
