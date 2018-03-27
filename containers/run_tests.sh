@@ -9,12 +9,13 @@ function run_test(){
     cd ${1}
     docker build -t cirrus-${1}:latest .
     docker run -ti --entrypoint /opt/scratch_test.sh cirrus-${1}:latest
-    docker run -ti --entrypoint /opt/clone_test.sh cirrus-${1}:latest
+    #docker run -ti --entrypoint /opt/clone_test.sh cirrus-${1}:latest
     cd $CONTAINERS_DIR
 }
 
 
-declare -a VERSIONS=("anaconda3-4.4.0" "py2.7" "py3.5" "py3.6")
+declare -a VERSIONS=("anaconda3-5.1.0")
+#declare -a VERSIONS=("anaconda3-4.4.0" "py2.7" "py3.5" "py3.6")
 
 for i in "${VERSIONS[@]}"
 do

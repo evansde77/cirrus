@@ -110,5 +110,9 @@ class Conda(Builder):
             local(cmd)
 
     def activate(self):
-        command = "source {}/bin/activate {}".format(self.venv_path, self.venv_path)
+        activate_script = '{}/bin/activate'.format(self.venv_path)
+        if os.path.exists(activate_script):
+            command = "source {}/bin/activate {}".format(self.venv_path, self.venv_path)
+        else:
+            command = "source activate {}".format(self.venv_path)
         return command
