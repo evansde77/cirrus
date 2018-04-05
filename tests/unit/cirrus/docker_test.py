@@ -29,6 +29,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.mock_popen.return_value = self.mock_popen
         self.mock_popen.communicate = mock.Mock()
         self.mock_popen.communicate.return_value = ('STDOUT', 'STDERR')
+        self.mock_popen.wait = mock.Mock(return_value=0)
 
         self.opts = mock.Mock()
         self.opts.login = False
@@ -65,10 +66,17 @@ class DockerFunctionTests(unittest.TestCase):
     def test_docker_build(self):
         """test straight docker build call"""
         dckr.docker_build(self.opts, self.config)
-        self.failUnless(self.mock_check_output.called)
-        self.mock_check_output.assert_has_calls(
+        self.failUnless(self.mock_popen.wait.called)
+        self.mock_popen.assert_has_calls(
             mock.call(
-                ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
+                [
+                    'docker', 'build', '-t',
+                    'unittesting/unittesting:latest', '-t',
+                    'unittesting/unittesting:1.2.3',
+                    'vm/docker_image'
+                ],
+                stderr=mock.ANY,
+                stdout=mock.ANY
             )
         )
 
@@ -77,15 +85,17 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.build_arg = {"OPTION1": "VALUE1"}
         self.opts.no_cache = False
         dckr.docker_build(self.opts, self.config)
-        self.failUnless(self.mock_check_output.called)
-        self.mock_check_output.assert_has_calls(
+        self.failUnless(self.mock_popen.wait.called)
+        self.mock_popen.assert_has_calls(
             mock.call(
                 [
                     'docker', 'build',
                     '-t', 'unittesting/unittesting:latest',
                     '-t', 'unittesting/unittesting:1.2.3',
                     '--build-arg', 'OPTION1=VALUE1',
-                    'vm/docker_image']
+                    'vm/docker_image'],
+                stderr=mock.ANY,
+                stdout=mock.ANY
             )
         )
 
@@ -94,8 +104,8 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.build_arg = {"OPTION1": "VALUE1"}
         self.opts.no_cache = True
         dckr.docker_build(self.opts, self.config)
-        self.failUnless(self.mock_check_output.called)
-        self.mock_check_output.assert_has_calls(
+        self.failUnless(self.mock_popen.wait.called)
+        self.mock_popen.assert_has_calls(
             mock.call(
                 [
                     'docker', 'build',
@@ -103,15 +113,17 @@ class DockerFunctionTests(unittest.TestCase):
                     '-t', 'unittesting/unittesting:1.2.3',
                     '--no-cache',
                     '--build-arg', 'OPTION1=VALUE1',
-                    'vm/docker_image']
+                    'vm/docker_image'],
+                stderr=mock.ANY,
+                stdout=mock.ANY
             )
         )
 
     def test_docker_build_addl_repos(self):
         self.config['docker']['additional_repos'] = "repo1:8080, repo2:8080 "
         dckr.docker_build(self.opts, self.config)
-        self.failUnless(self.mock_check_output.called)
-        self.mock_check_output.assert_has_calls(
+        self.failUnless(self.mock_popen.wait.called)
+        self.mock_popen.assert_has_calls(
             mock.call(
                 [
                     'docker', 'build',
@@ -121,7 +133,9 @@ class DockerFunctionTests(unittest.TestCase):
                     '-t', 'repo1:8080/unittesting:latest',
                     '-t', 'repo2:8080/unittesting:1.2.3',
                     '-t', 'repo2:8080/unittesting:latest',
-                    'vm/docker_image']
+                    'vm/docker_image'],
+                stderr=mock.ANY,
+                stdout=mock.ANY
             )
         )
 
@@ -146,9 +160,16 @@ class DockerFunctionTests(unittest.TestCase):
                 output='vm/docker_image', context=None, defaults=None, input='template', extend_context=mock.ANY
             )
         )
-        self.mock_check_output.assert_has_calls(
+        self.mock_popen.assert_has_calls(
             mock.call(
-                ['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image']
+                [
+                    'docker', 'build', '-t',
+                    'unittesting/unittesting:latest', '-t',
+                    'unittesting/unittesting:1.2.3',
+                    'vm/docker_image'
+                ],
+                stderr=mock.ANY,
+                stdout=mock.ANY
             )
         )
 
@@ -167,9 +188,20 @@ class DockerFunctionTests(unittest.TestCase):
         self.failUnless(self.mock_check_output.called)
         self.mock_check_output.assert_has_calls(
             [
-                mock.call(['docker', 'login', '-u', 'steve', '-p', 'st3v3R0X', 'unittesting']),
-                mock.call(['docker', 'build', '-t', 'unittesting/unittesting:latest', '-t', 'unittesting/unittesting:1.2.3', 'vm/docker_image'])
-            ]
+                mock.call(
+                    ['docker', 'login', '-u', 'steve', '-p', 'st3v3R0X', 'unittesting'],
+                )
+            ])
+        self.mock_popen.assert_has_calls(
+            mock.call(
+                [
+                    'docker', 'build', '-t',
+                    'unittesting/unittesting:latest', '-t',
+                    'unittesting/unittesting:1.2.3', 'vm/docker_image'
+                ],
+                stderr=mock.ANY,
+                stdout=mock.ANY
+            )
         )
 
     def test_docker_push(self):
