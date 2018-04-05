@@ -218,12 +218,17 @@ def _docker_build(path, tags, base_tag, build_helper):
     command.append(path)
     LOGGER.info("Executing docker build command: {}".format(' '.join(command)))
 
-    try:
-        stdout = subprocess.check_output(command)
-    except subprocess.CalledProcessError as ex:
-        LOGGER.error(ex.output)
-        raise
-    LOGGER.info(stdout)
+    p = subprocess.Popen(
+        command,
+        stdout=sys.stdout,
+        stderr=sys.stderr
+        )
+    status = p.wait()
+    if status:
+        msg = "docker build exited non-zero!"
+        LOGGER.error(msg)
+        raise RuntimeError(msg)
+
     image = find_image_id(base_tag)
     LOGGER.info("Image ID: {}".format(image))
 
