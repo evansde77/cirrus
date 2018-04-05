@@ -1,0 +1,17 @@
+#!/bin/bash
+echo "this is the dockerstache pre render script"
+echo "it runs in the following environment before rendering tempates"
+printenv | grep DOCKERSTACHE
+
+DIST_FILE=`ls -1t ../dist/{{package}}-*.tar.gz | head -1`
+echo "DIST_FILE=${{open_brace}}DIST_FILE{{close_brace}}"
+if [ ! -f "${{open_brace}}DIST_FILE{{close_brace}}" ]; then
+    echo "No dist file ${{{open_brace}}DIST_FILE{{close_brace}} found"
+    if [ ! -f "${{{open_brace}}DOCKERSTACHE_OUTPUT_PATH{{close_brace}}" ]; then
+        mkdir -p "${{DOCKERSTACHE_OUTPUT_PATH{{close_brace}}"
+    fi
+    echo "no dist" >> "${{open_brace}}DOCKERSTACHE_OUTPUT_PATH{{close_brace}}/{{package}}-latest.tar.gz"
+else
+    echo "copied to ${{open_brace}}DOCKERSTACHE_OUTPUT_PATH{{close_brace}}"
+    cp ${{open_brace}}DIST_FILE{{close_brace}} ${{open_brace}}DOCKERSTACHE_OUTPUT_PATH{{close_brace}}/{{package}}-latest.tar.gz
+fi

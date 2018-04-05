@@ -24,6 +24,7 @@ class InitContainerTests(unittest.TestCase):
         self.gitconf_str = "cirrus.credential-plugin=default"
         with open(self.cirrus_conf, 'w') as handle:
             handle.write("[package]\n")
+            handle.write("name=steves_package\n")
             handle.write("version=0.0.0\n")
             handle.write("author_email=steve@pbr.com\n")
             handle.write("[pypi]\n")
@@ -79,12 +80,12 @@ class InitContainerTests(unittest.TestCase):
             'Dockerfile.mustache',
             'post_script.sh',
             'pre_script.sh',
-            'local_pip_install.sh.mustache',
-            'pypi_pip_install.sh.mustache'
+            'install_script.sh.mustache'
         ]
         self.failUnless(os.path.exists(templates))
         found = os.listdir(templates)
         for exp in expected_files:
+
             self.failUnless(exp in found)
         dockerfile = os.path.join(templates, 'Dockerfile.mustache')
         with open(dockerfile, 'r') as handle:
@@ -101,23 +102,22 @@ class InitContainerTests(unittest.TestCase):
         self.failUnless('dockerstache_context = container-template/context.json' in conf)
         self.failUnless('directory = container-image' in conf)
 
-        local_install = os.path.join(
+        install_script = os.path.join(
             templates,
-            'local_pip_install.sh.mustache'
+            'install_script.sh.mustache'
         )
-        with open(local_install, 'r') as handle:
+        with open(install_script, 'r') as handle:
             local = handle.read()
+            print(local)
             self.failUnless('. /pyenvy/venvs/data_py2/bin/activate' in local)
             self.failUnless('pip install PIP_OPTS' in local)
-        pypi_install = os.path.join(
-            templates,
-            'pypi_pip_install.sh.mustache'
-        )
-        with open(pypi_install, 'r') as handle:
-            pypi =  handle.read()
-            self.failUnless('pip install PIP_OPTS' in pypi)
-            self.failUnless('. /pyenvy/venvs/data_py2/bin/activate' in pypi)
 
+        pre_script = os.path.join(
+            templates, "pre_script.sh"
+        )
+        with open(pre_script, 'r') as handle:
+            script = handle.read()
+            print(script)
 
 
 if __name__ == '__main__':
