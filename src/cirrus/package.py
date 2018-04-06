@@ -307,13 +307,13 @@ def build_parser(argslist):
         '--local-install',
         default=False,
         action='store_true',
-        help="Add scripts to install from local dist package on container"
+        help="deprecated, has no effect"
     )
     cont_command.add_argument(
         '--pypi-install',
         default=False,
         action='store_true',
-        help="Add scripts to install latest version of lib from a pypi server"
+        help="Deprecated, has no effect"
     )
     cont_command.add_argument(
         '--no-remote',

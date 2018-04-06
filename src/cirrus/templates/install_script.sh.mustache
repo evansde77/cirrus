@@ -1,0 +1,15 @@
+#!/bin/bash
+#
+# installer script either vi pypi server or locally using
+# a dist file passed as argument to this script
+LOCAL=$1
+
+{{virtualenv}}
+
+if [  "${LOCAL}x" == "x" ]; then
+    echo "Installing from pip"
+    pip install {{pip_options}} {{open_brace}}cirrus.configuration.package.name{{close_brace}}=={{open_brace}}cirrus.configuration.package.version{{close_brace}}
+else
+    echo "LOCAL flag is ${LOCAL}"
+    pip install -U $LOCAL {{pip_options}}
+fi

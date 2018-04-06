@@ -9,8 +9,10 @@ templates for docker-image command
 import sys
 import os
 import json
+import pystache
 
 from cirrus.logger import get_logger
+from cirrus.templates import find_template
 from cirrus.utils import working_dir
 from cirrus.configuration import load_configuration
 from cirrus.git_tools import (
@@ -20,61 +22,6 @@ from cirrus.git_tools import (
 )
 
 LOGGER = get_logger()
-
-DOCKER_PRE_SCRIPT = \
-"""#!/bin/bash
-echo "this is the dockerstache pre render script"
-echo "it runs in the following environment before rendering tempates"
-printenv | grep DOCKERSTACHE
-
-"""
-
-DOCKER_POST_SCRIPT = \
-"""#!/bin/bash
-echo "this is the dockerstache post render script"
-echo "it runs in the following environment after rendering tempates"
-printenv | grep DOCKERSTACHE
-{copy_dist}
-
-"""
-
-LOCAL_INSTALL_COMMAND = \
-"""
-DIST_FILE=`ls -1t ../dist/{package}-*.tar.gz | head -1`
-echo "DIST_FILE=${{DIST_FILE}}"
-echo "copied to ${{DOCKERSTACHE_OUTPUT_PATH}}"
-cp ${{DIST_FILE}} ${{DOCKERSTACHE_OUTPUT_PATH}}
-"""
-
-DOCKERFILE_TEMPLATE = \
-"""
-FROM {container}
-MAINTAINER {maintainer}
-ADD local_pip_install.sh /opt/local_pip_install.sh
-ADD pypi_pip_install.sh /opt/pypi_pip_install.sh
-RUN chmod +x /opt/pypi_pip_install.sh /opt/local_pip_install.sh
-
-{local_install}
-{pip_install}
-
-ENTRYPOINT ["{entrypoint}"]
-"""
-
-LOCAL_INSTALL_SCRIPT = \
-"""#!/bin/bash
-
-{virtualenv}
-pip install {pip_options} /opt/{{{{cirrus.configuration.package.name}}}}-{{{{cirrus.configuration.package.version}}}}.tar.gz
-
-"""
-
-PYPI_INSTALL_SCRIPT = \
-"""#!/bin/bash
-
-{virtualenv}
-pip install {pip_options} {{{{cirrus.configuration.package.name}}}}=={{{{cirrus.configuration.package.version}}}}
-
-"""
 
 
 def make_executable(path, repo):
@@ -89,30 +36,19 @@ def write_basic_dockerfile(opts, config, path):
 
     """
     LOGGER.info("writing Dockerfile {}".format(path))
-    pip_install = ""
-    if opts.pypi_install:
-        pip_install = "RUN /opt/pypi_pip_install.sh"
-
-    local_install = ""
-    if opts.local_install:
-        local_install = (
-            "COPY "
-            "{{cirrus.configuration.package.name}}-"
-            "{{cirrus.configuration.package.version}}.tar.gz "
-            "/opt/"
-        )
-        pip_install = "RUN /opt/local_pip_install.sh"
-
-    content = DOCKERFILE_TEMPLATE.format(
-        container=opts.container,
-        entrypoint=opts.entrypoint,
-        maintainer=config.author_email(),
-        pip_install=pip_install,
-        local_install=local_install
-        )
-
+    template = find_template("Dockerfile.mustache")
+    context = {
+        'open_brace': '{{',
+        'close_brace': '}}',
+        'package': config.package_name(),
+        'container': opts.container,
+        'entrypoint': opts.entrypoint,
+        'maintainer': config.author_email()
+        }
+    renderer = pystache.Renderer()
+    result = renderer.render_path(template, context)
     with open(path, 'w') as handle:
-        handle.write(content)
+        handle.write(result)
 
 
 def write_json_file(path, data):
@@ -169,8 +105,7 @@ def init_container(opts):
     pre_script = os.path.join(template_dir, 'pre_script.sh')
     post_script = os.path.join(template_dir, 'post_script.sh')
     context = os.path.join(template_dir, 'context.json')
-    local_install = os.path.join(template_dir, 'local_pip_install.sh.mustache')
-    pypi_install = os.path.join(template_dir, 'pypi_pip_install.sh.mustache')
+    installer_script = os.path.join(template_dir, 'install_script.sh.mustache')
     opts.context_file = os.path.join(opts.template_dir, 'context.json')
 
      # make sure repo is clean
@@ -199,30 +134,38 @@ def init_container(opts):
             "excludes": ["post_script.sh", "post_script.sh", ".dockerstache"]
         })
         write_json_file(context, {})
-        write_script(opts.repo, pre_script, DOCKER_PRE_SCRIPT)
-        write_script(
-            opts.repo,
-            local_install,
-            LOCAL_INSTALL_SCRIPT,
-            virtualenv=venv_option,
-            pip_options=config.pip_options() if config.pip_options() else ""
-        )
-        write_script(
-            opts.repo,
-            pypi_install,
-            PYPI_INSTALL_SCRIPT,
-            virtualenv=venv_option,
-            pip_options=config.pip_options() if config.pip_options() else ""
-        )
-        if opts.local_install:
-            write_script(
-                opts.repo,
-                post_script,
-                DOCKER_POST_SCRIPT,
-                copy_dist=LOCAL_INSTALL_COMMAND.format(package=config.package_name())
-            )
-        else:
-            write_script(opts.repo, post_script, DOCKER_POST_SCRIPT, copy_dist="")
+
+        # render templates for container scripts
+        template_context = {
+            'open_brace': '{{',
+            'close_brace': '}}',
+            'package': config.package_name(),
+            'virtualenv': venv_option,
+            'pip_options': config.pip_options() if config.pip_options() else ""
+        }
+
+        install_template = find_template('install_script.sh.mustache')
+        pre_template = find_template('pre_script.sh.mustache')
+        post_template = find_template('post_script.sh.mustache')
+
+        renderer = pystache.Renderer()
+        install_result = renderer.render_path(install_template, template_context)
+
+        with open(installer_script, 'w') as handle:
+            handle.write(install_result)
+
+        post_result = renderer.render_path(post_template, template_context)
+        with open(post_script, 'w') as handle:
+            handle.write(post_result)
+
+        pre_result = renderer.render_path(pre_template, template_context)
+        with open(pre_script, 'w') as handle:
+            handle.write(pre_result)
+
+        make_executable(pre_script, opts.repo)
+        make_executable(post_script, opts.repo)
+        make_executable(installer_script, opts.repo)
+
         edit_cirrus_conf(opts, config)
 
         modified = [
@@ -231,8 +174,7 @@ def init_container(opts):
             dotfile,
             pre_script,
             post_script,
-            local_install,
-            pypi_install,
+            installer_script,
             context
         ]
         LOGGER.info("commiting changes...")

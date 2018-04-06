@@ -40,6 +40,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.docker_repo = None
         self.opts.no_cache = False
         self.opts.build_arg = {}
+        self.opts.local_test = False
 
         self.config = Configuration(None)
         self.config['package'] = {
@@ -93,6 +94,26 @@ class DockerFunctionTests(unittest.TestCase):
                     '-t', 'unittesting/unittesting:latest',
                     '-t', 'unittesting/unittesting:1.2.3',
                     '--build-arg', 'OPTION1=VALUE1',
+                    'vm/docker_image'],
+                stderr=mock.ANY,
+                stdout=mock.ANY
+            )
+        )
+
+    def test_docker_build_args_local_test(self):
+        """test straight docker build call"""
+        self.opts.build_arg = {}
+        self.opts.no_cache = False
+        self.opts.local_test = True
+        dckr.docker_build(self.opts, self.config)
+        self.failUnless(self.mock_popen.wait.called)
+        self.mock_popen.assert_has_calls(
+            mock.call(
+                [
+                    'docker', 'build',
+                    '-t', 'unittesting/unittesting:latest',
+                    '-t', 'unittesting/unittesting:1.2.3',
+                    '--build-arg', 'LOCAL_INSTALL=/opt/unittesting-latest.tar.gz',
                     'vm/docker_image'],
                 stderr=mock.ANY,
                 stdout=mock.ANY

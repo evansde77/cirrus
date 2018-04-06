@@ -175,6 +175,16 @@ def build_parser():
         default=False,
         action='store_true'
     )
+    build_command.add_argument(
+        '--local-test',
+        help=(
+            'install latest dist tarball from ./dist into container '
+            'instead of pip installing from remote pypi '
+            'Run `git cirrus release build` prior to this to get your latest code '
+            'installed for testing'),
+        default=False,
+        action='store_true'
+    )
 
     push_command = subparsers.add_parser('push')
     push_command.add_argument(
@@ -395,6 +405,16 @@ def docker_build(opts, config):
     helper = BuildOptionHelper(opts, config)
     templ = helper['template']
     path = helper['directory']
+
+    if opts.local_test:
+        #
+        # local test => override build args
+        # assumes that the container-init stuff has been used
+        local_tar = '/opt/{package}-latest.tar.gz'.format(
+            package=config.package_name()
+        )
+        LOGGER.info("Local test build will install latest source tarball from dist...")
+        helper['build_arg']['LOCAL_INSTALL'] = local_tar
 
     if helper['login']:
         check = _docker_login(helper)
