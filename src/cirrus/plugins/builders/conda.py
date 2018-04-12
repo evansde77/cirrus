@@ -113,7 +113,12 @@ class Conda(Builder):
     def activate(self):
         cmd = 'source'
         if is_anaconda_5():
-            cmd = 'conda'
+            setup = find_conda_setup_script()
+            if setup:
+                cmd = " . {} && conda ".format(setup)
+            else:
+                cmd = "conda"
+
         activate_script = '{}/bin/activate'.format(self.venv_path)
         if os.path.exists(activate_script):
             command = "{} {}/bin/activate {}".format(cmd, self.venv_path, self.venv_path)

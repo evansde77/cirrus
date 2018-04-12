@@ -5,7 +5,7 @@ from cirrus.builder_plugin import Builder
 from cirrus.logger import get_logger
 from cirrus.invoke_helpers import local
 from cirrus.pypirc import build_pip_command
-from cirrus.conda_util import is_anaconda_5
+from cirrus.conda_utils import is_anaconda_5, find_conda_setup_script
 
 LOGGER = get_logger()
 
@@ -104,7 +104,12 @@ class CondaPip(Builder):
     def activate(self):
         cmd = 'source'
         if is_anaconda_5():
-            cmd = 'conda'
+            setup = find_conda_setup_script()
+            if setup:
+                cmd = " . {} && conda ".format(setup)
+            else:
+                cmd = "conda"
+
         activate_script = '{}/bin/activate'.format(self.venv_path)
         if os.path.exists(activate_script):
             command = "{} {}/bin/activate {}".format(cmd, self.venv_path, self.venv_path)
