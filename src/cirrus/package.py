@@ -26,7 +26,7 @@ import pluggage.registry
 
 import cirrus.templates
 
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser, ArgumentTypeError, Namespace
 
 from cirrus.logger import get_logger
 from cirrus.utils import working_dir
@@ -307,13 +307,13 @@ def build_parser(argslist):
         '--local-install',
         default=False,
         action='store_true',
-        help="Add scripts to install from local dist package on container"
+        help="deprecated, has no effect"
     )
     cont_command.add_argument(
         '--pypi-install',
         default=False,
         action='store_true',
-        help="Add scripts to install latest version of lib from a pypi server"
+        help="Deprecated, has no effect"
     )
     cont_command.add_argument(
         '--no-remote',
@@ -769,6 +769,47 @@ def setup_sdist(opts):
         pkg = opts.pypi_package_name
     package = "{}-{}.tar.gz".format(pkg, opts.version)
     return os.path.join(dist_dir, package)
+
+
+def init_package_api(**kwargs):
+    """
+    shim method to allow init_package to be called as
+    an API call by pushing arguments into an argparse namespace
+
+    TODO: Refactor init_package to be argparse namespace agnostic
+    """
+    namespace = Namespace()
+    namespace.repo = kwargs.get('repo', os.getcwd())
+    namespace.source = kwargs.get('source')
+    namespace.package = kwargs.get('package')
+    namespace.tests = kwargs.get('tests', 'tests')
+    namespace.version = kwargs.get('version', '0.0.0')
+    namespace.org = kwargs.get('organization', 'ORGANIZATION HERE')
+    namespace.desc = kwargs.get('description', 'PACKAGE DESCRIPTION HERE')
+    namespace.pypi_package_name = kwargs.get('pypi_package_name', None)
+    namespace.use_pypirc = kwargs.get('use_pypirc', False)
+    namespace.register_with_pypi = kwargs.get('register_with_pypi', None)
+    namespace.add_gitignore = kwargs.get('add_gitignore', True)
+    namespace.gitignore_url = kwargs.get(
+        'gitignore_url',
+        'https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore'
+    )
+    namespace.templates = kwargs.get('templates', [])
+    namespace.version_file = kwargs.get('version_file', None)
+    namespace.history_file = kwargs.get('history_file', 'HISTORY.md')
+    namespace.requirements = kwargs.get('requirements', 'requirements.txt')
+    namespace.test_requirements = kwargs.get('testrequirements', 'test-requirements.txt')
+    namespace.python = kwargs.get('python')
+    namespace.test_mode = kwargs.get('test_mode', 'tox')
+    namespace.master = 'master'
+    namespace.develop = 'develop'
+    namespace.origin = 'origin'
+    namespace.no_remote = kwargs.get('no_remote', False)
+    namespace.create_version_file = kwargs.get('create_version_file', False)
+    namespace.bootstrap = kwargs.get('bootstrap', False)
+    validate_package_name(namespace.package)
+    validate_package_name(namespace.pypi_package_name)
+    init_package(namespace)
 
 
 def init_package(opts):
