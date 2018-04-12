@@ -4,6 +4,7 @@ import os
 from cirrus.builder_plugin import Builder
 from cirrus.logger import get_logger
 from cirrus.invoke_helpers import local
+from cirrus.conda_utils import is_anaconda_5
 
 
 LOGGER = get_logger()
@@ -110,9 +111,12 @@ class Conda(Builder):
             local(cmd)
 
     def activate(self):
+        cmd = 'source'
+        if is_anaconda_5():
+            cmd = 'conda'
         activate_script = '{}/bin/activate'.format(self.venv_path)
         if os.path.exists(activate_script):
-            command = "source {}/bin/activate {}".format(self.venv_path, self.venv_path)
+            command = "{} {}/bin/activate {}".format(cmd, self.venv_path, self.venv_path)
         else:
-            command = "source activate {}".format(self.venv_path)
+            command = "{} activate {}".format(cmd, self.venv_path)
         return command
