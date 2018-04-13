@@ -137,13 +137,21 @@ class VenvPipBuilderTest(unittest.TestCase):
         mock_local.side_effect = [None, OSError("BOOM")]
         self.assertRaises(OSError, plugin.create, clean=True)
 
-
     @mock.patch('cirrus.builder_plugin.load_configuration')
     @mock.patch('cirrus.builder_plugin.repo_directory')
     @mock.patch('cirrus.plugins.builders.venv_pip.local')
     @mock.patch('cirrus.plugins.builders.venv_pip.os.path.exists')
-    def test_builder_clean(self, mock_exists, mock_local, mock_repo, mock_conf):
+    def test_builder_clean(self, mock_exists, mock_local, mock_repo, mock_load_conf):
         mock_exists.return_value = True
+        mock_repo.return_value = "REPO"
+        mock_conf = mock.Mock(name="load_configuration")
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt'],
+            'python': 'python6.7',
+            'virtualenv_name': 'venv'
+        })
+        mock_load_conf.return_value = mock_conf
         plugin = FACTORY('VirtualenvPip')
         plugin.clean()
         self.assertTrue(mock_local.called)

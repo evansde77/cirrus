@@ -53,6 +53,61 @@ class CondaPipBuilderTest(unittest.TestCase):
     @mock.patch('cirrus.builder_plugin.local')
     @mock.patch('cirrus.plugins.builders.conda_pip.build_pip_command')
     @mock.patch('cirrus.plugins.builders.conda_pip.os.path.exists')
+    def test_activate(self, mock_ospe, mock_pip, mock_base_local, mock_local, mock_repo_dir, mock_load_conf):
+        mock_pip.return_value = "PIP_COMMAND"
+        mock_repo_dir.return_value = "REPO"
+        mock_ospe.return_value = True
+        mock_conf = mock.Mock(name="load_configuration")
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt']
+        })
+        mock_load_conf.return_value = mock_conf
+        plugin = FACTORY('CondaPip')
+
+        self.assertEqual(
+            plugin.activate(),
+            "source REPO/venv/bin/activate REPO/venv"
+        )
+        mock_ospe.return_value = False
+        self.assertEqual(plugin.activate(), "source activate REPO/venv")
+
+
+    @mock.patch('cirrus.builder_plugin.load_configuration')
+    @mock.patch('cirrus.builder_plugin.repo_directory')
+    @mock.patch('cirrus.plugins.builders.conda_pip.local')
+    @mock.patch('cirrus.builder_plugin.local')
+    @mock.patch('cirrus.plugins.builders.conda_pip.build_pip_command')
+    @mock.patch('cirrus.plugins.builders.conda_pip.os.path.exists')
+    @mock.patch('cirrus.plugins.builders.conda_pip.is_anaconda_5')
+    @mock.patch('cirrus.plugins.builders.conda_pip.find_conda_setup_script')
+    def test_activate_conda5(self, mock_find_conda, mock_is_5, mock_ospe, mock_pip, mock_base_local, mock_local, mock_repo_dir, mock_load_conf):
+        mock_pip.return_value = "PIP_COMMAND"
+        mock_repo_dir.return_value = "REPO"
+        mock_ospe.return_value = True
+        mock_is_5.return_value = True
+        mock_find_conda.return_value = "/blah/conda/wonda/conda.sh"
+        mock_conf = mock.Mock(name="load_configuration")
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt']
+        })
+        mock_load_conf.return_value = mock_conf
+        plugin = FACTORY('CondaPip')
+
+        self.assertEqual(
+            plugin.activate(),
+            " . /blah/conda/wonda/conda.sh && conda  REPO/venv/bin/activate REPO/venv"
+        )
+        mock_ospe.return_value = False
+        self.assertEqual(plugin.activate(), " . /blah/conda/wonda/conda.sh && conda  activate REPO/venv")
+
+    @mock.patch('cirrus.builder_plugin.load_configuration')
+    @mock.patch('cirrus.builder_plugin.repo_directory')
+    @mock.patch('cirrus.plugins.builders.conda_pip.local')
+    @mock.patch('cirrus.builder_plugin.local')
+    @mock.patch('cirrus.plugins.builders.conda_pip.build_pip_command')
+    @mock.patch('cirrus.plugins.builders.conda_pip.os.path.exists')
     def test_builder_python_bin(self, mock_ospe, mock_pip, mock_base_local, mock_local, mock_repo_dir, mock_load_conf):
         mock_pip.return_value = "PIP_COMMAND"
         mock_repo_dir.return_value = "REPO"
