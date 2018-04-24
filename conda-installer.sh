@@ -33,7 +33,15 @@ fi
 
 # bootstrap conda virtualenv
 conda create -y -m -p ${LOCATION}/venv pip virtualenv
-source ${LOCATION}/venv/bin/activate ${LOCATION}/venv
+if [ -f "${LOCATION}/venv/bin/activate" ]; then
+    source ${LOCATION}/venv/bin/activate ${LOCATION}/venv
+else
+   conda_loc=`which conda`
+   conda_bin=`dirname $conda_loc`
+   conda_base=`dirname $conda_bin`
+   source ${conda_base}/etc/profile.d/conda.sh
+   conda activate ${LOCATION}/venv
+fi
 
 if [ "x$CUSTOM_PYPI_SERVER" == "x" ];then
     pip install ${CIRRUS_PIP_REQ} 1>> ${LOCATION}/install.log
