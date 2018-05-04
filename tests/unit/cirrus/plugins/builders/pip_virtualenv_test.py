@@ -74,6 +74,50 @@ class VenvPipBuilderTest(unittest.TestCase):
     @mock.patch('cirrus.plugins.builders.venv_pip.local')
     @mock.patch('cirrus.builder_plugin.local')
     @mock.patch('cirrus.plugins.builders.venv_pip.build_pip_command')
+    def test_builder_extras_require(
+        self,
+        mock_pip,
+        mock_base_local,
+        mock_local,
+        mock_venv_cls,
+        mock_repo_dir,
+        mock_load_conf
+    ):
+        mock_pip.return_value = "PIP_COMMAND"
+        mock_repo_dir.return_value = "REPO"
+
+        mock_venv = mock.Mock()
+        mock_venv.open_or_create = mock.Mock()
+        mock_venv_cls.return_value = mock_venv
+        mock_conf = mock.Mock(name="load_configuration")
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt']
+        })
+        mock_load_conf.return_value = mock_conf
+        plugin = FACTORY('VirtualenvPip')
+        plugin.create(clean=True, extras_require=['ALL', 'SERVER'])
+        plugin.activate()
+        mock_base_local.assert_has_calls([
+            mock.call('. REPO/venv/bin/activate && python setup.py develop')
+        ])
+        mock_local.assert_has_calls([
+            mock.call('PIP_COMMAND'),
+            mock.call('PIP_COMMAND'),
+            mock.call('PIP_COMMAND'),
+            mock.call('. REPO/venv/bin/activate && pip install -e .[ALL]'),
+            mock.call('. REPO/venv/bin/activate && pip install -e .[SERVER]')
+        ])
+        mock_base_local.reset_mock()
+        plugin.create(clean=True, nosetupdevelop=True)
+        self.failUnless(not mock_base_local.called)
+
+    @mock.patch('cirrus.builder_plugin.load_configuration')
+    @mock.patch('cirrus.builder_plugin.repo_directory')
+    @mock.patch('cirrus.plugins.builders.venv_pip.VirtualEnvironment')
+    @mock.patch('cirrus.plugins.builders.venv_pip.local')
+    @mock.patch('cirrus.builder_plugin.local')
+    @mock.patch('cirrus.plugins.builders.venv_pip.build_pip_command')
     def test_builder_python_bin(self, mock_pip, mock_base_local, mock_local, mock_venv_cls, mock_repo_dir, mock_load_conf):
         mock_pip.return_value = "PIP_COMMAND"
         mock_repo_dir.return_value = "REPO"

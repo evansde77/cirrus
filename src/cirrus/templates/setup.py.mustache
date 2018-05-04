@@ -50,7 +50,8 @@ setup_args ={
     'version': parser.get('package', 'version'),
     'url': get_default(parser, 'package', 'url', None),
     'author': get_default(parser, 'package','author', None),
-    'author_email': get_default(parser, 'package','author_email', None)
+    'author_email': get_default(parser, 'package','author_email', None),
+    'extras_require': {}
 }
 
 if parser.has_section('console_scripts'):
@@ -59,6 +60,14 @@ if parser.has_section('console_scripts'):
         for opt in parser.options('console_scripts')
     ]
     setup_args['entry_points'] = {'console_scripts' : scripts}
+
+if parser.has_section('extras_require'):
+    for opt in parser.options('extras_require'):
+        extras = [
+            x.strip() for x in parser.get('extras_require', opt).split(';') if x.strip()
+        ]
+        setup_args['extras_require'][opt] = extras
+    }
 
 if src_dir:
     setup_args['packages'] = setuptools.find_packages(src_dir, exclude=excl_dirs)

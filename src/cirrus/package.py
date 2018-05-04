@@ -339,6 +339,19 @@ def build_parser(argslist):
         default=list()
     )
 
+    upd_command = subparsers.add_parser('update')
+    upd_command.add_argument(
+        '--setup-py',
+        default=False,
+        action='store_true',
+        help='Update the setup.py file to the latest provided by cirrus'
+    )
+    upd_command.add_argument(
+        '--repo', '-r',
+        dest='repo',
+        default=os.getcwd()
+    )
+
     opts = parser.parse_args(argslist)
     return opts
 
@@ -854,6 +867,36 @@ def build_project(opts):
     plugin.run(opts)
 
 
+def update_setup_py(opts):
+    LOGGER.info("Updating setup.py...")
+    repo_location = opts.repo
+    s_py = os.path.join(repo_location, 'setup.py')
+    if os.path.exists(s_py):
+        backup_file(s_py)
+    else:
+        LOGGER.error("no setup.py found in {}".format(repo_location))
+        raise RuntimeError('{} not found'.format(s_py))
+
+    # render new template...
+    write_setup_py(opts)
+    # commit new file
+    commit_files_optional_push(
+        opts.repo,
+        "git cirrus package update: setup.py",
+        False,
+        'setup.py'
+    )
+
+
+def update_package(opts):
+    """
+    update cirrus templates/files in the repo
+    """
+    if opts.setup_py:
+        update_setup_py(opts)
+
+
+
 def main():
     """
     main cli response handler
@@ -868,6 +911,9 @@ def main():
 
     if opts.command == 'project':
         build_project(opts)
+
+    if opts.command == 'update':
+        update_package(opts)
 
 
 if __name__ == '__main__':

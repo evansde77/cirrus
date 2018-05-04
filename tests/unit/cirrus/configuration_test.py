@@ -31,11 +31,14 @@ class ConfigurationTests(unittest.TestCase):
         parser = ConfigParser.RawConfigParser()
         parser.add_section('package')
         parser.add_section('gitflow')
+        parser.add_section('extras_require')
         parser.set('package', 'name', 'cirrus_tests')
         parser.set('package', 'version', '1.2.3')
         parser.set('gitflow', 'develop_branch', 'develop')
         parser.set('gitflow', 'release_branch_prefix', 'release/')
         parser.set('gitflow', 'feature_branch_prefix', 'feature/')
+        parser.set('extras_require', 'analysis', 'pandas;scipy')
+        parser.set('extras_require', 'server', 'Flask==0.0.0')
 
         with open(self.test_file, 'w') as handle:
             parser.write(handle)
@@ -64,9 +67,12 @@ class ConfigurationTests(unittest.TestCase):
     @mock.patch('cirrus.gitconfig.shell_command')
     def test_reading(self, mock_shell):
         """test config load """
-        #test read and accessors
+        #  test read and accessors
         mock_shell.return_value = self.gitconf_str
-        config = load_configuration(package_dir=self.dir, gitconfig_file=self.gitconfig)
+        config = load_configuration(
+            package_dir=self.dir,
+            gitconfig_file=self.gitconfig
+        )
         self.assertEqual(config.package_version(), '1.2.3')
         self.assertEqual(config.package_name(), 'cirrus_tests')
 
@@ -76,6 +82,11 @@ class ConfigurationTests(unittest.TestCase):
 
         self.assertEqual(config.release_notes(), (None, None))
         self.assertEqual(config.version_file(), (None, '__version__'))
+
+        self.assertEqual(
+            config.extras_require(),
+            {'analysis': 'pandas;scipy', 'server': 'Flask==0.0.0'}
+        )
 
         self.failUnless(config.credentials is not None)
         self.failUnless(isinstance(config.credentials, Default))
