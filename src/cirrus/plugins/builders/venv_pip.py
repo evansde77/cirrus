@@ -35,9 +35,21 @@ class VirtualenvPip(Builder):
         )
         self.plugin_parser.add_argument(
             '--extras-require',
-            help='Additional extras_require packages to be installed',
+            help=(
+                'Additional extras_require packages to be installed '
+                'as part of setup develop step'
+            ),
             default=list(),
             nargs='+'
+        )
+        self.plugin_parser.add_argument(
+            '--all-extras',
+            help=(
+                'install all extras_require packages '
+                'specified in cirrus.conf as part of setup develop step'
+            ),
+            default=False,
+            action='store_true'
         )
 
     def create(self, **kwargs):
@@ -54,6 +66,9 @@ class VirtualenvPip(Builder):
         )
         upgrade = kwargs.get('upgrade', False)
         extras_require = kwargs.get('extras_require', [])
+        all_extras = kwargs.get('all_extras', False)
+        if all_extras:
+            extras_require = self.config.extras_require().keys()
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
         venv = VirtualEnvironment(
             self.venv_path,

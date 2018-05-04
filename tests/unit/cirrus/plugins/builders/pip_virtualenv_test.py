@@ -94,9 +94,26 @@ class VenvPipBuilderTest(unittest.TestCase):
             'build': {'builder': 'conf'},
             'extra_requirements': ['test-requirements.txt', 'more-reqs.txt']
         })
+        mock_conf.extras_require = mock.Mock(
+            return_value={'ALL': None, 'SERVER': None}
+        )
         mock_load_conf.return_value = mock_conf
         plugin = FACTORY('VirtualenvPip')
         plugin.create(clean=True, extras_require=['ALL', 'SERVER'])
+        plugin.activate()
+        mock_base_local.assert_has_calls([
+            mock.call('. REPO/venv/bin/activate && python setup.py develop')
+        ])
+        mock_local.assert_has_calls([
+            mock.call('PIP_COMMAND'),
+            mock.call('PIP_COMMAND'),
+            mock.call('PIP_COMMAND'),
+            mock.call('. REPO/venv/bin/activate && pip install -e .[ALL]'),
+            mock.call('. REPO/venv/bin/activate && pip install -e .[SERVER]')
+        ])
+        mock_base_local.reset_mock()
+        plugin = FACTORY('VirtualenvPip')
+        plugin.create(clean=True, all_extras=True)
         plugin.activate()
         mock_base_local.assert_has_calls([
             mock.call('. REPO/venv/bin/activate && python setup.py develop')
