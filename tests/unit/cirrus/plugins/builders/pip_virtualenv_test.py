@@ -97,6 +97,7 @@ class VenvPipBuilderTest(unittest.TestCase):
         mock_conf.extras_require = mock.Mock(
             return_value={'ALL': None, 'SERVER': None}
         )
+        mock_conf.package_name = mock.Mock(return_value='PACKAGE')
         mock_load_conf.return_value = mock_conf
         plugin = FACTORY('VirtualenvPip')
         plugin.create(clean=True, extras_require=['ALL', 'SERVER'])
@@ -108,8 +109,8 @@ class VenvPipBuilderTest(unittest.TestCase):
             mock.call('PIP_COMMAND'),
             mock.call('PIP_COMMAND'),
             mock.call('PIP_COMMAND'),
-            mock.call('. REPO/venv/bin/activate && pip install -e .[ALL]'),
-            mock.call('. REPO/venv/bin/activate && pip install -e .[SERVER]')
+            mock.call('. REPO/venv/bin/activate && pip install PACKAGE[ALL]'),
+            mock.call('. REPO/venv/bin/activate && pip install PACKAGE[SERVER]')
         ])
         mock_base_local.reset_mock()
         plugin = FACTORY('VirtualenvPip')
@@ -122,8 +123,8 @@ class VenvPipBuilderTest(unittest.TestCase):
             mock.call('PIP_COMMAND'),
             mock.call('PIP_COMMAND'),
             mock.call('PIP_COMMAND'),
-            mock.call('. REPO/venv/bin/activate && pip install -e .[ALL]'),
-            mock.call('. REPO/venv/bin/activate && pip install -e .[SERVER]')
+            mock.call('. REPO/venv/bin/activate && pip install PACKAGE[ALL]'),
+            mock.call('. REPO/venv/bin/activate && pip install PACKAGE[SERVER]')
         ])
         mock_base_local.reset_mock()
         plugin.create(clean=True, nosetupdevelop=True)

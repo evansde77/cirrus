@@ -130,8 +130,8 @@ class VirtualenvPip(Builder):
         activate = self.activate()
         LOGGER.info("Installing extra dependencies: [{}]".format(extra))
         local(
-            '{} && pip install -e .[{}]'.format(
-                activate, extra
+            '{} && pip install {}[{}]'.format(
+                activate, self.config.package_name(), extra
             )
         )
 
