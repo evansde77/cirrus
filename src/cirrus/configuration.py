@@ -179,12 +179,29 @@ class Configuration(dict):
         prefix = 'test-'
         key = '{0}{1}'.format(prefix, suite)
         if key not in self.keys():
-            valid = [k[len(prefix):] for k in self.keys() if k.startswith(prefix)]
-            raise RuntimeError("invalid suite name '{0}', valid are {1}".format(suite, valid))
+            valid = [
+                k[len(prefix):] for k in self.keys() if k.startswith(prefix)
+            ]
+            raise RuntimeError(
+                "invalid suite name '{0}', valid are {1}".format(suite, valid)
+            )
         return self.get(key, {})
 
     def venv_name(self):
         return self.get('build', {}).get('virtualenv_name', 'venv')
+
+    def extras_require(self):
+        """
+        support for extras_require additional requirement sets
+        This format gets passed to the extras_require section
+        in the standard setup.py script
+
+        [extras_require]
+        analysis = pandas; scipy>=X.Y.Z
+        server = flask; flask-Restful
+        """
+        sect = self.get('extras_require', {})
+        return sect
 
     def quality_rcfile(self):
         return self.get('quality', {}).get('rcfile')
