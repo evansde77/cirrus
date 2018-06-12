@@ -203,11 +203,9 @@ class Configuration(dict):
         sect = self.get('extras_require', {})
         return sect
 
-    def quality_rcfile(self):
-        return self.get('quality', {}).get('rcfile')
-
-    def quality_threshold(self):
-        return float(self.get('quality', {}).get('threshold'))
+    def quality_control(self):
+        """get the qc section"""
+        return self.get('qc', {})
 
     def release_notes(self):
         """
