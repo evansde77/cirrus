@@ -34,6 +34,10 @@ def get_creds_plugin(plugin_name):
     return factory(plugin_name)
 
 
+def parse_list(val):
+    return [x.strip() for x in val.split() if x.strip()]
+
+
 class Configuration(dict):
     """
     _Configuration_
@@ -205,7 +209,16 @@ class Configuration(dict):
 
     def quality_control(self):
         """get the qc section"""
-        return self.get('qc', {})
+        qc_conf = self.get('qc', {})
+        if 'include_files' in qc_conf:
+            qc_conf['include_files'] = parse_list(qc_conf['include_files'])
+        if 'exclude_files' in qc_conf:
+            qc_conf['exclude_files'] = parse_list(qc_conf['exclude_files'])
+        if 'exclude-dirs' in qc_conf:
+            qc_conf['exclude_dirs'] = parse_list(qc_conf['exclude_dirs'])
+        if 'linters' in qc_conf:
+            qc_conf['linters'] = parse_list(qc_conf['linters'])
+        return qc_conf
 
     def release_notes(self):
         """

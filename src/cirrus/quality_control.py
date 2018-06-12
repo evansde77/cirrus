@@ -46,7 +46,7 @@ def build_parser(argslist, qc_conf):
         dest='include_files',
         nargs='+',
         required=False,
-        default=None,
+        default=qc_conf.get('include_files', None),
         help='specify files to run qc on, as list, supports globs')
     parser.add_argument(
         '--linters',

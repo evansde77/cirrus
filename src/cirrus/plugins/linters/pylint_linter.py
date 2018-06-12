@@ -25,7 +25,9 @@ class Pylint(Linter):
     def __init__(self):
         super(Pylint, self).__init__()
         self.default_score = self.linter_config.get('default_score', 0)
-        self.min_score = self.linter_config.get('minimum_score_per_file', 7)
+        self.min_score = int(
+            self.linter_config.get('minimum_score_per_file', 7)
+        )
         self.rcfile = self.linter_config.get('pylintrc', None)
 
     def run_linter(self, *files):
@@ -57,10 +59,11 @@ class Pylint(Linter):
             # TODO add support for rcfile
             args = [f, "-r", "n"]
             if self.rcfile:
-                args.append("--rcfile=rcpylint".format(self.rcfile))
+                args.append("--rcfile={}".format(self.rcfile))
             Run(args, exit=False)
         report = outp.getvalue()
         errors = 0
+        score = self.default_score
         for line in report.split('\n'):
             if re.match("E....:.", line):
                 LOGGER.warning("  => {}".format(line))

@@ -19,9 +19,9 @@ class Pep8(Linter):
     """
     def __init__(self):
         super(Pep8, self).__init__()
-        self.errors_per_file = self.linter_config.get(
+        self.errors_per_file = int(self.linter_config.get(
             'allowed_errors_per_file', 0
-        )
+        ))
 
     def run_linter(self, *files):
         """
