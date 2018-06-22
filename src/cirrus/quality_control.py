@@ -4,19 +4,30 @@ _quality_control_
 Command to run quality control via pylint, pep8, pyflakes
 '''
 import sys
+import pluggage
+
 from argparse import ArgumentParser
 
 from cirrus.git_tools import get_diff_files
-from cirrus.pylint_tools import pep8_file
-from cirrus.pylint_tools import pyflakes_file
-from cirrus.pylint_tools import pylint_file
 from cirrus.configuration import load_configuration
 from cirrus.logger import get_logger
 
 LOGGER = get_logger()
 
+FACTORY = pluggage.registry.get_factory(
+    'linter',
+    load_modules=['cirrus.plugins.linters']
+)
 
-def build_parser(argslist):
+
+def list_plugins():
+    return [
+        k for k in FACTORY.registry.keys()
+        if k != "LinterPlugin"
+    ]
+
+
+def build_parser(argslist, qc_conf):
     """
     _build_parser_
 
@@ -31,104 +42,70 @@ def build_parser(argslist):
     )
     parser.add_argument('qc', nargs='?')
     parser.add_argument(
-        '-f',
-        '--files',
-        dest='files',
+        '--include-files', '-f',
+        dest='include_files',
         nargs='+',
         required=False,
-        help='specify files to run qc on')
-    parser.add_argument('--pylint', action='store_true')
-    parser.add_argument('--pyflakes', action='store_true')
-    parser.add_argument('--pep8', action='store_true')
+        default=qc_conf.get('include_files', None),
+        help='specify files to run qc on, as list, supports globs')
+    parser.add_argument(
+        '--linters',
+        nargs='+',
+        default=qc_conf.get('linters', []),
+        choices=list_plugins()
+    )
+    parser.add_argument(
+        '--exclude-dirs',
+        nargs='+',
+        default=qc_conf.get('exclude_dirs', None)
+    )
+    parser.add_argument(
+        '--exclude-files',
+        nargs='+',
+        default=qc_conf.get('exclude_files', None)
+    )
+
     parser.add_argument(
         '--only-changes',
         action='store_true',
-        help='Only run quality control on packages that you are working on')
+        help='Only run quality control on files with git changes'
+    )
+    parser.add_argument(
+        '--test-only',
+        action='store_true',
+        help='print files that will be checked, dont actually check',
+        default=False
+    )
     parser.add_argument('-v', '--verbose', action='store_true')
-
     opts = parser.parse_args(argslist)
-
-    if opts.only_changes and opts.files is not None:
-        raise ValueError(
-            "Cannot set '--only-changes' and provide an list of files"
-        )
-
     return opts
 
 
-def run_pylint(files=None):
+def run_linters(opts, cirrus_conf, qc_conf):
     """
-    Runs pylint on a package or list of files
+    run the linter plugins
 
-    Returns True if threshold test passes, False otherwise
     """
-    config = load_configuration()
-    quality_info = ()
-    pylint_options = {'rcfile': config.quality_rcfile()}
-    if files is None:  # run on entire package
-        quality_info = pylint_file(
-            [config.package_name()],
-            **pylint_options)
-    else:
-        quality_info = pylint_file(
-            files,
-            **pylint_options)
+    results = {}
+    known_linters = list_plugins()
+    for linter in opts.linters:
+        if linter not in known_linters:
+            msg = "Unable to find linter plugin matching {}".format(linter)
+            msg += "Valid Linters are {}".format(known_linters)
+            LOGGER.error(msg)
+            raise RuntimeError(msg)
+        results[linter] = True
+        linstance = FACTORY(linter)
+        linstance.test_mode = opts.test_only
+        linstance.check(opts)
+        if linstance.errors:
+            results['linter'] = False
 
-    threshold = config.quality_threshold()
-    if quality_info[1] <= threshold:
-        LOGGER.info(
-            "Failed threshold test.  "
-            "Your score: {0}, Threshold {1}"
-            .format(quality_info[1], threshold)
+    if not all(results.values()):
+        failed = [k for k, v in results.items() if v]
+        raise RuntimeError(
+            "Failures in Quality Control Checks: {}".format(",".join(failed))
         )
-        return False
-    else:
-        LOGGER.info("Passed threshold test.")
-        return True
-
-
-def run_pyflakes(verbose, files=None):
-    """
-    Runs pyflakes on a package or list of files
-
-    Returns True if no violations found, False otherwise.
-    """
-    config = load_configuration()
-    quality_info = ()
-    if files is None:  # run on entire package
-        quality_info = pyflakes_file([config.package_name()], verbose=verbose)
-    else:
-        quality_info = pyflakes_file(files, verbose=verbose)
-
-    LOGGER.info("Package ran: {0}, Number of Flakes: {1}".format(
-        quality_info[0],
-        quality_info[1]))
-
-    if quality_info[1] > 0:
-        return False
-    return True
-
-
-def run_pep8(verbose, files=None):
-    """
-    Runs pep8 on a package or list of files
-
-    Returns True if no violations found, False otherwise.
-    """
-    config = load_configuration()
-    quality_info = ()
-    if files is None:  # run on entire package
-        quality_info = pep8_file([config.package_name()], verbose=verbose)
-    else:
-        quality_info = pep8_file(files, verbose=verbose)
-
-    LOGGER.info("Package ran: {0}, Number of Errors: {1}".format(
-        quality_info[0],
-        quality_info[1]))
-
-    if quality_info[1] > 0:
-        return False
-    return True
 
 
 def main():
@@ -137,7 +114,9 @@ def main():
 
     Execute test command
     """
-    opts = build_parser(sys.argv)
+    cirrus_conf = load_configuration()
+    qc_conf = cirrus_conf.quality_control()
+    opts = build_parser(sys.argv, qc_conf)
     if opts.only_changes:
         files = get_diff_files(None)
         # we only want python modules
@@ -147,25 +126,9 @@ def main():
         if not files:
             LOGGER.info("No modules have been changed.")
             sys.exit(0)
-    else:
-        files = opts.files
+        opts.include_files = files
+    run_linters(opts, cirrus_conf, qc_conf)
 
-    pass_pep8, pass_pyflakes, pass_pylint = True, True, True
-    # run all if none specified
-    if not opts.pylint and not opts.pep8 and not opts.pyflakes:
-        pass_pep8 = run_pep8(opts.verbose, files=files)
-        pass_pyflakes = run_pyflakes(opts.verbose, files=files)
-        pass_pylint = run_pylint(files=files)
-    else:
-        if opts.pylint:
-            pass_pylint = run_pylint(files=files)
-        if opts.pep8:
-            pass_pep8 = run_pep8(opts.verbose, files=files)
-        if opts.pyflakes:
-            pass_pyflakes = run_pyflakes(opts.verbose, files=files)
-
-    if not all([pass_pep8, pass_pylint, pass_pyflakes]):
-        sys.exit(1)
 
 if __name__ == '__main__':
     main()
