@@ -4,6 +4,7 @@ docker command
 
 
 """
+import os
 import re
 import sys
 import subprocess
@@ -405,6 +406,8 @@ def docker_build(opts, config):
     helper = BuildOptionHelper(opts, config)
     templ = helper['template']
     path = helper['directory']
+    if not os.path.exists(path):
+        os.makedirs(path)
 
     if opts.local_test:
         #

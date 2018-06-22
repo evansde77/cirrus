@@ -4,201 +4,131 @@ qc command tests
 import mock
 import unittest
 
-from cirrus.quality_control import run_pep8
-from cirrus.quality_control import run_pyflakes
-from cirrus.quality_control import run_pylint
-from cirrus.quality_control import main
+from cirrus.quality_control import main, run_linters, build_parser
 
 
-def linter_side_effect(result):
+class QCCommandTests(unittest.TestCase):
     """
-    Helper function to create a mock side-effect for
-    one of the linter functions (i.e. pep8_file, etc...)
-    the function retured takes a list of filenames
-    and keyword parameters, and returns a tuple
-    with the filename list and fake result as given.
+    test coverage for qc command module
+
     """
-    def side_effect(filenames, **kwargs):
-        return filenames, result
-    return side_effect
+    def test_build_parser(self):
+        """test build_parser call"""
+        args = [
+            '--include-files', 'file1', 'file2',
+            '--exclude-files', 'file3', 'file4',
+            '--exclude-dirs', 'dir1',
+            '--linters', 'Pep8', 'Pyflakes'
+        ]
+        qc_conf = {}
+        opts = build_parser(args, qc_conf)
+        self.assertEqual(opts.include_files, ['file1', 'file2'])
+        self.assertEqual(opts.exclude_files, ['file3', 'file4'])
+        self.assertEqual(opts.exclude_dirs, ['dir1'])
+        self.assertEqual(opts.linters, ['Pep8', 'Pyflakes'])
 
+        qc_conf = {'exclude_dirs': ['dir3', 'dir4']}
+        args = [
+            '--include-files', 'file1', 'file2',
+            '--exclude-files', 'file3', 'file4',
+            '--linters', 'Pep8', 'Pyflakes'
+        ]
+        opts = build_parser(args, qc_conf)
+        self.assertEqual(opts.exclude_dirs, ['dir3', 'dir4'])
 
-class QualityControlTest(unittest.TestCase):
+    @mock.patch("cirrus.quality_control.load_configuration")
+    @mock.patch("cirrus.quality_control.FACTORY")
+    def test_run_linters(self, mock_factory, mock_conf):
+        """test pass case"""
+        mock_linter = mock.Mock()
+        mock_linter.test_mode = False
+        mock_linter.check = mock.Mock()
+        mock_linter.errors = None
+        mock_factory.return_value = mock_linter
+        mock_factory.registry = {
+            'Pep8': None,
+            'Pylint': None
+        }
 
-    def setUp(self):
-        """setup mocks"""
-        self.patch_config_load = mock.patch(
-            'cirrus.quality_control.load_configuration')
-        self.mock_config = self.patch_config_load.start()
+        opts = mock.Mock()
+        opts.test_only = False
+        opts.linters = ['Pep8', 'Pylint']
+        run_linters(opts, mock_conf, {})
+        self.assertTrue(mock_linter.check.called)
+        self.assertEqual(mock_linter.check.call_count, 2)
 
-        self.patch_pep8 = mock.patch('cirrus.quality_control.pep8_file')
-        self.mock_pep8 = self.patch_pep8.start()
-        self.patch_pyflakes = mock.patch('cirrus.quality_control.pyflakes_file')
-        self.mock_pyflakes = self.patch_pyflakes.start()
-        self.patch_pylint = mock.patch('cirrus.quality_control.pylint_file')
-        self.mock_pylint = self.patch_pylint.start()
+    @mock.patch("cirrus.quality_control.load_configuration")
+    @mock.patch("cirrus.quality_control.FACTORY")
+    def test_run_linters_fail(self, mock_factory, mock_conf):
+        """test fail case"""
+        mock_linter = mock.Mock()
+        mock_linter.test_mode = False
+        mock_linter.check = mock.Mock()
+        mock_linter.errors = 100
+        mock_factory.return_value = mock_linter
+        mock_factory.registry = {
+            'Pep8': None,
+            'Pylint': None
+        }
 
-        self.patch_config = mock.patch('cirrus.quality_control.load_configuration')
-        self.mock_config_get = self.patch_config.start()
-        self.mock_config = mock.Mock()
-        self.mock_config.package_name.return_value = 'testpackage'
-        self.mock_config.quality_rcfile.return_value = 'rc_cola'
-        self.mock_config.quality_threshold.return_value = 9.0
-        self.mock_config_get.return_value = self.mock_config
+        opts = mock.Mock()
+        opts.test_only = False
+        opts.linters = ['Pep8', 'Pylint']
+        self.assertRaises(RuntimeError, run_linters, opts, mock_conf, {})
 
-        self.patch_sys = mock.patch('cirrus.quality_control.sys')
-        self.mock_sys = self.patch_sys.start()
+    @mock.patch("cirrus.quality_control.load_configuration")
+    @mock.patch("cirrus.quality_control.FACTORY")
+    def test_bad_linter_name(self, mock_factory, mock_conf):
+        """test fail case"""
+        mock_linter = mock.Mock()
+        mock_linter.test_mode = False
+        mock_linter.check = mock.Mock()
+        mock_linter.errors = 100
+        mock_factory.return_value = mock_linter
+        mock_factory.registry = {
+            'Pep8': None,
+            'Pylint': None
+        }
 
-        self.patch_get_diff = mock.patch('cirrus.quality_control.get_diff_files')
-        self.mock_diff_files = self.patch_get_diff.start()
-        self.mock_diff_files.return_value = ['bar.ini', 'baz.yml', 'foo.py']
+        opts = mock.Mock()
+        opts.test_only = False
+        opts.linters = ['WOMP']
+        self.assertRaises(RuntimeError, run_linters, opts, mock_conf, {})
 
-    def tearDown(self):
-        self.patch_config_load.stop()
-        self.patch_pep8.stop()
-        self.patch_pyflakes.stop()
-        self.patch_pylint.stop()
-        self.patch_config.stop()
-        self.patch_sys.stop()
-        self.patch_get_diff.stop()
-
-    def test_run_pylint_failure(self):
-        self.mock_pylint.side_effect = linter_side_effect(3.42)
-        result = run_pylint()
-        self.mock_pylint.assert_called_once_with(
-            ['testpackage'],
-            rcfile='rc_cola'
-        )
-        self.assertFalse(result)
-
-    def test_run_pylint_success(self):
-        self.mock_pylint.side_effect = linter_side_effect(10.0)
-        result = run_pylint()
-        self.mock_pylint.assert_called_once_with(
-            ['testpackage'],
-            rcfile='rc_cola'
-        )
-        self.assertTrue(result)
-
-    def test_run_pylint_files(self):
-        self.mock_pylint.side_effect = linter_side_effect(10.0)
-        result = run_pylint(files=['foo', 'bar'])
-        self.mock_pylint.assert_called_once_with(
-            ['foo', 'bar'],
-            rcfile='rc_cola'
-        )
-        self.assertTrue(result)
-
-    def test_run_pyflakes_failure(self):
-        self.mock_pyflakes.side_effect = linter_side_effect(3)
-        result = run_pyflakes(False)
-        self.mock_pyflakes.assert_called_once_with(['testpackage'], verbose=False)
-        self.assertFalse(result)
-
-    def test_run_pyflakes_success(self):
-        self.mock_pyflakes.side_effect = linter_side_effect(0)
-        result = run_pyflakes(False)
-        self.mock_pyflakes.assert_called_once_with(['testpackage'], verbose=False)
-        self.assertTrue(result)
-
-    def test_run_pyflakes_files_verbose(self):
-        self.mock_pyflakes.side_effect = linter_side_effect(0)
-        result = run_pyflakes(True, files=['foo', 'bar'])
-        self.mock_pyflakes.assert_called_once_with(['foo', 'bar'], verbose=True)
-        self.assertTrue(result)
-
-    def test_run_pep8_failure(self):
-        self.mock_pep8.side_effect = linter_side_effect(3)
-        result = run_pep8(False)
-        self.mock_pep8.assert_called_once_with(['testpackage'], verbose=False)
-        self.assertFalse(result)
-
-    def test_run_pep8_success(self):
-        self.mock_pep8.side_effect = linter_side_effect(0)
-        result = run_pep8(False)
-        self.mock_pep8.assert_called_once_with(['testpackage'], verbose=False)
-        self.assertTrue(result)
-
-    def test_run_pep8_files_verbose(self):
-        self.mock_pep8.side_effect = linter_side_effect(0)
-        result = run_pep8(True, files=['foo', 'bar'])
-        self.mock_pep8.assert_called_once_with(['foo', 'bar'], verbose=True)
-        self.assertTrue(result)
-
-    def test_qc_command_success(self):
-        self.mock_pep8.side_effect = linter_side_effect(0)
-        self.mock_pyflakes.side_effect = linter_side_effect(0)
-        self.mock_pylint.side_effect = linter_side_effect(10.0)
-        self.mock_sys.argv = ['qc']
+    @mock.patch("cirrus.quality_control.load_configuration")
+    @mock.patch("cirrus.quality_control.build_parser")
+    @mock.patch("cirrus.quality_control.run_linters")
+    @mock.patch("cirrus.quality_control.get_diff_files")
+    def test_main(self, mock_diffs, mock_rl, mock_bp, mock_conf):
+        mock_qc = {}
+        mock_conf.quality_control = mock.Mock(return_value=mock_qc)
+        mock_opts = mock.Mock()
+        mock_opts.only_changes = False
+        mock_bp.return_value = mock_opts
 
         main()
+        self.assertTrue(mock_rl.called)
 
-        self.mock_pep8.assert_called_once_with(['testpackage'], verbose=False)
-        self.mock_pyflakes.assert_called_once_with(['testpackage'], verbose=False)
-        self.mock_pylint.assert_called_once_with(['testpackage'], rcfile='rc_cola')
-
-    def test_qc_command_single_failure(self):
-        self.mock_pep8.side_effect = linter_side_effect(0)
-        self.mock_pyflakes.side_effect = linter_side_effect(3)
-        self.mock_pylint.side_effect = linter_side_effect(10.0)
-        self.mock_sys.argv = ['qc']
-
-        main()
-
-        self.mock_sys.exit.assert_called_once_with(1)
-        self.mock_pep8.assert_called_once_with(['testpackage'], verbose=False)
-        self.mock_pyflakes.assert_called_once_with(['testpackage'], verbose=False)
-        self.mock_pylint.assert_called_once_with(['testpackage'], rcfile='rc_cola')
-
-    def test_qc_command_multiple_failure(self):
-        self.mock_pep8.side_effect = linter_side_effect(2)
-        self.mock_pyflakes.side_effect = linter_side_effect(3)
-        self.mock_pylint.side_effect = linter_side_effect(3.4)
-        self.mock_sys.argv = ['qc']
+    @mock.patch("cirrus.quality_control.load_configuration")
+    @mock.patch("cirrus.quality_control.build_parser")
+    @mock.patch("cirrus.quality_control.run_linters")
+    @mock.patch("cirrus.quality_control.get_diff_files")
+    def test_main_diffs(self, mock_diffs, mock_rl, mock_bp, mock_conf):
+        mock_qc = {}
+        mock_conf.quality_control = mock.Mock(return_value=mock_qc)
+        mock_opts = mock.Mock()
+        mock_opts.only_changes = True
+        mock_opts.incude_files = None
+        mock_bp.return_value = mock_opts
+        mock_diffs.return_value = ['DIFF1.py', 'DIFF2.py']
 
         main()
+        self.assertTrue(mock_rl.called)
+        self.assertEqual(mock_opts.include_files, mock_diffs.return_value)
 
-        self.mock_sys.exit.assert_called_once_with(1)
-        self.mock_pep8.assert_called_once_with(['testpackage'], verbose=False)
-        self.mock_pyflakes.assert_called_once_with(['testpackage'], verbose=False)
-        self.mock_pylint.assert_called_once_with(['testpackage'], rcfile='rc_cola')
-
-    def test_qc_command_only_changes(self):
-        self.mock_pep8.side_effect = linter_side_effect(2)
-        self.mock_pyflakes.side_effect = linter_side_effect(3)
-        self.mock_pylint.side_effect = linter_side_effect(3.4)
-        self.mock_sys.argv = ['qc', '--only-changes']
-
-        main()
-
-        self.mock_sys.exit.assert_called_once_with(1)
-        self.mock_pep8.assert_called_once_with(['foo.py'], verbose=False)
-        self.mock_pyflakes.assert_called_once_with(['foo.py'], verbose=False)
-        self.mock_pylint.assert_called_once_with(['foo.py'], rcfile='rc_cola')
-
-    def test_qc_command_files(self):
-        self.mock_pep8.side_effect = linter_side_effect(2)
-        self.mock_pyflakes.side_effect = linter_side_effect(3)
-        self.mock_pylint.side_effect = linter_side_effect(3.4)
-        self.mock_sys.argv = ['qc', '-f', 'baz.py']
-
-        main()
-
-        self.mock_sys.exit.assert_called_once_with(1)
-        self.mock_pep8.assert_called_once_with(['baz.py'], verbose=False)
-        self.mock_pyflakes.assert_called_once_with(['baz.py'], verbose=False)
-        self.mock_pylint.assert_called_once_with(['baz.py'], rcfile='rc_cola')
-
-    def test_qc_command_changes_and_files_error(self):
-        self.mock_sys.argv = ['qc', '-f', 'baz.py', '--only-changes']
-
-        with self.assertRaises(ValueError):
-            main()
-
-        self.assertFalse(self.mock_pep8.called)
-        self.assertFalse(self.mock_pyflakes.called)
-        self.assertFalse(self.mock_pylint.called)
+        mock_diffs.return_value = []
+        self.assertRaises(SystemExit, main)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
