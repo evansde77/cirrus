@@ -562,11 +562,11 @@ def write_cirrus_conf(opts, version_file):
     config.set('qc', 'threshold', str(10))
     config.set('qc', 'include_files', 'src/{}/*'.format(opts.package))
     config.set('qc', 'exclude_dirs', 'tests dist venv .tox')
-    config.set('qc', 'linters' "Pep8 Pyflakes")
+    config.set('qc', 'linters', "Pep8 Pyflakes")
     config.add_section("qc/Pep8")
-    config.set("qc/Pep8", "allowed_errors_per_file", 5)
+    config.set("qc/Pep8", "allowed_errors_per_file", str(5))
     config.add_section("qc/Pyflakes")
-    config.set("qc/Pyflakes", "allowed_errors_per_file", 5)
+    config.set("qc/Pyflakes", "allowed_errors_per_file", str(5))
 
     with open(cirrus_conf, 'w') as handle:
         config.write(handle)
