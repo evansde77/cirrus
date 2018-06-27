@@ -20,8 +20,8 @@ from cirrus.invoke_helpers import local
 LOGGER = get_logger()
 
 
-CONDA_VERSION_FORMAT = re.compile('^[0-9]{1}\.[0-9]{1}$')
-PYTHON_VERSION_FORMAT = re.compile('^python[0-9]{1}\.[0-9]{1}$')
+CONDA_VERSION_FORMAT = re.compile('^[0-9]{1}\\.[0-9]{1}$')
+PYTHON_VERSION_FORMAT = re.compile('^python[0-9]{1}\\.[0-9]{1}$')
 
 
 def normalise_version(v):
@@ -32,7 +32,8 @@ def normalise_version(v):
         result = 'python{}'.format(v)
     if not PYTHON_VERSION_FORMAT.match(result):
         msg = (
-            "Unable to reconcile python version from cirrus.conf build section:\n"
+            "Unable to reconcile python version "
+            "from cirrus.conf build section:\n"
             "Value in cirrus.conf [build]: python={v}\n"
             "Expected either pythonX.Y or X.Y format"
         )
@@ -59,7 +60,10 @@ class Builder(PluggagePlugin):
         self.build_config = self.config.get('build', {})
         self.working_dir = repo_directory()
         self.venv_name = self.build_config.get('virtualenv_name', 'venv')
-        self.reqs_name = self.build_config.get('requirements_file', 'requirements.txt')
+        self.reqs_name = self.build_config.get(
+            'requirements_file',
+            'requirements.txt'
+        )
         self.extra_reqs = self.build_config.get('extra_requirements', [])
         self.python_bin = self.build_config.get('python', None)
         self.extra_reqs = self.str_to_list(self.extra_reqs)

@@ -86,7 +86,7 @@ def main():
     # make this more flexible
     for req in parse_requirements(reqs_name):
         if req.req is not None:
-            versions = [ x for x in req.absolute_versions]
+            versions = [x for x in req.absolute_versions]
             if len(versions) > 0:
                 reqs[req.name] = versions[0]
 
@@ -97,7 +97,7 @@ def main():
         if tag is not None:
             msg += " with tag {tag}"
         msg.format(req=req, repo=repo, tag=tag)
-        print msg
+        print(msg)
         local_repo = os.path.join(repo_cache, req)
         git_clone_repo(repo, local_repo, tag=reqs.get(req))
         install_from_repo(venv_command, local_repo)

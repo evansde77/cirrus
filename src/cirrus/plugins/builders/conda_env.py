@@ -62,7 +62,10 @@ class CondaEnv(Builder):
         if environment is None:
             environment = self.build_config.get('conda-environment', None)
         if environment is None:
-            msg = "No conda environment yaml specified in cirrus.conf [build] section or via --environment option"
+            msg = (
+                "No conda environment yaml specified in cirrus.conf"
+                " [build] section or via --environment option"
+            )
             LOGGER.error(msg)
             raise RuntimeError(msg)
         clean = kwargs.get('clean', False)
@@ -105,7 +108,13 @@ class CondaEnv(Builder):
                     "Working Dir: {2}\n"
                     "Conda env: {3}\n"
                     "Requirements: {4}\n"
-                ).format(ex, cmd, self.working_dir, self.venv_path, self.reqs_name)
+                ).format(
+                    ex,
+                    cmd,
+                    self.working_dir,
+                    self.venv_path,
+                    self.reqs_name
+                )
                 LOGGER.error(msg)
                 raise
 
@@ -116,18 +125,29 @@ class CondaEnv(Builder):
                     venv=self.venv_path,
                     file=conda_file
                 )
-                LOGGER.info("Installing extra conda reqs: {}".format(conda_file))
+                LOGGER.info(
+                    "Installing extra conda reqs: {}".format(
+                        conda_file
+                    )
+                )
                 try:
                     local(cmd)
                 except OSError as ex:
                     msg = (
-                        "Error running conda install extras command during build\n"
+                        "Error running conda install extras "
+                        "command during build\n"
                         "Error was {0}\n"
                         "Running command: {1}\n"
                         "Working Dir: {2}\n"
                         "Conda env: {3}\n"
                         "Extra Conda Requirements: {4}\n"
-                    ).format(ex, cmd, self.working_dir, self.venv_path, conda_file)
+                    ).format(
+                        ex,
+                        cmd,
+                        self.working_dir,
+                        self.venv_path,
+                        conda_file
+                    )
                     LOGGER.error(msg)
                     raise
 
@@ -146,13 +166,16 @@ class CondaEnv(Builder):
                     local(cmd)
                 except OSError as ex:
                     msg = (
-                        "Error running pip install extras command during build\n"
+                        "Error running pip install extras "
+                        "command during build\n"
                         "Error was {0}\n"
                         "Running command: {1}\n"
                         "Working Dir: {2}\n"
                         "Conda env: {3}\n"
                         "Extra pip Requirements: {4}\n"
-                    ).format(ex, cmd, self.working_dir, self.venv_path, pip_file)
+                    ).format(
+                        ex, cmd, self.working_dir, self.venv_path, pip_file
+                    )
                     LOGGER.error(msg)
                     raise
 
@@ -170,7 +193,11 @@ class CondaEnv(Builder):
                 conda,
                 self.venv_path
             )
-            LOGGER.info("Removing existing conda env: {0}".format(self.venv_path))
+            LOGGER.info(
+                "Removing existing conda env: {0}".format(
+                    self.venv_path
+                )
+            )
             local(cmd)
 
     def activate(self):
@@ -183,7 +210,11 @@ class CondaEnv(Builder):
                 cmd = "conda"
         activate_script = '{}/bin/activate'.format(self.venv_path)
         if os.path.exists(activate_script):
-            command = "{} {}/bin/activate {}".format(cmd, self.venv_path, self.venv_path)
+            command = "{} {}/bin/activate {}".format(
+                cmd,
+                self.venv_path,
+                self.venv_path
+            )
         else:
             command = "{} activate {}".format(cmd, self.venv_path)
         return command

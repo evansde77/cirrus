@@ -10,7 +10,6 @@ import os
 import sys
 import datetime
 import itertools
-from collections import OrderedDict
 from cirrus.invoke_helpers import local
 import pluggage.registry
 
@@ -94,7 +93,8 @@ def artifact_name(config):
     return build_artifact
 
 
-parse_to_list = lambda s: [x.strip() for x in s.split(',') if x.strip()]
+def parse_to_list(s):
+    return [x.strip() for x in s.split(',') if x.strip()]
 
 
 def release_branch_name(config):
@@ -179,10 +179,14 @@ def release_config(config, opts):
 
     if opts.github_develop_context_string:
         release_config['update_develop_github_context'] = True
-        release_config['github_develop_context_string'] = opts.github_develop_context_string
+        release_config[
+            'github_develop_context_string'
+        ] = opts.github_develop_context_string
     if opts.github_master_context_string:
         release_config['update_master_github_context'] = True
-        release_config['github_master_context_string'] = opts.github_master_context_string
+        release_config[
+            'github_master_context_string'
+        ] = opts.github_master_context_string
 
     # validate argument types
     release_config['wait_on_ci_timeout'] = int(
@@ -204,15 +208,20 @@ def release_config(config, opts):
     if release_config['update_github_context']:
         # require context string
         if release_config['github_context_string'] is None:
-            msg = "if using update_github_context you must provide a github_context_string"
+            msg = (
+                "if using update_github_context you must "
+                "provide a github_context_string"
+            )
             raise RuntimeError(msg)
         release_config['github_context_string'] = parse_to_list(
             release_config['github_context_string']
         )
     if release_config['update_develop_github_context']:
-        # require context string                                                                                                                                                        if release_config['github_develop_context_string'] is None:
         if release_config['github_develop_context_string'] is None:
-            msg = "if using update_develop_github_context you must provide a github_context_string"
+            msg = (
+                "if using update_develop_github_context you "
+                "must provide a github_context_string"
+            )
             raise RuntimeError(msg)
         release_config['github_develop_context_string'] = parse_to_list(
             release_config['github_develop_context_string']
@@ -220,7 +229,10 @@ def release_config(config, opts):
     if release_config['update_master_github_context']:
         # require context string
         if release_config['github_master_context_string'] is None:
-            msg = "if using update_master_github_context you must provide a github_master_context_string"
+            msg = (
+                "if using update_master_github_context you must "
+                "provide a github_master_context_string"
+            )
             raise RuntimeError(msg)
         release_config['github_master_context_string'] = parse_to_list(
             release_config['github_master_context_string']
@@ -267,7 +279,10 @@ def build_parser(argslist):
         '--bump',
         nargs=2,
         action='append',
-        help='package versions to update in requirements.txt, eg --bump argparse 1.2.1 --bump womp 9.9.9'
+        help=(
+            'package versions to update in requirements.txt, '
+            'eg --bump argparse 1.2.1 --bump womp 9.9.9'
+        )
     )
     new_command.add_argument(
         '--no-remote',
@@ -278,7 +293,11 @@ def build_parser(argslist):
 
     # borrow --micro/minor/major options from "new" command.
     subparsers.add_parser('trigger', parents=[new_command], add_help=False)
-    new_version_command = subparsers.add_parser('new-version', parents=[new_command], add_help=False)
+    subparsers.add_parser(
+        'new-version',
+        parents=[new_command],
+        add_help=False
+    )
 
     cleanup_command = subparsers.add_parser(
         'cleanup'
@@ -300,7 +319,10 @@ def build_parser(argslist):
     status_command = subparsers.add_parser('status')
     status_command.add_argument(
         '--release',
-        help='check status of the provided release, defaults to current branch',
+        help=(
+            'check status of the provided release, '
+            'defaults to current branch'
+        ),
         default=None
     )
 
@@ -323,13 +345,19 @@ def build_parser(argslist):
         '--develop-context-string',
         default=None,
         dest='github_develop_context_string',
-        help='Update the github context string for develop branch provided when pushed'
+        help=(
+            'Update the github context string for '
+            'develop branch provided when pushed'
+        )
     )
     merge_command.add_argument(
         '--master-context-string',
         default=None,
         dest='github_master_context_string',
-        help='Update the github context string for master branch provided when pushed'
+        help=(
+            'Update the github context string for master '
+            'branch provided when pushed'
+        )
     )
 
     merge_command.add_argument(
@@ -452,7 +480,9 @@ def make_new_version(opts):
     # update __version__ or equivalent
     version_file, version_attr = config.version_file()
     if version_file is not None:
-        LOGGER.info('Updating {0} attribute in {1}'.format(version_file, version_attr))
+        LOGGER.info(
+            'Updating {0} attribute in {1}'.format(version_file, version_attr)
+        )
         update_version(version_file, new_version, version_attr)
         changes.append(version_file)
 
@@ -555,7 +585,12 @@ def new_release(opts):
     # update __version__ or equivalent
     version_file, version_attr = config.version_file()
     if version_file is not None:
-        LOGGER.info('Updating {0} attribute in {1}'.format(version_file, version_attr))
+        LOGGER.info(
+            'Updating {0} attribute in {1}'.format(
+                version_file,
+                version_attr
+            )
+        )
         update_version(version_file, new_version, version_attr)
         changes.append(version_file)
 
@@ -592,7 +627,8 @@ def trigger_release(opts):
         build_server_config = config[build_server]
     except KeyError:
         msg = (
-            '[build-server] section is incomplete or missing from cirrus.conf. '
+            '[build-server] section is incomplete '
+            'or missing from cirrus.conf. '
             'Please see below for an example.\n'
             '\n [build-server]'
             '\n name = jenkins'
@@ -626,7 +662,11 @@ def _trigger_jenkins_release(config, new_version, level):
 
     if response.status_code != 201:
         LOGGER.error(response.text)
-        raise RuntimeError('Jenkins HTTP API returned code {}'.format(response.status_code))
+        raise RuntimeError(
+            'Jenkins HTTP API returned code {}'.format(
+                response.status_code
+            )
+        )
 
 
 def upload_release(opts):
@@ -653,7 +693,9 @@ def upload_release(opts):
     plugin = get_plugin(opts.plugin)
 
     if opts.test:
-        LOGGER.info("Uploading {} to pypi disabled by test or option...".format(tag))
+        LOGGER.info(
+            "Uploading {} to pypi disabled by test or option...".format(tag)
+        )
         return
 
     plugin.upload(opts, build_artifact)
@@ -729,7 +771,9 @@ def merge_release(opts):
                 #
                 # wait on release branch CI success
                 #
-                LOGGER.info(u"Waiting on CI build for {0}".format(release_branch))
+                LOGGER.info(
+                    u"Waiting on CI build for {0}".format(release_branch)
+                )
                 ghc.wait_on_gh_status(
                     sha,
                     timeout=rel_conf['wait_on_ci_timeout'],
@@ -740,7 +784,6 @@ def merge_release(opts):
             ghc.pull_branch(master, remote=not opts.no_remote)
             ghc.merge_branch(release_branch)
             sha = ghc.repo.head.ref.commit.hexsha
-
 
             if rel_conf['wait_on_ci_master']:
                 #

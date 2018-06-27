@@ -3,7 +3,6 @@ _feature_
 
 Command to create a new feature branch off of the develop branch
 '''
-import os
 import sys
 from argparse import ArgumentParser
 
@@ -71,7 +70,7 @@ def build_parser(argslist):
         action='store_true'
     )
 
-    list_command = subparsers.add_parser('list')
+    subparsers.add_parser('list')
 
     opts = parser.parse_args(argslist)
     return opts
@@ -136,7 +135,7 @@ def new_pr(opts):
     Creates a pull request
     """
     repo_dir = repo_directory()
-    #parse notify adding '@' if necessary
+    # parse notify adding '@' if necessary
     notifiees = []
     if opts.notify is not None:
         notify = opts.notify.split(',')
@@ -180,7 +179,7 @@ def main():
     if opts.command == 'merge':
         merge_feature_branch(opts)
     else:
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == '__main__':

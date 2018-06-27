@@ -31,7 +31,11 @@ def register_package(
         username = username or cirrus_conf.get_param('twine', 'username', None)
         password = password or cirrus_conf.get_param('twine', 'password', None)
         certfile = certfile or cirrus_conf.get_param('twine', 'certfile', None)
-        client_certfile = client_certfile or cirrus_conf.get_param('twine', 'client_certfile', None)
+        client_certfile = client_certfile or cirrus_conf.get_param(
+            'twine',
+            'client_certfile',
+            None
+        )
 
     register(
         package,
@@ -72,8 +76,16 @@ def upload_package(
         password = password or cirrus_conf.get_param('twine', 'password', None)
         certfile = certfile or cirrus_conf.get_param('twine', 'certfile', None)
         identity = identity or cirrus_conf.get_param('twine', 'identity', None)
-        sign_with = sign_with or cirrus_conf.get_param('twine', 'sign_with', None)
-        client_certfile = client_certfile or cirrus_conf.get_param('twine', 'client_certfile', None)
+        sign_with = sign_with or cirrus_conf.get_param(
+            'twine',
+            'sign_with',
+            None
+        )
+        client_certfile = client_certfile or cirrus_conf.get_param(
+            'twine',
+            'client_certfile',
+            None
+        )
 
     upload(
         [package],

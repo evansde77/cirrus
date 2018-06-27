@@ -4,7 +4,7 @@ import os
 from cirrus.builder_plugin import Builder
 from cirrus.logger import get_logger
 from cirrus.invoke_helpers import local
-from cirrus.conda_utils import is_anaconda_5
+from cirrus.conda_utils import is_anaconda_5, find_conda_setup_script
 
 
 LOGGER = get_logger()
@@ -36,7 +36,9 @@ class Conda(Builder):
         upgrade = kwargs.get('upgrade', False)
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
         clean = kwargs.get('clean', False)
-        channels = self.str_to_list(self.build_config.get('conda_channels', []))
+        channels = self.str_to_list(
+            self.build_config.get('conda_channels', [])
+        )
         LOGGER.info("channels from conf: {}".format(channels))
         if kwargs.get('conda_channels'):
             channels = kwargs['conda_channels']
@@ -44,7 +46,13 @@ class Conda(Builder):
             self.clean(**kwargs)
 
         channels = ''.join(' -c {}'.format(c) for c in channels)
-        LOGGER.info("channels: result={}".format(kwargs.get('conda_channels'), self.build_config.get('conda_channels'), channels))
+        LOGGER.info(
+            "channels: result={}".format(
+                kwargs.get('conda_channels'),
+                self.build_config.get('conda_channels'),
+                channels
+            )
+        )
         venv_command = "{} create -y -m {} -p {} pip virtualenv".format(
             conda,
             channels,
@@ -107,7 +115,11 @@ class Conda(Builder):
                 conda,
                 self.venv_path
             )
-            LOGGER.info("Removing existing conda env: {0}".format(self.venv_path))
+            LOGGER.info(
+                "Removing existing conda env: {0}".format(
+                    self.venv_path
+                )
+            )
             local(cmd)
 
     def activate(self):
@@ -121,7 +133,11 @@ class Conda(Builder):
 
         activate_script = '{}/bin/activate'.format(self.venv_path)
         if os.path.exists(activate_script):
-            command = "{} {}/bin/activate {}".format(cmd, self.venv_path, self.venv_path)
+            command = "{} {}/bin/activate {}".format(
+                cmd,
+                self.venv_path,
+                self.venv_path
+            )
         else:
             command = "{} activate {}".format(cmd, self.venv_path)
         return command

@@ -21,7 +21,7 @@ def local(command):
     c = Context()
     LOGGER.info("local({})".format(command))
     try:
-        result = c.run(command)
+        c.run(command)
     except UnexpectedExit as ex:
         msg = "Error running command:\n{}".format(ex)
         LOGGER.error(msg)

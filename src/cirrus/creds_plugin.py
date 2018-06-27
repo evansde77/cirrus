@@ -78,7 +78,14 @@ class CredsPlugin(PluggagePlugin):
             'chef_client_keyfile': None,
         }
 
-    def set_chef_credentials(self, server, username, keyfile, client_user=None, client_key=None):
+    def set_chef_credentials(
+            self,
+            server,
+            username,
+            keyfile,
+            client_user=None,
+            client_key=None
+            ):
         raise NotImplementedError(
             "{}.set_chef_credentials".format(type(self).__name__)
         )

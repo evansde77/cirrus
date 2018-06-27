@@ -38,7 +38,7 @@ def run_command(cmd):
     return subprocess.call(cmd, shell=False)
 
 
-HELP = \
+HELP = (   # noqa
 """
 Cirrus commands available are:
 
@@ -47,6 +47,7 @@ Cirrus commands available are:
 Do git cirrus <command> -h for more information on a
 particular command
 """
+)
 
 
 def format_help(command_list):
@@ -99,6 +100,7 @@ def main():
         # always return to previous dir
         os.chdir(old_dir)
     return exit_code
+
 
 if __name__ == "__main__":
     sys.exit(main())

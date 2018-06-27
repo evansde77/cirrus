@@ -22,8 +22,16 @@ def nightly_config(conf=None):
         conf = load_configuration()
     if not conf.has_section('release'):
         return result
-    result['nightly_format'] = conf.get_param("release", "nightly_format", result['nightly_format'])
-    result['nightly_separator'] = conf.get_param("release", "nightly_separator", result['nightly_separator'])
+    result['nightly_format'] = conf.get_param(
+        "release",
+        "nightly_format",
+        result['nightly_format']
+    )
+    result['nightly_separator'] = conf.get_param(
+        "release",
+        "nightly_separator",
+        result['nightly_separator']
+    )
     return result
 
 
@@ -34,7 +42,7 @@ def is_nightly(version):
 
     """
     conf = nightly_config()
-    reg = "^[0-9]+\.[0-9]+\.[0-9]+{}".format(conf['nightly_separator'])
+    reg = "^[0-9]+\\.[0-9]+\\.[0-9]+{}".format(conf['nightly_separator'])
     matcher = re.compile(reg)
     elems = matcher.split(version, 1)
     if len(elems) == 2:

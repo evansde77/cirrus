@@ -1,7 +1,6 @@
 '''
 Contains class for handling the creation of pull requests
 '''
-import os
 import git
 import json
 import time
@@ -56,16 +55,21 @@ class GitHubContext(object):
         """
         _branch_state_
 
-        Get the branch status which should include details of CI builds/hooks etc
+        Get the branch status which should include details of
+        CI builds/hooks etc
         See:
-        https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
+        https://developer.github.com/v3/repos/statuses/
+           #get-the-combined-status-for-a-specific-ref
 
         returns a state which is one of 'failure', 'pending', 'success'
 
         """
         if branch is None:
             branch = self.active_branch_name
-        url = "https://api.github.com/repos/{org}/{repo}/commits/{branch}/status".format(
+        url = (
+            "https://api.github.com/repos/{org}/"
+            "{repo}/commits/{branch}/status"
+        ).format(
             org=self.config.organisation_name(),
             repo=self.config.package_name(),
             branch=branch
@@ -81,7 +85,10 @@ class GitHubContext(object):
         given branch
 
         """
-        url = "https://api.github.com/repos/{org}/{repo}/commits/{branch}/statuses".format(
+        url = (
+            "https://api.github.com/repos/{org}/{repo}/"
+            "commits/{branch}/statuses"
+        ).format(
             org=self.config.organisation_name(),
             repo=self.config.package_name(),
             branch=branch
@@ -131,7 +138,8 @@ class GitHubContext(object):
 
         Mark the CI status of the current branch.
 
-        :param state: state of the last test run, such as "success" or "failure"
+        :param state: state of the last test run, such as
+            "success" or "failure"
         :param context: The GH context string to use for the state, eg
            "continuous-integration/travis-ci"
 
@@ -142,7 +150,12 @@ class GitHubContext(object):
         if branch is None:
             branch = self.repo.active_branch.name
 
-        LOGGER.info(u"Setting CI status for branch {} to {}".format(branch, state))
+        LOGGER.info(
+            u"Setting CI status for branch {} to {}".format(
+                branch,
+                state
+            )
+        )
 
         sha = self.repo.head.commit.hexsha
 
@@ -155,7 +168,10 @@ class GitHubContext(object):
             if "rejected" not in unicode_(ex):
                 raise
 
-        url = "https://api.github.com/repos/{org}/{repo}/statuses/{sha}".format(
+        url = (
+            "https://api.github.com/repos/"
+            "{org}/{repo}/statuses/{sha}"
+        ).format(
             org=self.config.organisation_name(),
             repo=self.config.package_name(),
             sha=sha
@@ -189,14 +205,21 @@ class GitHubContext(object):
         LOGGER.info("Waiting on CI status of {}...".format(branch_name))
         while status == 'pending':
             if time_spent > timeout:
-                LOGGER.error("Exceeded timeout for branch status {}".format(branch_name))
+                LOGGER.error(
+                    "Exceeded timeout for branch status {}".format(
+                        branch_name
+                    )
+                )
                 break
             status = branch_status(branch_name)
             time.sleep(interval)
             time_spent += interval
 
         if status != 'success':
-            msg = "CI Test status is not success: {} is {}".format(branch_name, status)
+            msg = "CI Test status is not success: {} is {}".format(
+                branch_name,
+                status
+            )
             LOGGER.error(msg)
             raise RuntimeError(msg)
 
@@ -234,7 +257,11 @@ class GitHubContext(object):
                 raise RuntimeError(unicode_(r.summary))
         return ret
 
-    def push_branch_with_retry(self, branch_name=None, attempts=300, cooloff=2):
+    def push_branch_with_retry(
+            self,
+            branch_name=None,
+            attempts=300,
+            cooloff=2):
         """
         _push_branch_with_retry_
 
@@ -249,14 +276,21 @@ class GitHubContext(object):
                 self.push_branch(branch_name=branch_name)
                 break
             except RuntimeError as ex:
-                msg = "Error pushing branch {}: {}".format(branch_name, str(ex))
+                msg = "Error pushing branch {}: {}".format(
+                    branch_name,
+                    str(ex)
+                )
                 LOGGER.info(msg)
                 count += 1
                 error_flag = ex
                 time.sleep(cooloff)
         if error_flag is not None:
-            msg = "Unable to push branch {} due to repeated failures: {}".format(
-                self.active_branch_name, str(error_flag)
+            msg = (
+                "Unable to push branch {} "
+                "due to repeated failures: {}"
+            ).format(
+                self.active_branch_name,
+                str(error_flag)
             )
             raise RuntimeError(msg)
 
@@ -287,13 +321,20 @@ class GitHubContext(object):
             # file with unmerged blobs
             list_of_blobs = unmerged_blobs[path]
             for (stage, blob) in list_of_blobs:
-                # Now we can check each stage to see whether there were any conflicts
+                # Now we can check each stage to see whether there
+                # were any conflicts
                 if stage != 0:
                     LOGGER.info("conflict in {}: {}".format(path, blob))
                     found_a_conflict = True
         return found_a_conflict
 
-    def tag_release(self, tag, master='master', push=True, attempts=1, cooloff=2):
+    def tag_release(
+            self,
+            tag,
+            master='master',
+            push=True,
+            attempts=1,
+            cooloff=2):
         """
         _tag_release_
 
@@ -303,7 +344,10 @@ class GitHubContext(object):
         if self.active_branch_name != master:
             self.repo.git.checkout(master)
 
-        exists = any(existing_tag.name == tag for existing_tag in self.repo.tags)
+        exists = any(
+            existing_tag.name == tag
+            for existing_tag in self.repo.tags
+        )
         if exists:
             # tag already exists
             msg = (
@@ -327,7 +371,9 @@ class GitHubContext(object):
                     time.sleep(cooloff)
                 count += 1
             if error_flag is not None:
-                msg = "Unable to push tags {} due to repeated failures: {}".format(
+                msg = (
+                    "Unable to push tags {} due to repeated failures: {}"
+                ).format(
                     tag, str(error_flag)
                 )
                 raise RuntimeError(msg)
@@ -339,7 +385,9 @@ class GitHubContext(object):
         Delete the local and (if remote is True) branch
         """
         if self.active_branch_name == branch_name:
-            msg = "Cant delete branch {} because it is active".format(branch_name)
+            msg = "Cant delete branch {} because it is active".format(
+                branch_name
+            )
             raise RuntimeError(msg)
         self.repo.git.branch('-D', branch_name)
         if remote:
@@ -397,9 +445,14 @@ class GitHubContext(object):
         toggle the merged boolean to include previously merged branches
 
         """
-        feature_pfix = "remotes/origin/{}".format(self.config.gitflow_feature_prefix())
+        feature_pfix = "remotes/origin/{}".format(
+            self.config.gitflow_feature_prefix()
+        )
         branches = self.iter_git_branches(merged)
-        branches = itertools.ifilter(lambda x: x.startswith(feature_pfix), branches)
+        branches = itertools.ifilter(
+            lambda x: x.startswith(feature_pfix),
+            branches
+        )
         return branches
 
     def pull_requests(self, user=None):
@@ -441,7 +494,9 @@ class GitHubContext(object):
         :returns: json structure (see GH API)
 
         """
-        url = "https://api.github.com/repos/{org}/{repo}/pulls/{number}".format(
+        url = (
+            "https://api.github.com/repos/{org}/{repo}/pulls/{number}"
+        ).format(
             org=self.config.organisation_name(),
             repo=self.config.package_name(),
             number=pr
@@ -505,7 +560,11 @@ class GitHubContext(object):
         :returns: commit sha string or None if not found
         """
         try:
-            commit = self.repo.git.log(release_branch_or_tag, n=1, format="format:%H")
+            commit = self.repo.git.log(
+                release_branch_or_tag,
+                n=1,
+                format="format:%H"
+            )
             return commit.strip()
         except git.exc.GitCommandError as ex:
             if "unknown revision" in str(ex):
@@ -548,21 +607,24 @@ class GitHubContext(object):
         return str(details)
 
 
-
 def branch_status(branch_name):
     """
     _branch_status_
 
     Get the branch status which should include details of CI builds/hooks etc
     See:
-    https://developer.github.com/v3/repos/statuses/#get-the-combined-status-for-a-specific-ref
+    https://developer.github.com/v3/repos/statuses/
+       #get-the-combined-status-for-a-specific-ref
 
     returns a state which is one of 'failure', 'pending', 'success'
 
     """
     config = load_configuration()
     token = get_github_auth()[1]
-    url = "https://api.github.com/repos/{org}/{repo}/commits/{branch}/status".format(
+    url = (
+        "https://api.github.com/repos/{org}/{repo}/"
+        "commits/{branch}/status"
+    ).format(
         org=config.organisation_name(),
         repo=config.package_name(),
         branch=branch_name
@@ -685,7 +747,10 @@ def comment_on_sha(owner, repo, comment, sha, path, token=None):
     """
     add a comment to the commit/sha provided
     """
-    url = "https://api.github.com/repos/{owner}/{repo}/commits/{sha}/comments".format(
+    url = (
+        "https://api.github.com/repos/{owner}/{repo}/"
+        "commits/{sha}/comments"
+    ).format(
         owner=owner, repo=repo, sha=sha
     )
     if token is None:

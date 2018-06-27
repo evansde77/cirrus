@@ -29,7 +29,10 @@ class Default(CredsPlugin):
         load - override load hook to read the users .gitconfig file
         """
         if self.gitconfig_file is None:
-            self.gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+            self.gitconfig_file = os.path.join(
+                os.environ['HOME'],
+                '.gitconfig'
+                )
         self.config = load_gitconfig(self.gitconfig_file)
 
     def github_credentials(self):
@@ -73,8 +76,12 @@ class Default(CredsPlugin):
 
         """
         return {
-            'buildserver-user': self.config.get_param('cirrus', 'buildserver-user'),
-            'buildserver-token': self.config.get_param('cirrus', 'buildserver-token')
+            'buildserver-user': self.config.get_param(
+                'cirrus', 'buildserver-user'
+            ),
+            'buildserver-token': self.config.get_param(
+                'cirrus', 'buildserver-token'
+            )
         }
 
     def set_buildserver_credentials(self, user, token):
@@ -89,11 +96,21 @@ class Default(CredsPlugin):
             'chef_server': self.config.get_param('cirrus', 'chef-server'),
             'chef_username': self.config.get_param('cirrus', 'chef-username'),
             'chef_keyfile': self.config.get_param('cirrus', 'chef-keyfile'),
-            'chef_client_user': self.config.get_param('cirrus', 'chef-client-user'),
-            'chef_client_keyfile': self.config.get_param('cirrus', 'chef-client-keyfile')
+            'chef_client_user': self.config.get_param(
+                'cirrus', 'chef-client-user'
+            ),
+            'chef_client_keyfile': self.config.get_param(
+                'cirrus', 'chef-client-keyfile'
+            )
         }
 
-    def set_chef_credentials(self, server, username, keyfile, client_user=None, client_key=None):
+    def set_chef_credentials(
+            self,
+            server,
+            username,
+            keyfile,
+            client_user=None,
+            client_key=None):
         if client_user is None:
             client_user = username
         if client_key is None:
@@ -107,9 +124,15 @@ class Default(CredsPlugin):
 
     def dockerhub_credentials(self):
         return {
-            'username': self.config.get_param('cirrus', 'docker-login-username'),
-            'email': self.config.get_param('cirrus', 'docker-login-email'),
-            'password': self.config.get_param('cirrus', 'docker-login-password')
+            'username': self.config.get_param(
+                'cirrus', 'docker-login-username'
+            ),
+            'email': self.config.get_param(
+                'cirrus', 'docker-login-email'
+            ),
+            'password': self.config.get_param(
+                'cirrus', 'docker-login-password'
+            )
         }
 
     def set_dockerhub_credentials(self, email, user, password):
@@ -119,8 +142,12 @@ class Default(CredsPlugin):
 
     def file_server_credentials(self):
         return {
-            'file_server_username': self.config.get_param('cirrus', 'file-server-username'),
-            'file_server_keyfile': self.config.get_param('cirrus', 'file-server-keyfile')
+            'file_server_username': self.config.get_param(
+                'cirrus', 'file-server-username'
+            ),
+            'file_server_keyfile': self.config.get_param(
+                'cirrus', 'file-server-keyfile'
+            )
         }
 
     def set_file_server_credentials(self, username, keyfile):

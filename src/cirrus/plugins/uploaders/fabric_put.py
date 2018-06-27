@@ -35,7 +35,8 @@ class Pypi(Uploader):
 
         package_dir = pypi_conf['pypi_upload_path']
         LOGGER.info("Uploading {0} to {1}".format(build_artifact, pypi_url))
-        put(build_artifact,
+        put(
+            build_artifact,
             package_dir,
             pypi_url,
             ssh_username=pypi_user,

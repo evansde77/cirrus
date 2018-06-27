@@ -82,7 +82,7 @@ class GitConfigSection(object):
         return '\n'.join(result)
 
 
-VALID_LINE = re.compile("^[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+=")
+VALID_LINE = re.compile("^[a-zA-Z0-9_-]+\\.[a-zA-Z0-9_-]+=")
 
 
 class GitConfig(dict):
@@ -142,7 +142,13 @@ class GitConfig(dict):
 
     def set_param(self, section, param, value):
         """set/add parameter in section"""
-        shell_command(self.command + ' {0}.{1} \"{2}\"'.format(section, param, str(value)))
+        shell_command(
+            self.command + ' {0}.{1} \"{2}\"'.format(
+                section,
+                param,
+                str(value)
+            )
+        )
         self.parse()
 
     def unset_param(self, section, param):

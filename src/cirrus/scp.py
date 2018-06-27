@@ -78,5 +78,3 @@ def put(local_file,
         scp_binary=scp_binary
     )
     scp()
-
-

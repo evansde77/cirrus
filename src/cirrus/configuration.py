@@ -12,7 +12,6 @@ conf = load_configuration()
 
 """
 import os
-import subprocess
 
 from cirrus.gitconfig import load_gitconfig
 from cirrus.environment import repo_directory
@@ -68,13 +67,19 @@ class Configuration(dict):
                     self.parser.get(section, option)
                 )
         if self.gitconfig_file is None:
-            self.gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+            self.gitconfig_file = os.path.join(
+                os.environ['HOME'],
+                '.gitconfig'
+            )
         self.gitconfig = load_gitconfig(self.gitconfig_file)
         self._load_creds_plugin()
 
     def setup_load(self):
         if self.gitconfig_file is None:
-            self.gitconfig_file = os.path.join(os.environ['HOME'], '.gitconfig')
+            self.gitconfig_file = os.path.join(
+                os.environ['HOME'],
+                '.gitconfig'
+            )
         self.gitconfig = load_gitconfig(self.gitconfig_file)
         self.gitconfig.add_section('cirrus')
         self._load_creds_plugin()
@@ -104,7 +109,7 @@ class Configuration(dict):
             self, param, section='cirrus', validator=lambda x: x is not None
             ):
         """helper to check if a gitconfig param is set/present"""
-        if not param in self.list_gitconfig_params(section):
+        if param not in self.list_gitconfig_params(section):
             return False
         return validator(self.gitconfig.get_param(section, param))
 

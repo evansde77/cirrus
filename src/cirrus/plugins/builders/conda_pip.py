@@ -25,7 +25,11 @@ class CondaPip(Builder):
         python_bin = kwargs.get("python")
         if python_bin is not None:
             self.python_bin = python_bin
-            LOGGER.info("Overriding python bin from command line: {}".format(python_bin))
+            LOGGER.info(
+                "Overriding python bin from command line: {}".format(
+                    python_bin
+                )
+            )
         conda = kwargs.get('conda', self.conda_bin)
         upgrade = kwargs.get('upgrade', False)
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
@@ -38,7 +42,11 @@ class CondaPip(Builder):
             self.venv_path
         )
         if self.python_bin:
-            LOGGER.info("using python bin: {}".format(self.python_bin_for_conda))
+            LOGGER.info(
+                "using python bin: {}".format(
+                    self.python_bin_for_conda
+                )
+            )
             # should probably check this is int or int.int format
             venv_command += " python={}".format(self.python_bin_for_conda)
 
@@ -98,7 +106,11 @@ class CondaPip(Builder):
                 conda,
                 self.venv_path
             )
-            LOGGER.info("Removing existing conda env: {0}".format(self.venv_path))
+            LOGGER.info(
+                "Removing existing conda env: {0}".format(
+                    self.venv_path
+                )
+            )
             local(cmd)
 
     def activate(self):
@@ -112,7 +124,11 @@ class CondaPip(Builder):
 
         activate_script = '{}/bin/activate'.format(self.venv_path)
         if os.path.exists(activate_script):
-            command = "{} {}/bin/activate {}".format(cmd, self.venv_path, self.venv_path)
+            command = "{} {}/bin/activate {}".format(
+                cmd,
+                self.venv_path,
+                self.venv_path
+            )
         else:
             command = "{} activate {}".format(cmd, self.venv_path)
         return command

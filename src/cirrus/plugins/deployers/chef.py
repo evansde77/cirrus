@@ -120,7 +120,11 @@ class ChefServerDeployer(Deployer):
 
         for node in nodes:
             LOGGER.info("Running chef-client on {}".format(node))
-            with FabricHelper(node, opts['chef_client_user'], opts['chef_client_keyfile']):
+            with FabricHelper(
+                    node,
+                    opts['chef_client_user'],
+                    opts['chef_client_keyfile']
+                    ):
                 run('sudo chef-client')
 
     def _find_nodes(self, args):
@@ -225,7 +229,7 @@ class ChefServerDeployer(Deployer):
             default=None,
             help='Chef role to edit'
             )
-        #TODO: value needs converted to a list
+        # TODO: value needs converted to a list
         self.parser.add_argument(
             '--attribute', '-a',
             dest='attributes',

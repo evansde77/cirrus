@@ -49,7 +49,12 @@ def get_builder_plugin():
     build_config = config.get('build', {})
     builder = build_config.get('builder')
     if builder is not None:
-        LOGGER.info("Using Builder Plugin from cirrus.conf: {}".format(builder))
+        LOGGER.info(
+            (
+                "Using Builder Plugin "
+                "from cirrus.conf: {}"
+            ).format(builder)
+        )
         return builder
     # fall back to old defaults
     if is_anaconda():

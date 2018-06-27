@@ -102,9 +102,9 @@ def list_prs(opts):
     """
     repo_dir = os.getcwd()
     with GitHubContext(repo_dir) as ghc:
-        print "  ID,  User, Title"
+        print("  ID,  User, Title")
         for pr in ghc.pull_requests(user=opts.user):
-            print pr['number'], pr['user']['login'], pr['title']
+            print(pr['number'], pr['user']['login'], pr['title'])
 
 
 def get_pr(opts):

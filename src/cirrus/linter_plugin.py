@@ -16,7 +16,8 @@ from cirrus.logger import get_logger
 LOGGER = get_logger()
 
 
-match_path = lambda x, xp: any(fnmatch.fnmatch(x, y) for y in xp)
+def match_path(x, xp):
+    return any(fnmatch.fnmatch(x, y) for y in xp)
 
 
 def normalise_dir_pattern(repo_dir, d):
@@ -81,6 +82,10 @@ def python_files(
 
 
 class Linter(PluggagePlugin):
+    """
+    Base plugin for a Linter implementation
+
+    """
     PLUGGAGE_FACTORY_NAME = 'linter'
 
     def __init__(self):

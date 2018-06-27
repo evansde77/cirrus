@@ -21,7 +21,7 @@ PIP_OPERATORS = [
     "==="
 ]
 
-REGEXP = "(^[\w\-]+[ ]*[{op}]{{1}})"
+REGEXP = "(^[\\w\\-]+[ ]*[{op}]{{1}})"
 
 RE_OPERATORS = re.compile("|".join([
     REGEXP.format(op=op) for op in PIP_OPERATORS
@@ -98,12 +98,14 @@ class ReqFile(dict):
             raise KeyError(msg)
 
         if self.operators.get(pkg) is not None:
-            replacer = re.compile("^[\s]*({pkg}){{1}}[\s]*({op}){{1}}".format(
-                pkg=pkg,
-                op=self.operators[pkg])
+            replacer = re.compile(
+                "^[\\s]*({pkg}){{1}}[\\s]*({op}){{1}}".format(
+                    pkg=pkg,
+                    op=self.operators[pkg]
+                )
             )
         else:
-            replacer = re.compile("^[\s]*({pkg}){{1}}$".format(pkg=pkg))
+            replacer = re.compile("^[\\s]*({pkg}){{1}}$".format(pkg=pkg))
         output = []
         for line in self.read():
             if replacer.match(line.strip()):

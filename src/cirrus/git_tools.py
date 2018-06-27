@@ -66,7 +66,9 @@ class RepoInitializer(object):
         local_branch = self.repo.heads[branch_name]
         if remote:
             if not self.branch_exists_origin(branch_name, origin_name):
-                LOGGER.info("Pushing {} to {}".format(branch_name, origin_name))
+                LOGGER.info(
+                    "Pushing {} to {}".format(branch_name, origin_name)
+                )
                 rem = self.repo.remotes[origin_name]
                 ret = rem.push(branch_name)
                 # Check to make sure that we haven't errored out.
@@ -76,7 +78,11 @@ class RepoInitializer(object):
                         raise RuntimeError(unicode_(r.summary))
             tracking_branch = local_branch.tracking_branch()
             if not tracking_branch:
-                LOGGER.info("Setting tracking branch for {}".format(branch_name))
+                LOGGER.info(
+                    "Setting tracking branch for {}".format(
+                        branch_name
+                    )
+                )
                 rref = self.repo.remotes[origin_name].refs[branch_name]
                 local_branch.set_tracking_branch(rref)
         else:
@@ -115,13 +121,25 @@ def checkout_and_pull(repo_dir, branch_from, pull=True, origin='origin'):
 
     # pull branch_from from remote
     if pull:
-        remote_branch = "remotes/{origin}/{branch}".format(origin=origin, branch=branch_from)
+        remote_branch = "remotes/{origin}/{branch}".format(
+            origin=origin,
+            branch=branch_from
+        )
         ref = "refs/heads/{branch}:refs/{remote_branch}".format(
             branch=branch_from, remote_branch=remote_branch
         )
-        branches = [str(x.strip()) for x in repo.git.branch(all=True).split() if x.strip()]
+        branches = [
+            str(x.strip())
+            for x in repo.git.branch(all=True).split()
+            if x.strip()
+        ]
         if remote_branch not in branches:
-            LOGGER.info("couldnt find remote for {} in {}, skipping pull...".format(branch_from, branches))
+            LOGGER.info(
+                "couldnt find remote for {} in {}, skipping pull...".format(
+                    branch_from,
+                    branches
+                )
+            )
             return
         if origin in [x.name for x in repo.remotes]:
             return repo.remotes.origin.pull(ref)
@@ -252,7 +270,7 @@ def commit_files_optional_push(repo_dir, commit_msg, push=True, *filenames):
             LOGGER.info("Setting Executable bit on {}".format(f))
             repo.git.update_index(f, chmod='+x')
     # commits with message
-    new_commit = repo.index.commit(commit_msg)
+    repo.index.commit(commit_msg)
     # push branch to origin
     if push:
         return repo.remotes.origin.push(repo.head)
@@ -393,7 +411,7 @@ def get_commit_msgs(repo_dir, since_sha):
 
     """
     repo = git.Repo(repo_dir)
-    rev_range = '..'.join([since_sha,repo.head.commit.hexsha])
+    rev_range = '..'.join([since_sha, repo.head.commit.hexsha])
     result = []
     for commit in repo.iter_commits(rev_range):
         row = {
@@ -424,12 +442,12 @@ def format_commit_messages(rows):
     for author, commits in itertools.groupby(rows, lambda x: x['committer']):
         result.append(u" -- Author: {0}".format(author))
         sorted_commits = sorted(
-            [ c for c in commits ],
+            [c for c in commits],
             key=lambda x: x['date'],
             reverse=True
         )
         result.extend(
-            u' --- {0}: {1}'.format(commit['date'],commit['message'])
+            u' --- {0}: {1}'.format(commit['date'], commit['message'])
             for commit in sorted_commits
         )
 
@@ -468,6 +486,7 @@ def markdown_format(rows):
             commit['message']) for commit in sorted_commits)
 
     return '\n'.join(result)
+
 
 FORMATTERS = {
     'plaintext': format_commit_messages,

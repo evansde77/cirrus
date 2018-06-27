@@ -52,8 +52,9 @@ def main():
     """
     _main_
 
-    Look up the plugin to be invoked for deployment, via the CLI or cirrus config
-    for this package, and then invoke the deployer plugin
+    Look up the plugin to be invoked for deployment
+    via the CLI or cirrus config for this package
+    and then invoke the deployer plugin
 
     """
     initial_opts = build_parser()

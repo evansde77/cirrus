@@ -38,10 +38,20 @@ def release_status(release):
             release_branch = "{}{}".format(rel_pfix, release)
             release_tag = release
 
-        LOGGER.info("Checking: branch={} tag={}".format(release_branch, release_tag))
+        LOGGER.info(
+            "Checking: branch={} tag={}".format(
+                release_branch,
+                release_tag
+            )
+        )
         branch_commit = ghc.find_release_commit(release_branch)
         tag_commit = ghc.find_release_commit(release_tag)
-        LOGGER.info("Resolved Commits: branch={} tag={}".format(branch_commit, tag_commit))
+        LOGGER.info(
+            "Resolved Commits: branch={} tag={}".format(
+                branch_commit,
+                tag_commit
+            )
+        )
 
         # handles caser where tag or release is not present, eg typo
         if (not tag_commit) and (not branch_commit):
@@ -61,10 +71,18 @@ def release_status(release):
             on_master = master_branch in branches
             on_origin = remote_master in branches
             if on_master:
-                LOGGER.info("Tag is present on local master {}...".format(master_branch))
+                LOGGER.info(
+                    "Tag is present on local master {}...".format(
+                        master_branch
+                    )
+                )
                 tag_present = True
             if on_origin:
-                LOGGER.info("Tag is present on remote master {}...".format(remote_master))
+                LOGGER.info(
+                    "Tag is present on remote master {}...".format(
+                        remote_master
+                    )
+                )
                 tag_present = True
 
         # look for common merge base containing the release name for master
@@ -74,30 +92,56 @@ def release_status(release):
         merge_on_develop = False
         merge_on_master = False
         if develop_merge:
-            merge_on_develop = release_branch in ghc.git_show_commit(develop_merge)
+            merge_on_develop = (
+                release_branch in ghc.git_show_commit(develop_merge)
+            )
         if master_merge:
-            merge_on_master = release_branch in ghc.git_show_commit(master_merge)
+            merge_on_master = (
+                release_branch in ghc.git_show_commit(master_merge)
+            )
 
         if merge_on_develop:
-            LOGGER.info("Merge of {} is on {}".format(release_branch, develop_branch))
+            LOGGER.info(
+                "Merge of {} is on {}".format(
+                    release_branch,
+                    develop_branch
+                )
+            )
         else:
-            LOGGER.info("Merge of {} not found on {}".format(release_branch, develop_branch))
+            LOGGER.info(
+                "Merge of {} not found on {}".format(
+                    release_branch,
+                    develop_branch
+                )
+            )
         if merge_on_master:
-            LOGGER.info("Merge of {} is on {}".format(release_branch, master_branch))
+            LOGGER.info(
+                "Merge of {} is on {}".format(
+                    release_branch,
+                    master_branch
+                )
+            )
         else:
-            LOGGER.info("Merge of {} not found on {}".format(release_branch, master_branch))
+            LOGGER.info(
+                "Merge of {} not found on {}".format(
+                    release_branch,
+                    master_branch
+                )
+            )
 
         if not all([tag_present, merge_on_develop, merge_on_master]):
             msg = (
                 "\nRelease branch {} was not found either as a tag or merge "
                 "commit on develop branch: {} or master branch: {} branches\n"
-                "This may mean that the release is still running on a CI platform or "
+                "This may mean that the release is still "
+                "running on a CI platform or "
                 "has errored out. \n"
                 " => Tag Present: {}\n"
                 " => Merged to develop: {}\n"
                 " => Merged to master: {}\n"
                 "\nFor troubleshooting please see: "
-                "https://github.com/evansde77/cirrus/wiki/Troubleshooting#release\n"
+                "https://github.com/evansde77/cirrus/wiki/"
+                "Troubleshooting#release\n"
             ).format(
                 release_branch,
                 develop_branch,
@@ -109,7 +153,9 @@ def release_status(release):
             LOGGER.error(msg)
             result = False
         else:
-            msg = "Release {} looks to be successfully merged and tagged\n".format(release_branch)
+            msg = (
+                "Release {} looks to be successfully merged and tagged\n"
+            ).format(release_branch)
             LOGGER.info(msg)
             result = True
     return result

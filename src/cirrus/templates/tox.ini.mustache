@@ -1,0 +1,8 @@
+[tox]
+envlist = {{python}}
+[testenv]
+{{install_command}}
+deps=
+  -r{{requirements}}
+  -r{{test_requirements}}
+commands=nosetests -w {{testdir}}/unit

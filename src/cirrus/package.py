@@ -14,7 +14,6 @@ package sublime-project - Assistant to set up a sublime project for a cirrus
   managed package, including build rules for the local venv
 
 """
-import contextlib
 import inspect
 import requests
 import os
@@ -39,7 +38,6 @@ from cirrus.pypirc import PypircFile
 from cirrus.git_tools import (
     RepoInitializer,
     branch,
-    push,
     get_tags,
     tag_release,
     commit_files_optional_push,
@@ -49,18 +47,6 @@ from cirrus.git_tools import (
 
 DEFAULT_HISTORY_SENTINEL = "\nCIRRUS_HISTORY_SENTINEL\n"
 LOGGER = get_logger()
-
-TOXFILE = \
-"""
-[tox]
-envlist = {python}
-[testenv]
-{install_command}
-deps=
-  -r{requirements}
-  -r{test_requirements}
-commands=nosetests -w {testdir}/unit
-"""
 
 
 def validate_package_name(value):
@@ -124,7 +110,10 @@ def build_parser(argslist):
     )
     init_command.add_argument(
         '--source-dir', '-s',
-        help="source code directory within package, assumes top level dir if not set",
+        help=(
+            "source code directory within package, assumes top "
+            "level dir if not set"
+        ),
         dest='source',
         default=None
     )
@@ -158,7 +147,10 @@ def build_parser(argslist):
     )
     init_command.add_argument(
         '--pypi-package-name',
-        help='Name for package on upload to pypi, use if different from package option',
+        help=(
+            'Name for package on upload to pypi, use if different '
+            'from package option'
+        ),
         default=None,
         type=validate_package_name
     )
@@ -185,7 +177,9 @@ def build_parser(argslist):
     init_command.add_argument(
         '--gitignore-url',
         help='URL of gitignore file to add',
-        default='https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore'
+        default=(
+            'https://raw.githubusercontent.com/github/'
+            'gitignore/master/Python.gitignore')
     )
 
     init_command.add_argument(
@@ -217,7 +211,10 @@ def build_parser(argslist):
     )
     init_command.add_argument(
         '--python',
-        help='optionally specify the name of python binary to use in this package, eg python2, python3',
+        help=(
+            'optionally specify the name of python binary '
+            'to use in this package, eg python2, python3'
+        ),
         default=None
     )
     init_command.add_argument(
@@ -260,7 +257,10 @@ def build_parser(argslist):
 
     init_command.add_argument(
         '--bootstrap',
-        help="assumes repo is empty and will create a very minimal set of files to get things started",
+        help=(
+            "assumes repo is empty and will create a very minimal "
+            "set of files to get things started"
+        ),
         default=False,
         action='store_true'
     )
@@ -301,7 +301,11 @@ def build_parser(argslist):
         '--container-virtualenv',
         default=None,
         dest='virtualenv',
-        help="If container image has a virtualenv, install package there, otherwise will install in whatever is system python"
+        help=(
+            "If container image has a virtualenv, install package "
+            "there, otherwise will install in whatever is system "
+            "python"
+        )
     )
     cont_command.add_argument(
         '--local-install',
@@ -727,31 +731,44 @@ def bootstrap_repo(opts):
         files.append(opts.test_requirements)
 
     if not os.path.exists('tox.ini'):
+        context = {}
         if opts.python is not None:
-            py_vers = opts.python.replace('python', 'py')
+            context['python'] = opts.python.replace('python', 'py')
         else:
-            py_vers = "py{}.{}".format(
+            context['python'] = "py{}.{}".format(
                 sys.version_info.major,
                 sys.version_info.minor
             )
-        with open('tox.ini', 'w') as handle:
 
-            install_comm = ""
-            if opts.use_pypirc:
-                rcfile = PypircFile()
-                pip_opts = rcfile.pip_options()
-                LOGGER.info("Adding pip options to tox.ini: {}".format(pip_opts))
-                install_comm = "install_command = pip install {} {{opts}} {{packages}}".format(pip_opts)
-
-            handle.write(
-                TOXFILE.format(
-                    requirements=opts.requirements,
-                    test_requirements=opts.test_requirements,
-                    install_command=install_comm,
-                    testdir=opts.tests,
-                    python=py_vers
+        install_comm = ""
+        if opts.use_pypirc:
+            rcfile = PypircFile()
+            pip_opts = rcfile.pip_options()
+            LOGGER.info(
+                "Adding pip options to tox.ini: {}".format(
+                    pip_opts
                 )
             )
+            install_comm = (
+                "install_command = pip install {} "
+                "{{opts}} {{packages}}"
+            ).format(
+                pip_opts
+            )
+        context['install_command'] = install_comm
+        context['requirements'] = opts.requirements
+        context['test_requirements'] = opts.test_requirements
+        context['testdir'] = opts.tests
+        tox_template = os.path.join(
+            os.path.dirname(inspect.getsourcefile(cirrus.templates)),
+            'tox.ini.mustache'
+        )
+        with open(tox_template, 'r') as handle:
+            templ = handle.read()
+
+        tox_rendered = pystache.render(templ, context)
+        with open('tox.ini', 'w') as handle:
+            handle.write(tox_rendered)
 
         files.append('tox.ini')
 
@@ -812,13 +829,19 @@ def init_package_api(**kwargs):
     namespace.add_gitignore = kwargs.get('add_gitignore', True)
     namespace.gitignore_url = kwargs.get(
         'gitignore_url',
-        'https://raw.githubusercontent.com/github/gitignore/master/Python.gitignore'
+        (
+            'https://raw.githubusercontent.com/github/'
+            'gitignore/master/Python.gitignore'
+        )
     )
     namespace.templates = kwargs.get('templates', [])
     namespace.version_file = kwargs.get('version_file', None)
     namespace.history_file = kwargs.get('history_file', 'HISTORY.md')
     namespace.requirements = kwargs.get('requirements', 'requirements.txt')
-    namespace.test_requirements = kwargs.get('testrequirements', 'test-requirements.txt')
+    namespace.test_requirements = kwargs.get(
+        'testrequirements',
+        'test-requirements.txt'
+    )
     namespace.python = kwargs.get('python')
     namespace.test_mode = kwargs.get('test_mode', 'tox')
     namespace.master = 'master'
@@ -901,7 +924,6 @@ def update_package(opts):
     """
     if opts.setup_py:
         update_setup_py(opts)
-
 
 
 def main():

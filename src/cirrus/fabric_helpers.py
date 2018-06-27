@@ -18,11 +18,14 @@ class FabricHelper(object):
 
     Example usage;
 
-    with FabricHelper('pypi.cloudant.com', 'evansde77', '/Users/david/.ssh/id_rsa'):
+    with FabricHelper(
+        'pypi.cloudant.com',
+        'evansde77',
+        '/Users/david/.ssh/id_rsa'):
         run('/bin/date')
 
-    Will run the date command on pypi.cloudant.com as evansde77 using the key file
-    specified
+    Will run the date command on pypi.cloudant.com as
+    evansde77 using the key file specified
     """
     def __init__(self, hostname, username, ssh_key):
         self.hostname = hostname
@@ -47,6 +50,3 @@ class FabricHelper(object):
         env.host_string = self.hostname_cache
         env.user = self.username_cache
         env.key_filename = self.ssh_key_cache
-
-
-

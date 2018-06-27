@@ -60,9 +60,21 @@ class OptionHelper(dict):
 
     def __init__(self, cli_opts, config):
         super(OptionHelper, self).__init__()
-        self['username'] = config.get_param('docker', 'docker_login_username', None)
-        self['email'] = config.get_param('docker', 'docker_login_email', None)
-        self['password'] = config.get_param('docker', 'docker_login_password', None)
+        self['username'] = config.get_param(
+            'docker',
+            'docker_login_username',
+            None
+        )
+        self['email'] = config.get_param(
+            'docker',
+            'docker_login_email',
+            None
+        )
+        self['password'] = config.get_param(
+            'docker',
+            'docker_login_password',
+            None
+        )
         self['login'] = config.get_param(
             'docker', 'docker_login_username', None
         ) is not None
@@ -83,9 +95,21 @@ class BuildOptionHelper(OptionHelper):
         super(BuildOptionHelper, self).__init__(cli_opts, config)
         self['docker_repo'] = config.get_param('docker', 'repo', None)
         self['directory'] = config.get_param('docker', 'directory', None)
-        self['template'] = config.get_param('docker', 'dockerstache_template', None)
-        self['context'] = config.get_param('docker', 'dockerstache_context', None)
-        self['defaults'] = config.get_param('docker', 'dockerstache_defaults', None)
+        self['template'] = config.get_param(
+            'docker',
+            'dockerstache_template',
+            None
+        )
+        self['context'] = config.get_param(
+            'docker',
+            'dockerstache_context',
+            None
+        )
+        self['defaults'] = config.get_param(
+            'docker',
+            'dockerstache_defaults',
+            None
+        )
         self['build_arg'] = {}
         self['no_cache'] = config.get_param('docker', 'no_cache', None)
         if cli_opts.docker_repo:
@@ -101,16 +125,32 @@ class BuildOptionHelper(OptionHelper):
 
 
 class StoreDictKeyPair(Action):
-     _DICT = {}
-     def __init__(self, option_strings, dest, nargs=None, **kwargs):
-         self._nargs = nargs
-         super(StoreDictKeyPair, self).__init__(option_strings, dest, nargs=nargs, **kwargs)
-     def __call__(self, parser, namespace, values, option_string=None):
-         for kv in values:
-             k,v = kv.split("=")
-             self._DICT[k] = v
-         setattr(namespace, self.dest, self._DICT)
+    """
+    action to parse key=value pairs from CLI args
 
+    See argparse docs for details of API
+    """
+    _DICT = {}
+
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        self._nargs = nargs
+        super(StoreDictKeyPair, self).__init__(
+            option_strings,
+            dest,
+            nargs=nargs,
+            **kwargs
+        )
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        """
+        values is a series of key=value strings
+        here we split them and add them to the argparse namespace
+        as the expected field name as a dictionary
+        """
+        for kv in values:
+            k, v = kv.split("=")
+            self._DICT[k] = v
+        setattr(namespace, self.dest, self._DICT)
 
 
 def build_parser():
@@ -137,7 +177,10 @@ def build_parser():
         '--login',
         action='store_true',
         dest='login',
-        help='perform docker login before command using settings in cirrus.conf',
+        help=(
+            'perform docker login before command '
+            'using settings in cirrus.conf'
+        ),
         default=False
     )
     build_command.add_argument(
@@ -166,7 +209,10 @@ def build_parser():
     )
     build_command.add_argument(
         '--build-arg',
-        help='build arg key=value pairs to pass to docker build as build-arg options',
+        help=(
+            'build arg key=value pairs to pass to '
+            'docker build as build-arg options'
+        ),
         nargs='+',
         action=StoreDictKeyPair
     )
@@ -181,8 +227,8 @@ def build_parser():
         help=(
             'install latest dist tarball from ./dist into container '
             'instead of pip installing from remote pypi '
-            'Run `git cirrus release build` prior to this to get your latest code '
-            'installed for testing'),
+            'Run `git cirrus release build` prior to this to get your '
+            'latest code installed for testing'),
         default=False,
         action='store_true'
     )
@@ -192,7 +238,10 @@ def build_parser():
         '--login',
         action='store_true',
         dest='login',
-        help='perform docker login before command using settings in cirrus.conf',
+        help=(
+            'perform docker login before command '
+            'using settings in cirrus.conf'
+        ),
         default=False
     )
     push_command.add_argument(
@@ -304,7 +353,7 @@ def match_docker_version(raw_version_string):
         "Docker version 1.12.0, build 8eab29e"
     :returns: the docker version string, cleaned up as xx.yy.zz
     """
-    match = re.search('[0-9]+\.[0-9]+\.[0-9]+', to_str(raw_version_string))
+    match = re.search('[0-9]+\\.[0-9]+\\.[0-9]+', to_str(raw_version_string))
     if match is None:
         raise DockerVersionError(
             "Installed Docker version cannot be determined. "
@@ -416,13 +465,19 @@ def docker_build(opts, config):
         local_tar = '/opt/{package}-latest.tar.gz'.format(
             package=config.package_name()
         )
-        LOGGER.info("Local test build will install latest source tarball from dist...")
+        LOGGER.info(
+            "Local test build will install "
+            "latest source tarball from dist..."
+            )
         helper['build_arg']['LOCAL_INSTALL'] = local_tar
 
     if helper['login']:
         check = _docker_login(helper)
         if not check:
-            msg = "Unable to perform docker login due to missing cirrus conf entries"
+            msg = (
+                "Unable to perform docker login due "
+                "to missing cirrus conf entries"
+            )
             LOGGER.error(msg)
             sys.exit(1)
     if templ is not None:
@@ -454,7 +509,10 @@ def docker_push(opts, config):
     helper = OptionHelper(opts, config)
     if helper['login']:
         if not _docker_login(helper):
-            msg = "Unable to perform docker login due to missing cirrus conf entries"
+            msg = (
+                "Unable to perform docker login "
+                "due to missing cirrus conf entries"
+            )
             LOGGER.error(msg)
             sys.exit(1)
 
@@ -465,7 +523,11 @@ def docker_push(opts, config):
         _docker_push(latest_tag_name(config))
 
     if helper['additional_repos']:
-        tags = additional_repo_tags(config, helper['additional_repos'], opts.latest)
+        tags = additional_repo_tags(
+            config,
+            helper['additional_repos'],
+            opts.latest
+        )
         for t in tags:
             _docker_push(t)
 
@@ -497,7 +559,7 @@ def main():
     if not config.has_section('docker'):
         msg = (
             "Unable to find docker section in cirrus.conf"
-            #TODO: Link to docs here
+            #  TODO: Link to docs here
             )
         LOGGER.error(msg)
         sys.exit(1)

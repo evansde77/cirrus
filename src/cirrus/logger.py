@@ -8,7 +8,7 @@ import sys
 import logging
 
 
-_LOGGER=None
+_LOGGER = None
 _FORMATTER = logging.Formatter(
     "%(asctime)s;%(levelname)s;%(message)s",
     datefmt="%Y-%m-%d"

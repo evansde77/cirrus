@@ -12,7 +12,7 @@ from pylint.lint import Run
 
 LOGGER = get_logger()
 
-SCORE_MATCH = re.compile("[\-]*\d.\d\d")
+SCORE_MATCH = re.compile("[\\-]*\\d.\\d\\d")
 ERROR_MATCH = re.compile("")
 
 

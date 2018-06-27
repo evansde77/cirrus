@@ -48,9 +48,10 @@ class Documentation(Publisher):
             workspace. It must match whatever is in the section "File location"
             in the Jenkins job configuration.
 
-        .. note:: arc_var is the variable that will be used to name the file/folder
-            the archive should be unpacked to as determined by the name of the
-            archive filename. I.e. package-0.0.0.tar.gz => package-0.0.0
+        .. note:: arc_var is the variable that will be used
+            to name the file/folder the archive should be unpacked to as
+            determined by the name of the archive filename.
+            I.e. package-0.0.0.tar.gz => package-0.0.0
 
         .. note:: extra_vars is a boolean. When True a section named
             [jenkins_docs_extra_vars] should be added to cirrus.conf containing
@@ -94,15 +95,21 @@ class Documentation(Publisher):
 
         payload = MultipartEncoder(
             fields={
-                "file0": (filename, open(doc_artifact, 'rb'), 'application/x-gzip'),
+                "file0": (
+                    filename, open(doc_artifact, 'rb'), 'application/x-gzip'
+                ),
                 "json": json.dumps(build_params)})
 
         client = JenkinsClient(jenkins_config['url'])
 
-        response = client.start_job_file_upload(jenkins_config['doc_job'], payload)
+        response = client.start_job_file_upload(
+            jenkins_config['doc_job'], payload
+        )
 
         if response.status_code != 201:
             LOGGER.error(response.text)
             raise RuntimeError(
-                'Jenkins HTTP API returned code {}'.format(response.status_code)
+                'Jenkins HTTP API returned code {}'.format(
+                    response.status_code
+                )
             )

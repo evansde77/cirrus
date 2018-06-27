@@ -63,7 +63,10 @@ def build_parser(argslist):
     )
     parser.add_argument(
         '--upgrade-setuptools',
-        help="upgrade setuptools in cirrus installation (needed for some conda installations)",
+        help=(
+            "upgrade setuptools in cirrus installation "
+            "(needed for some conda installations)"
+        ),
         default=False,
         action='store_true'
     )
@@ -103,7 +106,9 @@ def latest_release(config):
 
     """
     releases = get_releases(config.organisation_name(), config.package_name())
-    tags = [(release['tag_name'], release['published_at']) for release in releases]
+    tags = [
+        (release['tag_name'], release['published_at']) for release in releases
+    ]
     sorted(tags, key=sort_by_date)
     most_recent_tag = tags[0][0]
     return most_recent_tag
@@ -165,7 +170,10 @@ def pip_install(version, update_setuptools=False):
     if is_anaconda():
         if update_setuptools:
             local(
-                'source {0}/bin/activate {1} && pip install --upgrade setuptools'.format(
+                (
+                    'source {0}/bin/activate {1} && pip '
+                    'install --upgrade setuptools'
+                ).format(
                     venv_path, venv_path
                 )
             )
@@ -177,7 +185,10 @@ def pip_install(version, update_setuptools=False):
     else:
         if update_setuptools:
             local(
-                ' . ./{0}/bin/activate && pip install --upgrade setuptools'.format(
+                (
+                    ' . ./{0}/bin/activate && pip install'
+                    ' --upgrade setuptools'
+                ).format(
                     venv_name
                 )
             )
@@ -242,6 +253,7 @@ def main():
     else:
         pip_update(opts)
     return
+
 
 if __name__ == '__main__':
     main()

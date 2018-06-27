@@ -53,7 +53,8 @@ class GitHubHelper(object):
 
         Mark the CI status of the current branch.
 
-        :param state: state of the last test run, such as "success" or "failure"
+        :param state: state of the last test run, such as
+          "success" or "failure"
         :param context: The GH context string to use for the state, eg
            "continuous-integration/travis-ci"
 
@@ -72,7 +73,10 @@ class GitHubHelper(object):
         git_repo.remotes.origin.pull(ref)
 
         sha = git_repo.head.commit.hexsha
-        url = "https://api.github.com/repos/{org}/{repo}/statuses/{sha}".format(
+        url = (
+            "https://api.github.com/repos/"
+            "{org}/{repo}/statuses/{sha}"
+        ).format(
             org=org,
             repo=repo,
             sha=sha
@@ -94,7 +98,10 @@ class GitHubHelper(object):
         Set the status for the given context to success on the
         provided sha
         """
-        url = "https://api.github.com/repos/{org}/{repo}/statuses/{sha}".format(
+        url = (
+            "https://api.github.com/repos"
+            "/{org}/{repo}/statuses/{sha}"
+        ).format(
             org=org,
             repo=repo,
             sha=sha
@@ -182,9 +189,8 @@ def main():
     gh = GitHubHelper()
 
     if not (opts.id or opts.branch):
-        print opts.id,  opts.branch
         msg = "Must supply either pull request ID or branch name"
-        print msg
+        print(msg)
         sys.exit(1)
 
     if opts.branch is not None:

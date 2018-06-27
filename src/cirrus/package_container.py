@@ -108,7 +108,7 @@ def init_container(opts):
     installer_script = os.path.join(template_dir, 'install_script.sh.mustache')
     opts.context_file = os.path.join(opts.template_dir, 'context.json')
 
-     # make sure repo is clean
+    # make sure repo is clean
     if has_unstaged_changes(opts.repo):
         msg = (
             "Error: Unstaged changes are present on the branch "
@@ -149,7 +149,10 @@ def init_container(opts):
         post_template = find_template('post_script.sh.mustache')
 
         renderer = pystache.Renderer()
-        install_result = renderer.render_path(install_template, template_context)
+        install_result = renderer.render_path(
+            install_template,
+            template_context
+        )
 
         with open(installer_script, 'w') as handle:
             handle.write(install_result)

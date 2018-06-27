@@ -10,7 +10,7 @@ import requests
 
 from argparse import ArgumentParser
 
-from cirrus.configuration import load_setup_configuration, get_creds_plugin
+from cirrus.configuration import load_setup_configuration
 from cirrus.logger import get_logger
 from cirrus.environment import is_anaconda, cirrus_bin
 from cirrus._2to3 import get_raw_input
@@ -301,7 +301,7 @@ def interactive_setup(opts, config):
     interactive Q&A style config
 
     """
-    #TODO: Allow cli options if provided instead of prompting
+    # TODO: Allow cli options if provided instead of prompting
     gh_creds = config.credentials.github_credentials()
     if gh_creds['github_user'] is None:
         values = create_github_token()
@@ -396,7 +396,6 @@ def main():
         interactive_setup(opts, config)
     else:
         robot_setup(opts, config)
-
 
 
 if __name__ == '__main__':

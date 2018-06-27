@@ -17,7 +17,8 @@ from cirrus.logger import get_logger
 LOGGER = get_logger()
 
 
-short_uuid = lambda: str(uuid.uuid4()).rsplit('-', 1)[1]
+def short_uuid():
+    return str(uuid.uuid4()).rsplit('-', 1)[1]
 
 
 def get_dotted(d, key):
@@ -53,7 +54,12 @@ def set_dotted(d, key, value):
             dest[k] = {}
         dest = dest[k]
         if not isinstance(dest, dict):
-            raise TypeError('non-dict element in key {0} at {1}'.format(key, k))
+            raise TypeError(
+                (
+                    'non-dict element in key '
+                    '{0} at {1}'
+                ).format(key, k)
+            )
     dest[last_key] = value
 
 
@@ -72,7 +78,8 @@ def edit_chef_environment(server_url, cert, username, environment, attributes):
     }
     will result in changes:
       env.override_attributes['application']['app_version'] = 'x.y.z'
-      env.override_attributes['application']['some_url'] = 'http://www.google.com'
+      env.override_attributes['application']['some_url'] = \
+          'http://www.google.com'
 
     :param server_url: URL of your chef server
     :param cert: Client.pem file location
@@ -85,7 +92,11 @@ def edit_chef_environment(server_url, cert, username, environment, attributes):
     with chef.ChefAPI(server_url, cert, username):
         env = chef.Environment(environment)
         overrides = env.override_attributes
-        LOGGER.info("Editing Chef Server Environment: {} as {}".format(environment, username))
+        LOGGER.info(
+            "Editing Chef Server Environment: {} as {}".format(
+                environment, username
+            )
+        )
         for attr, new_value in attributes.iteritems():
             LOGGER.info(" => Setting {}={}".format(attr, new_value))
             set_dotted(overrides, attr, new_value)
@@ -102,7 +113,11 @@ def edit_chef_role(server_url, cert, username, rolename, attributes):
     """
     with chef.ChefAPI(server_url, cert, username):
         role = chef.Role(rolename)
-        LOGGER.info("Editing Chef Server Role: {} as {}".format(rolename, username))
+        LOGGER.info(
+            "Editing Chef Server Role: {} as {}".format(
+                rolename, username
+            )
+        )
         overrides = role.override_attributes
         for attr, new_value in attributes.iteritems():
             LOGGER.info(" => Setting {}={}".format(attr, new_value))
@@ -110,7 +125,13 @@ def edit_chef_role(server_url, cert, username, rolename, attributes):
         role.save()
 
 
-def list_nodes(server_url, cert, username, query, attribute='name', format_str=None):
+def list_nodes(
+        server_url,
+        cert,
+        username,
+        query,
+        attribute='name',
+        format_str=None):
     """
     _list_nodes_
 
@@ -132,8 +153,8 @@ def list_nodes(server_url, cert, username, query, attribute='name', format_str=N
         "role:some_role AND environment:prod",
         attribute='name', format_str='{}.cloudant.com')
 
-    Will extract the name attribute for each node and return that value expanded
-    in the format_str
+    Will extract the name attribute for each node and return
+    that value expanded in the format_str
 
     :param server_url: Chef Server URL
     :param cert: path to PEM cert for chef server auth
@@ -156,7 +177,14 @@ def list_nodes(server_url, cert, username, query, attribute='name', format_str=N
     return result
 
 
-def update_chef_environment(server_url, cert, username, environment, attributes, chef_repo=None, **kwargs):
+def update_chef_environment(
+        server_url,
+        cert,
+        username,
+        environment,
+        attributes,
+        chef_repo=None,
+        **kwargs):
     """
     _update_chef_environment_
 
@@ -189,8 +217,14 @@ def update_chef_environment(server_url, cert, username, environment, attributes,
             LOGGER.error(msg)
             raise RuntimeError(msg)
         with r.feature_branch(feature_name, push=kwargs.get('push', False)):
-            with r.edit_environment(environment, branch=r.current_branch_name) as env:
-                LOGGER.info("Updating Chef Environment: {}".format(environment))
+            with r.edit_environment(
+                    environment,
+                    branch=r.current_branch_name) as env:
+                LOGGER.info(
+                    (
+                        "Updating Chef Environment: {}"
+                    ).format(environment)
+                )
                 for x, y in attributes.iteritems():
                     LOGGER.info(" => Setting {}={}".format(x, y))
                     set_dotted(env['override_attributes'], x, y)
@@ -408,7 +442,9 @@ class ChefRepo(object):
             self.checkout_and_pull(base_branch)
 
         if feature_branch in self.repo.heads:
-            msg = "Error: feature branch: {0} already exists.".format(feature_branch)
+            msg = (
+                "Error: feature branch: {0} already exists."
+            ).format(feature_branch)
             LOGGER.error(msg)
             raise RuntimeError(msg)
 
