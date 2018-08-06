@@ -79,6 +79,18 @@ def validate_package_name(value):
     return value
 
 
+def validate_pypi_package_name(value):
+    """
+    ensure package names dont cause problems
+    with bad characters
+    """
+    if " " in value:
+        raise ArgumentTypeError(
+            "Package name: {} contains a space ".format(value)
+        )
+    return value
+
+
 def get_plugin(plugin_name):
     """
     _get_plugin_
@@ -158,9 +170,12 @@ def build_parser(argslist):
     )
     init_command.add_argument(
         '--pypi-package-name',
-        help='Name for package on upload to pypi, use if different from package option',
+        help=(
+            'Name for package on upload to pypi, '
+            'use if different from package option'
+        ),
         default=None,
-        type=validate_package_name
+        type=validate_pypi_package_name
     )
     init_command.add_argument(
         '--use-pypirc',

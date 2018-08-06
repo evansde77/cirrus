@@ -11,7 +11,7 @@ import sys
 import json
 import argparse
 import requests
-from configuration import get_github_auth
+from cirrus.configuration import get_github_auth
 
 
 class GitHubHelper(object):
@@ -182,9 +182,9 @@ def main():
     gh = GitHubHelper()
 
     if not (opts.id or opts.branch):
-        print opts.id,  opts.branch
+        print("request id={} branch_name={}".format(opts.id,  opts.branch))
         msg = "Must supply either pull request ID or branch name"
-        print msg
+        print(msg)
         sys.exit(1)
 
     if opts.branch is not None:
