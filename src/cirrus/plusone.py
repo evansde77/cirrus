@@ -11,7 +11,7 @@ import sys
 import json
 import argparse
 import requests
-from configuration import get_github_auth
+from cirrus.configuration import get_github_auth
 
 
 class GitHubHelper(object):
