@@ -21,7 +21,7 @@ import os
 import sys
 
 import pystache
-from cirrus._2to3 import ConfigParser
+from cirrus._2to3 import ConfigParser, to_str
 import pluggage.registry
 
 import cirrus.templates
@@ -505,8 +505,9 @@ def write_gitignore(opts):
     resp.raise_for_status()
     data = resp.content
     gitignore = os.path.join(opts.repo, '.gitignore')
+    content = to_str(data)
     with open(gitignore, 'w') as handle:
-        handle.write(data)
+        handle.write(content)
     return gitignore
 
 
