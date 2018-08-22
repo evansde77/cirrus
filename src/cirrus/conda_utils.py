@@ -61,7 +61,10 @@ def find_conda_setup_script():
 def conda_version():
     """get the installed version of conda, return None if not installed"""
     try:
-        outp = subprocess.check_output(['conda', '-V'])
+        outp = subprocess.check_output(
+            ['conda', '-V'],
+            stderr=subprocess.STDOUT
+        )
     except Exception:
         return None
     outp = to_str(outp)
