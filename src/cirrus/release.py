@@ -548,8 +548,8 @@ def new_release(opts):
         fields = ['major', 'minor', 'micro']
         mask = [opts.major, opts.minor, opts.micro]
         field = [x for x in itertools.compress(fields, mask)][0]
+        curr = current_version
         if opts.skip_existing:
-            curr = current_version
             # skip any existing unmerged branches
             with GitHubContext(repo_dir) as ghc:
                 unmerged = ghc.unmerged_releases(version_only=True)
@@ -567,7 +567,9 @@ def new_release(opts):
                     LOGGER.info(
                         "selected current version as {}".format(curr)
                     )
-            new_version = bump_version_field(curr, field)
+
+        new_version = bump_version_field(curr, field)
+
 
     # release branch
     branch_name = "{0}{1}".format(

@@ -67,6 +67,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.minor = False
         opts.nightly = False
         opts.bump = None
+        opts.skip_existing = False
 
         # should create a new minor release, editing
         # the cirrus config in the test dir
@@ -104,6 +105,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.minor = False
         opts.nightly = True
         opts.bump = None
+        opts.skip_existing = False
 
         # should create a new minor release, editing
         # the cirrus config in the test dir
@@ -136,6 +138,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.major = False
         opts.minor = False
         opts.nightly = False
+        opts.skip_existing = False
         opts.bump = [['womp', '1.2.3'], ['wibble', '3.4.5']]
 
         # should create a new minor release, editing
@@ -170,6 +173,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         opts.minor = False
         opts.nightly = False
         opts.bump = None
+        opts.skip_existing = False
         self.assertRaises(RuntimeError, new_release, opts)
 
 
