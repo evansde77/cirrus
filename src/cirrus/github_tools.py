@@ -557,10 +557,6 @@ class GitHubContext(object):
         return result
 
 
-if __name__ == '__main__':
-    with GitHubContext('/Users/devans/Documents/cirrus') as ghc:
-        print(ghc.unmerged_releases())
-
 def branch_status(branch_name):
     """
     _branch_status_

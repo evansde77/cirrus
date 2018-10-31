@@ -33,6 +33,7 @@ class ReleaseStatusTests(unittest.TestCase):
         self.mock_ghc.commit_on_branches = mock.Mock(return_value=['master', 'remotes/origin/master'])
         self.mock_ghc.merge_base = mock.Mock(return_value="MERGE_COMMIT")
         self.mock_ghc.git_show_commit = mock.Mock(return_value=" this contains release/0.2.3 blah")
+        self.mock_ghc.unmerged_releases = mock.Mock(return_value=['release/UNMERGED'])
 
     def tearDown(self):
         self.patch_ghc.stop()
@@ -40,6 +41,7 @@ class ReleaseStatusTests(unittest.TestCase):
     def test_release_status_on_develop(self):
         """test succesful release status with tag name"""
         self.assertTrue(not release_status('develop'))
+        self.mock_ghc.unmerged_releases.assert_called()
 
     def test_release_status(self):
         """test succesful release status with tag name"""

@@ -33,6 +33,26 @@ def release_status(release):
         master_branch = ghc.config.gitflow_master_name()
         origin_name = ghc.config.gitflow_origin_name()
 
+        if release in (develop_branch, master_branch):
+            unmerged = ghc.unmerged_releases()
+            msg = (
+                "On Develop or Master Branch {}, "
+                "checking for unmerged releases...\n"
+            ).format(release)
+            if unmerged:
+                msg += (
+                    "Found the following unmerged "
+                    "releases:\n {}\n"
+                ).format('\n'.join(unmerged))
+            else:
+                msg += "No unmerged releases found.\n"
+            msg += (
+                "Please checkout a release branch and re run this command"
+                " for more details about a specific release"
+            )
+            LOGGER.info(msg)
+            return False
+
         if not release.startswith(rel_pfix):
             msg = (
                 "Branch {release} doesnt look like a release branch\n"
