@@ -548,6 +548,18 @@ class GitHubContext(object):
         return str(details)
 
 
+    def unmerged_releases(self):
+        develop_branch = self.config.gitflow_branch_name()
+        release_pfix = self.config.gitflow_release_prefix()
+        outp = str(self.repo.git.branch('--no-merged', develop_branch))
+        lines = outp.split()
+        result = [l.strip() for l in lines if l.strip().startswith(release_pfix)]
+        return result
+
+
+if __name__ == '__main__':
+    with GitHubContext('/Users/devans/Documents/cirrus') as ghc:
+        print(ghc.unmerged_releases())
 
 def branch_status(branch_name):
     """

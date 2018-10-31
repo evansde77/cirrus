@@ -37,9 +37,13 @@ class ReleaseStatusTests(unittest.TestCase):
     def tearDown(self):
         self.patch_ghc.stop()
 
+    def test_release_status_on_develop(self):
+        """test succesful release status with tag name"""
+        self.assertTrue(not release_status('develop'))
+
     def test_release_status(self):
         """test succesful release status with tag name"""
-        self.assertTrue(release_status('0.2.3'))
+        self.assertTrue(release_status('release/0.2.3'))
 
     def test_release_status_branch(self):
         """test successful release status with branch name"""
@@ -48,7 +52,7 @@ class ReleaseStatusTests(unittest.TestCase):
     def test_bad_release_tag(self):
         """verify bad tag/release branch"""
         self.mock_ghc.find_release_commit.side_effect = [None, None]
-        self.assertTrue(not release_status('0.2.3'))
+        self.assertTrue(not release_status('release/0.2.3'))
 
     def test_missing_merges(self):
         self.mock_ghc.merge_base.return_value = None

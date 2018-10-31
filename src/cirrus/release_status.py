@@ -5,6 +5,7 @@ _release_status_
 Helper function to determine release status
 
 """
+
 from cirrus.environment import repo_directory
 from cirrus.github_tools import GitHubContext
 from cirrus.logger import get_logger
@@ -31,6 +32,15 @@ def release_status(release):
         develop_branch = ghc.config.gitflow_branch_name()
         master_branch = ghc.config.gitflow_master_name()
         origin_name = ghc.config.gitflow_origin_name()
+
+        if not release.startswith(rel_pfix):
+            msg = (
+                "Branch {release} doesnt look like a release branch\n"
+                "Please checkout the release branch you want to check status of"
+            ).format(release=release)
+            LOGGER.error(msg)
+            return False
+
         if rel_pfix in release:
             release_tag = release.split(rel_pfix)[1]
             release_branch = release

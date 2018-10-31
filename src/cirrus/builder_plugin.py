@@ -9,6 +9,9 @@ for managing virtualenvs of various flavours
 import os
 import re
 import argparse
+import subprocess
+
+from collections import namedtuple
 
 from cirrus.configuration import load_configuration
 from cirrus.environment import repo_directory
@@ -19,9 +22,25 @@ from cirrus.invoke_helpers import local
 
 LOGGER = get_logger()
 
+PythonVersion = namedtuple("PythonVersion", "major minor micro")
 
 CONDA_VERSION_FORMAT = re.compile('^[0-9]{1}\.[0-9]{1}$')
 PYTHON_VERSION_FORMAT = re.compile('^python[0-9]{1}\.[0-9]{1}$')
+PYTHON_VERSION_MATCH = re.compile('Python [0-9]+\.[0-9]+\.[0-9]+')
+
+
+def _parse_python_version(s):
+    """
+    take the output of python -V and return
+    a version namedtuple
+    """
+    x = PYTHON_VERSION_MATCH.match(s.strip())
+    # split on space into Python/version/blah
+    elems = x.string.split()
+    vers = elems[1]
+    # parse version
+    maj, minor, micro = vers.split('.', 2)
+    return PythonVersion(int(maj), int(minor), int(micro))
 
 
 def normalise_version(v):
@@ -103,6 +122,15 @@ class Builder(PluggagePlugin):
                 activate
             )
         )
+
+    def venv_python_version(self):
+        """
+        get the python version from the virtualenv/conda env/pipenv
+        whatever
+        """
+        command = "{} && python -V".format(self.activate())
+        outp = subprocess.getoutput(command)
+        return _parse_python_version(outp)
 
     @property
     def python_bin_for_venv(self):

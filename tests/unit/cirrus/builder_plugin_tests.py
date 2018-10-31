@@ -71,6 +71,30 @@ class BuilderPluginTest(unittest.TestCase):
         self.assertEqual(plug2.python_bin_for_venv, 'python6.7')
         self.assertEqual(plug2.python_bin_for_conda, '6.7')
 
+    @mock.patch('cirrus.builder_plugin.load_configuration')
+    @mock.patch('cirrus.builder_plugin.repo_directory')
+    @mock.patch('cirrus.builder_plugin.local')
+    @mock.patch('cirrus.builder_plugin.subprocess')
+    def test_python_version(self, mock_subp, mock_local, mock_repo_dir, mock_load_conf):
+        mock_conf = mock.Mock()
+        mock_conf.get = mock.Mock(return_value={
+            'build': {'builder': 'conf'},
+            'extra_requirements': ['test-requirements.txt', 'more-reqs.txt'],
+            'python': 'python6.7'
+        })
+        mock_load_conf.return_value = mock_conf
+        mock_repo_dir.return_value = "REPO"
+        mock_subp.getoutput = mock.Mock(return_value="  Python 3.7.1  ")
+        plug = Builder()
+        v = plug.venv_python_version()
+        self.assertEqual(v.major, 3)
+        self.assertEqual(v.minor, 7)
+        self.assertEqual(v.micro, 1)
+        mock_subp.getoutput.return_value = "Python 3.6.4 :: Anaconda, Inc."
+        v = plug.venv_python_version()
+        self.assertEqual(v.major, 3)
+        self.assertEqual(v.minor, 6)
+        self.assertEqual(v.micro, 4)
 
 if __name__ == '__main__':
     unittest.main()
