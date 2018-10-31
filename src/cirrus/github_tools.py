@@ -548,12 +548,14 @@ class GitHubContext(object):
         return str(details)
 
 
-    def unmerged_releases(self):
+    def unmerged_releases(self, version_only=False):
         develop_branch = self.config.gitflow_branch_name()
         release_pfix = self.config.gitflow_release_prefix()
         outp = str(self.repo.git.branch('--no-merged', develop_branch))
         lines = outp.split()
         result = [l.strip() for l in lines if l.strip().startswith(release_pfix)]
+        if version_only:
+            result = [x.replace(release_pfix, '') for x in result]
         return result
 
 

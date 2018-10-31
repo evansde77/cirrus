@@ -472,7 +472,7 @@ def make_new_version(opts):
     if opts.skip_existing:
         # skip any existing unmerged branches
         with GitHubContext(repo_dir) as ghc:
-            unmerged = ghc.unmerged_releases()
+            unmerged = ghc.unmerged_releases(version_only=True)
             if unmerged:
                 LOGGER.info(
                     (
@@ -483,7 +483,7 @@ def make_new_version(opts):
                     )
                 )
                 unmerged.append(current_version)
-                current_version = max_version(unmerged)
+                current_version = max_version(*unmerged)
                 LOGGER.info(
                     "selected current version as {}".format(current_version)
                 )
@@ -532,6 +532,9 @@ def new_release(opts):
     LOGGER.info("Creating new release...")
     config = load_configuration()
     current_version = config.package_version()
+     # need to be on the latest develop
+    repo_dir = repo_directory()
+
     if opts.nightly:
         msg = "creating new nightly release..."
         new_version = rel_utils.new_nightly()
@@ -545,7 +548,26 @@ def new_release(opts):
         fields = ['major', 'minor', 'micro']
         mask = [opts.major, opts.minor, opts.micro]
         field = [x for x in itertools.compress(fields, mask)][0]
-        new_version = bump_version_field(current_version, field)
+        if opts.skip_existing:
+            curr = current_version
+            # skip any existing unmerged branches
+            with GitHubContext(repo_dir) as ghc:
+                unmerged = ghc.unmerged_releases(version_only=True)
+                if unmerged:
+                    LOGGER.info(
+                        (
+                            "Skipping Existing Versions found "
+                            "unmerged_releases: {}"
+                        ).format(
+                            ' '.join(unmerged)
+                        )
+                    )
+                    unmerged.append(current_version)
+                    curr = max_version(*unmerged)
+                    LOGGER.info(
+                        "selected current version as {}".format(curr)
+                    )
+            new_version = bump_version_field(curr, field)
 
     # release branch
     branch_name = "{0}{1}".format(
@@ -554,8 +576,7 @@ def new_release(opts):
     )
     LOGGER.info('release branch is {0}'.format(branch_name))
 
-    # need to be on the latest develop
-    repo_dir = repo_directory()
+
     # make sure the branch doesnt already exist on remote
     if remote_branch_exists(repo_dir, branch_name):
         msg = (

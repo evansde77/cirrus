@@ -42,8 +42,8 @@ def release_status(release):
             if unmerged:
                 msg += (
                     "Found the following unmerged "
-                    "releases:\n {}\n"
-                ).format('\n'.join(unmerged))
+                    "releases:\n{}\n"
+                ).format('\n '.join(unmerged))
             else:
                 msg += "No unmerged releases found.\n"
             msg += (
