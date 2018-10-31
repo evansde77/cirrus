@@ -21,7 +21,7 @@ from cirrus.git_tools import has_unstaged_changes, current_branch
 from cirrus.git_tools import branch, checkout_and_pull
 from cirrus.git_tools import remote_branch_exists
 from cirrus.git_tools import commit_files_optional_push
-from cirrus.github_tools import GitHubContext
+from cirrus.github_tools import GitHubContext, unmerged_releases
 from cirrus.utils import update_file, update_version, max_version
 from cirrus.logger import get_logger
 from cirrus.plugins.jenkins import JenkinsClient
@@ -471,22 +471,21 @@ def make_new_version(opts):
     #
     if opts.skip_existing:
         # skip any existing unmerged branches
-        with GitHubContext(repo_dir) as ghc:
-            unmerged = ghc.unmerged_releases(version_only=True)
-            if unmerged:
-                LOGGER.info(
-                    (
-                        "Skipping Existing Versions found "
-                        "unmerged_releases: {}"
-                    ).format(
-                        ' '.join(unmerged)
-                    )
+        unmerged = unmerged_releases(repo_dir, version_only=True)
+        if unmerged:
+            LOGGER.info(
+                (
+                    "Skipping Existing Versions found "
+                    "unmerged_releases: {}"
+                ).format(
+                    ' '.join(unmerged)
                 )
-                unmerged.append(current_version)
-                current_version = max_version(*unmerged)
-                LOGGER.info(
-                    "selected current version as {}".format(current_version)
-                )
+            )
+            unmerged.append(current_version)
+            current_version = max_version(*unmerged)
+            LOGGER.info(
+                "selected current version as {}".format(current_version)
+            )
 
     new_version = bump_version_field(current_version, field)
     msg = "Bumping version from {prev} to {new} on branch {branch}".format(
@@ -551,22 +550,21 @@ def new_release(opts):
         curr = current_version
         if opts.skip_existing:
             # skip any existing unmerged branches
-            with GitHubContext(repo_dir) as ghc:
-                unmerged = ghc.unmerged_releases(version_only=True)
-                if unmerged:
-                    LOGGER.info(
-                        (
-                            "Skipping Existing Versions found "
-                            "unmerged_releases: {}"
-                        ).format(
-                            ' '.join(unmerged)
-                        )
+            unmerged = unmerged_releases(repo_dir, version_only=True)
+            if unmerged:
+                LOGGER.info(
+                    (
+                        "Skipping Existing Versions found "
+                        "unmerged_releases: {}"
+                    ).format(
+                        ' '.join(unmerged)
                     )
-                    unmerged.append(current_version)
-                    curr = max_version(*unmerged)
-                    LOGGER.info(
-                        "selected current version as {}".format(curr)
-                    )
+                )
+                unmerged.append(current_version)
+                curr = max_version(*unmerged)
+                LOGGER.info(
+                    "selected current version as {}".format(curr)
+                )
 
         new_version = bump_version_field(curr, field)
 
