@@ -10,7 +10,6 @@ import os
 import sys
 import datetime
 import itertools
-from collections import OrderedDict
 from cirrus.invoke_helpers import local
 import pluggage.registry
 
@@ -22,8 +21,8 @@ from cirrus.git_tools import has_unstaged_changes, current_branch
 from cirrus.git_tools import branch, checkout_and_pull
 from cirrus.git_tools import remote_branch_exists
 from cirrus.git_tools import commit_files_optional_push
-from cirrus.github_tools import GitHubContext
-from cirrus.utils import update_file, update_version
+from cirrus.github_tools import GitHubContext, unmerged_releases
+from cirrus.utils import update_file, update_version, max_version
 from cirrus.logger import get_logger
 from cirrus.plugins.jenkins import JenkinsClient
 from cirrus.req_utils import bump_package
@@ -78,6 +77,38 @@ def bump_version_field(version, field='major'):
 
 
 def artifact_name(config):
+    """
+    given cirrus config, build the expected
+    artifact name
+    """
+    artifact_name = "{0}-{1}.tar.gz".format(
+        config.package_name(),
+        config.package_version()
+    )
+    build_artifact = os.path.join(
+        os.getcwd(),
+        'dist',
+        artifact_name
+    )
+    return build_artifact
+
+def egg_artifact_name(config):
+    """
+    given cirrus config, build the expected
+    artifact name
+    """
+    artifact_name = "{0}-{1}.tar.gz".format(
+        config.package_name(),
+        config.package_version()
+    )
+    build_artifact = os.path.join(
+        os.getcwd(),
+        'dist',
+        artifact_name
+    )
+    return build_artifact
+
+def wheel_artifact_name(config):
     """
     given cirrus config, build the expected
     artifact name
@@ -264,6 +295,12 @@ def build_parser(argslist):
         default=False
     )
     new_command.add_argument(
+        '--skip-existing',
+        default=False,
+        action='store_true',
+        help='Increment past any existing, unmerged release branches'
+    )
+    new_command.add_argument(
         '--bump',
         nargs=2,
         action='append',
@@ -429,16 +466,35 @@ def make_new_version(opts):
         LOGGER.error(msg)
         raise RuntimeError(msg)
 
-    # update cirrus conf
-    new_version = bump_version_field(current_version, field)
+    #
+    # compute next version
+    #
+    if opts.skip_existing:
+        # skip any existing unmerged branches
+        unmerged = unmerged_releases(repo_dir, version_only=True)
+        if unmerged:
+            LOGGER.info(
+                (
+                    "Skipping Existing Versions found "
+                    "unmerged_releases: {}"
+                ).format(
+                    ' '.join(unmerged)
+                )
+            )
+            unmerged.append(current_version)
+            current_version = max_version(*unmerged)
+            LOGGER.info(
+                "selected current version as {}".format(current_version)
+            )
 
+    new_version = bump_version_field(current_version, field)
     msg = "Bumping version from {prev} to {new} on branch {branch}".format(
         prev=current_version,
         new=new_version,
         branch=curr_branch
     )
     LOGGER.info(msg)
-
+    # update cirrus conf
     config.update_package_version(new_version)
     changes = ['cirrus.conf']
 
@@ -475,6 +531,9 @@ def new_release(opts):
     LOGGER.info("Creating new release...")
     config = load_configuration()
     current_version = config.package_version()
+     # need to be on the latest develop
+    repo_dir = repo_directory()
+
     if opts.nightly:
         msg = "creating new nightly release..."
         new_version = rel_utils.new_nightly()
@@ -488,7 +547,27 @@ def new_release(opts):
         fields = ['major', 'minor', 'micro']
         mask = [opts.major, opts.minor, opts.micro]
         field = [x for x in itertools.compress(fields, mask)][0]
-        new_version = bump_version_field(current_version, field)
+        curr = current_version
+        if opts.skip_existing:
+            # skip any existing unmerged branches
+            unmerged = unmerged_releases(repo_dir, version_only=True)
+            if unmerged:
+                LOGGER.info(
+                    (
+                        "Skipping Existing Versions found "
+                        "unmerged_releases: {}"
+                    ).format(
+                        ' '.join(unmerged)
+                    )
+                )
+                unmerged.append(current_version)
+                curr = max_version(*unmerged)
+                LOGGER.info(
+                    "selected current version as {}".format(curr)
+                )
+
+        new_version = bump_version_field(curr, field)
+
 
     # release branch
     branch_name = "{0}{1}".format(
@@ -497,8 +576,7 @@ def new_release(opts):
     )
     LOGGER.info('release branch is {0}'.format(branch_name))
 
-    # need to be on the latest develop
-    repo_dir = repo_directory()
+
     # make sure the branch doesnt already exist on remote
     if remote_branch_exists(repo_dir, branch_name):
         msg = (

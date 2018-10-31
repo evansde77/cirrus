@@ -8,6 +8,15 @@ General purpose utils
 import os
 import contextlib
 import codecs
+from distutils.version import StrictVersion
+
+
+def max_version(*versions):
+    """
+    find largest semantic version
+    """
+    max_version = max([StrictVersion(x) for x in versions])
+    return str(max_version)
 
 
 @contextlib.contextmanager
