@@ -194,7 +194,7 @@ def build_parser(argslist):
     init_command.add_argument(
         '--add-gitignore',
         help="Add a git ignore file to the repo",
-        default=False,
+        default=True,
         action='store_true'
     )
     init_command.add_argument(
