@@ -15,7 +15,7 @@ PyChef==0.2.3
 keyring>=8.5.1
 virtualenv-api>=2.1.16
 virtualenv
-twine>=1.9.1
+twine==1.11.0
 pluggage>=0.0.4
 dockerstache>=0.0.14
 requests-toolbelt>=0.8.0
