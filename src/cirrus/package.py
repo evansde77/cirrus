@@ -745,8 +745,9 @@ def bootstrap_repo(opts):
     if not os.path.exists('tox.ini'):
         if opts.python is not None:
             py_vers = opts.python.replace('python', 'py')
+            py_vers = py_vers.replace('.', '')
         else:
-            py_vers = "py{}.{}".format(
+            py_vers = "py{}{}".format(
                 sys.version_info.major,
                 sys.version_info.minor
             )
@@ -756,8 +757,15 @@ def bootstrap_repo(opts):
             if opts.use_pypirc:
                 rcfile = PypircFile()
                 pip_opts = rcfile.pip_options()
-                LOGGER.info("Adding pip options to tox.ini: {}".format(pip_opts))
-                install_comm = "install_command = pip install {} {{opts}} {{packages}}".format(pip_opts)
+                LOGGER.info(
+                    "Adding pip options to tox.ini: {}".format(
+                        pip_opts
+                    )
+                )
+                install_comm = (
+                    "install_command = pip install "
+                    "{} {{opts}} {{packages}}"
+                ).format(pip_opts)
 
             handle.write(
                 TOXFILE.format(
