@@ -1,0 +1,18 @@
+# .bashrc
+
+# User specific aliases and functions
+
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+   . /etc/bashrc
+fi
+
+export PYENV_ROOT="/home/cirrus/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+if command -v pyenv 1>/dev/null 2>&1; then
+  eval "$(pyenv init -)"
+fi

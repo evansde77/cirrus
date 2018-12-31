@@ -1,0 +1,9 @@
+#!/bin/bash 
+
+echo "REPO=${REPO_DIR}"
+echo "COMMAND=${1}"
+
+cd $REPO 
+git cirrus $@
+
+

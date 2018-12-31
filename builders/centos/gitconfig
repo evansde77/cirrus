@@ -1,0 +1,7 @@
+[user]
+	name = cirrus
+	email = cirrus-cli@nope
+[cirrus]
+	builder = VirtualenvPip
+[alias]
+	cirrus = ! /home/cirrus/.cirrus/venv/bin/cirrus
