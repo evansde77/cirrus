@@ -6,7 +6,7 @@ tests for release status module
 import unittest
 import mock
 
-from cirrus.release_status import release_status
+from cirrus.release.status import release_status
 
 
 class ReleaseStatusTests(unittest.TestCase):
@@ -15,7 +15,7 @@ class ReleaseStatusTests(unittest.TestCase):
     """
 
     def setUp(self):
-        self.patch_ghc = mock.patch('cirrus.release_status.GitHubContext')
+        self.patch_ghc = mock.patch('cirrus.release.status.GitHubContext')
         self.mock_ghc = mock.Mock()
         self.mock_ghc_ctor = self.patch_ghc.start()
         mock_ghc_ctx = mock.Mock()

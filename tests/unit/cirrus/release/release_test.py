@@ -8,16 +8,16 @@ import unittest
 import tempfile
 import mock
 
-from cirrus.release import new_release
-from cirrus.release import upload_release
-from cirrus.release import build_release
-from cirrus.release import cleanup_release
-from cirrus.release import artifact_name
+from cirrus.release.new import new_release
+from cirrus.release.upload import upload_release
+from cirrus.release.build import build_release
+from cirrus.release.merge import cleanup_release
+from cirrus.release.utils import artifact_name
 from cirrus.configuration import Configuration
 from cirrus._2to3 import to_str
 from pluggage.errors import FactoryError
 
-from .harnesses import CirrusConfigurationHarness, write_cirrus_conf
+from tests.unit.cirrus.harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
 
 class ReleaseNewCommandTest(unittest.TestCase):
@@ -34,13 +34,13 @@ class ReleaseNewCommandTest(unittest.TestCase):
                 'gitflow': {'develop_branch': 'develop', 'release_branch_prefix': 'release/'},
                 }
             )
-        self.harness = CirrusConfigurationHarness('cirrus.release.load_configuration', self.config)
+        self.harness = CirrusConfigurationHarness('cirrus.release.new.load_configuration', self.config)
         self.harness.setUp()
-        self.harness_utils = CirrusConfigurationHarness('cirrus.release_utils.load_configuration', self.config)
+        self.harness_utils = CirrusConfigurationHarness('cirrus.release.utils.load_configuration', self.config)
         self.harness_utils.setUp()
-        self.patch_pull = mock.patch('cirrus.release.checkout_and_pull')
-        self.patch_branch = mock.patch('cirrus.release.branch')
-        self.patch_commit = mock.patch('cirrus.release.commit_files_optional_push')
+        self.patch_pull = mock.patch('cirrus.release.new.checkout_and_pull')
+        self.patch_branch = mock.patch('cirrus.release.new.branch')
+        self.patch_commit = mock.patch('cirrus.release.new.commit_files_optional_push')
         self.mock_pull = self.patch_pull.start()
         self.mock_branch = self.patch_branch.start()
         self.mock_commit = self.patch_commit.start()
@@ -54,7 +54,7 @@ class ReleaseNewCommandTest(unittest.TestCase):
         if os.path.exists(self.dir):
             os.system('rm -rf {0}'.format(self.dir))
 
-    @mock.patch('cirrus.release.has_unstaged_changes')
+    @mock.patch('cirrus.release.new.has_unstaged_changes')
     def test_new_release(self, mock_unstaged):
         """
         _test_new_release_
@@ -78,16 +78,16 @@ class ReleaseNewCommandTest(unittest.TestCase):
         new_conf.load()
         self.assertEqual(new_conf.package_version(), '1.2.4')
 
-        self.failUnless(self.mock_pull.called)
+        self.assertTrue(self.mock_pull.called)
         self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
-        self.failUnless(self.mock_branch.called)
+        self.assertTrue(self.mock_branch.called)
         self.assertEqual(self.mock_branch.call_args[0][1], 'release/1.2.4')
-        self.failUnless(self.mock_commit.called)
+        self.assertTrue(self.mock_commit.called)
         self.assertEqual(self.mock_commit.call_args[0][2], False)
         self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
 
-    @mock.patch('cirrus.release.has_unstaged_changes')
-    @mock.patch('cirrus.release.unmerged_releases')
+    @mock.patch('cirrus.release.new.has_unstaged_changes')
+    @mock.patch('cirrus.release.new.unmerged_releases')
     def test_new_release_skip_existing(self, mock_unmerged, mock_unstaged):
         """
         _test_new_release_
@@ -112,16 +112,16 @@ class ReleaseNewCommandTest(unittest.TestCase):
         new_conf.load()
         self.assertEqual(new_conf.package_version(), '1.2.5')
 
-        self.failUnless(self.mock_pull.called)
+        self.assertTrue(self.mock_pull.called)
         self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
-        self.failUnless(self.mock_branch.called)
+        self.assertTrue(self.mock_branch.called)
         self.assertEqual(self.mock_branch.call_args[0][1], 'release/1.2.5')
-        self.failUnless(self.mock_commit.called)
+        self.assertTrue(self.mock_commit.called)
         self.assertEqual(self.mock_commit.call_args[0][2], False)
         self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
 
-    @mock.patch('cirrus.release.has_unstaged_changes')
-    @mock.patch('cirrus.release_utils.datetime')
+    @mock.patch('cirrus.release.new.has_unstaged_changes')
+    @mock.patch('cirrus.release.utils.datetime')
     def test_new_nightly_release(self, mock_dt, mock_unstaged):
         """
         _test_new_release_
@@ -150,17 +150,17 @@ class ReleaseNewCommandTest(unittest.TestCase):
         new_conf.load()
         self.assertEqual(new_conf.package_version(), '1.2.3-nightly-TIMESTAMP')
 
-        self.failUnless(self.mock_pull.called)
+        self.assertTrue(self.mock_pull.called)
         self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
-        self.failUnless(self.mock_branch.called)
+        self.assertTrue(self.mock_branch.called)
         self.assertEqual(self.mock_branch.call_args[0][1], 'release/1.2.3-nightly-TIMESTAMP')
-        self.failUnless(self.mock_commit.called)
+        self.assertTrue(self.mock_commit.called)
         self.assertEqual(self.mock_commit.call_args[0][2], False)
         self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
 
 
-    @mock.patch('cirrus.release.has_unstaged_changes')
-    @mock.patch('cirrus.release.bump_package')
+    @mock.patch('cirrus.release.new.has_unstaged_changes')
+    @mock.patch('cirrus.release.new.bump_package')
     def test_new_release_bump(self, mock_bump, mock_unstaged):
         """
         _test_new_release_
@@ -184,17 +184,17 @@ class ReleaseNewCommandTest(unittest.TestCase):
         new_conf.load()
         self.assertEqual(new_conf.package_version(), '1.2.4')
 
-        self.failUnless(self.mock_pull.called)
+        self.assertTrue(self.mock_pull.called)
         self.assertEqual(self.mock_pull.call_args[0][1], 'develop')
-        self.failUnless(self.mock_branch.called)
+        self.assertTrue(self.mock_branch.called)
         self.assertEqual(self.mock_branch.call_args[0][1], 'release/1.2.4')
-        self.failUnless(self.mock_commit.called)
+        self.assertTrue(self.mock_commit.called)
         self.assertEqual(self.mock_commit.call_args[0][2], False)
         self.assertEqual(self.mock_commit.call_args[0][3], 'cirrus.conf')
 
         self.assertEqual(mock_bump.call_count, 2)
 
-    @mock.patch('cirrus.release.has_unstaged_changes')
+    @mock.patch('cirrus.release.new.has_unstaged_changes')
     def test_new_release_unstaged(self, mock_unstaged):
         """
         test new release fails on unstaged changes
@@ -225,9 +225,9 @@ class ReleaseCleanupCommandTest(unittest.TestCase):
                 'gitflow': {'develop_branch': 'develop', 'release_branch_prefix': 'release/'},
                 }
             )
-        self.harness = CirrusConfigurationHarness('cirrus.release.load_configuration', self.config)
+        self.harness = CirrusConfigurationHarness('cirrus.release.merge.load_configuration', self.config)
         self.harness.setUp()
-        self.patch_ghc = mock.patch('cirrus.release.GitHubContext')
+        self.patch_ghc = mock.patch('cirrus.release.merge.GitHubContext')
         self.mock_ghc = self.patch_ghc.start()
         self.mock_ctx = mock.Mock()
         self.mock_instance = mock.Mock()
@@ -250,22 +250,22 @@ class ReleaseCleanupCommandTest(unittest.TestCase):
         opts.version = None
 
         cleanup_release(opts)
-        self.failUnless(self.mock_ghc.called)
-        self.failUnless(self.mock_instance.delete_branch.called)
+        self.assertTrue(self.mock_ghc.called)
+        self.assertTrue(self.mock_instance.delete_branch.called)
         self.mock_instance.delete_branch.assert_has_calls([mock.call('release/1.2.3', True)])
 
         self.mock_instance.reset_mock()
         opts.no_remote = True
         opts.version = '4.5.6'
         cleanup_release(opts)
-        self.failUnless(self.mock_instance.delete_branch.called)
+        self.assertTrue(self.mock_instance.delete_branch.called)
         self.mock_instance.delete_branch.assert_has_calls([mock.call('release/4.5.6', False)])
 
         self.mock_instance.reset_mock()
         opts.no_remote = False
         opts.version = 'release/7.8.9'
         cleanup_release(opts)
-        self.failUnless(self.mock_instance.delete_branch.called)
+        self.assertTrue(self.mock_instance.delete_branch.called)
         self.mock_instance.delete_branch.assert_has_calls([mock.call('release/7.8.9', True)])
 
 
@@ -283,10 +283,10 @@ class ReleaseBuildCommandTest(unittest.TestCase):
                 'gitflow': {'develop_branch': 'develop', 'release_branch_prefix': 'release/'}
             }
             )
-        self.harness = CirrusConfigurationHarness('cirrus.release.load_configuration', self.config)
+        self.harness = CirrusConfigurationHarness('cirrus.release.build.load_configuration', self.config)
         self.harness.setUp()
 
-        self.patch_local =  mock.patch('cirrus.release.local')
+        self.patch_local =  mock.patch('cirrus.release.build.local')
         self.mock_local = self.patch_local.start()
 
     def tearDown(self):
@@ -298,24 +298,28 @@ class ReleaseBuildCommandTest(unittest.TestCase):
         opts = mock.Mock()
         self.assertRaises(RuntimeError, build_release, opts)
 
-    def test_build_command(self):
+    @mock.patch('cirrus.release.build.os')
+    @mock.patch('cirrus.release.utils.os')
+    def test_build_command(self, mock_utils_os, mock_build_os):
         """test calling build, needs os.path.exists mocks since we arent actually building"""
-        with mock.patch('cirrus.release.os') as mock_os:
+        mock_build_os.path = mock.Mock()
+        mock_build_os.path.exists = mock.Mock()
+        mock_build_os.path.exists.return_value = True
 
-            mock_os.path = mock.Mock()
-            mock_os.path.exists = mock.Mock()
-            mock_os.path.exists.return_value = True
-            mock_os.path.join = mock.Mock()
-            mock_os.path.join.return_value = 'build_artifact'
+        mock_utils_os.path = mock.Mock()
+        mock_utils_os.path.exists = mock.Mock()
+        mock_utils_os.path.exists.return_value = True
+        mock_utils_os.path.join = mock.Mock()
+        mock_utils_os.path.join.return_value = 'build_artifact'
 
-            opts = mock.Mock()
-            result = build_release(opts)
-            self.assertEqual(result, 'build_artifact')
-            self.failUnless(mock_os.path.exists.called)
-            self.assertEqual(mock_os.path.exists.call_args[0][0], 'build_artifact')
+        opts = mock.Mock()
+        result = build_release(opts)
+        self.assertEqual(result, 'build_artifact')
+        self.assertTrue(mock_build_os.path.exists.called)
+        self.assertEqual(mock_build_os.path.exists.call_args[0][0], 'build_artifact')
 
-            self.failUnless(self.mock_local.called)
-            self.assertEqual(self.mock_local.call_args[0][0], 'python setup.py sdist')
+        self.assertTrue(self.mock_local.called)
+        self.assertEqual(self.mock_local.call_args[0][0], 'python setup.py sdist')
 
 
 class ReleaseUploadTest(unittest.TestCase):
@@ -335,7 +339,7 @@ class ReleaseUploadTest(unittest.TestCase):
                 }
             }
             )
-        self.harness = CirrusConfigurationHarness('cirrus.release.load_configuration', self.config)
+        self.harness = CirrusConfigurationHarness('cirrus.release.upload.load_configuration', self.config)
         self.harness.setUp()
         self.artifact_name = artifact_name(self.harness.config)
 
@@ -347,8 +351,8 @@ class ReleaseUploadTest(unittest.TestCase):
         opts = mock.Mock()
         self.assertRaises(RuntimeError, upload_release, opts)
 
-    @mock.patch('cirrus.release.os.path.exists')
-    @mock.patch('cirrus.release.get_plugin')
+    @mock.patch('cirrus.release.upload.os.path.exists')
+    @mock.patch('cirrus.release.upload.get_plugin')
     def test_upload_plugin(self, mock_plugin, mock_exists):
         """test call with well behaved plugin"""
         plugin = mock.Mock()
@@ -359,13 +363,13 @@ class ReleaseUploadTest(unittest.TestCase):
         opts.plugin = 'pypi'
         opts.test = False
         upload_release(opts)
-        self.failUnless(plugin.upload.called)
+        self.assertTrue(plugin.upload.called)
         plugin.upload.assert_has_calls(
             [mock.call(opts, self.artifact_name)]
         )
 
-    @mock.patch('cirrus.release.os.path.exists')
-    @mock.patch('cirrus.release.get_plugin')
+    @mock.patch('cirrus.release.upload.os.path.exists')
+    @mock.patch('cirrus.release.upload.get_plugin')
     def test_upload_plugin_test_mode(self, mock_plugin, mock_exists):
         plugin = mock.Mock()
         plugin.upload = mock.Mock()
@@ -375,9 +379,9 @@ class ReleaseUploadTest(unittest.TestCase):
         opts.plugin = 'pypi'
         opts.test = True
         upload_release(opts)
-        self.failUnless(not plugin.upload.called)
+        self.assertTrue(not plugin.upload.called)
 
-    @mock.patch('cirrus.release.os.path.exists')
+    @mock.patch('cirrus.release.upload.os.path.exists')
     def test_upload_bad_plugin(self, mock_exists):
         """test with missing plugin"""
         mock_exists.return_value = True

@@ -1,15 +1,9 @@
-#!/usr/bin/env python
-"""
-_release_status_
-
-Helper function to determine release status
-
-"""
+import sys
 
 from cirrus.environment import repo_directory
+from cirrus.git_tools import current_branch
 from cirrus.github_tools import GitHubContext
 from cirrus.logger import get_logger
-
 
 LOGGER = get_logger()
 
@@ -143,3 +137,14 @@ def release_status(release):
             LOGGER.info(msg)
             result = True
     return result
+
+
+def show_release_status(opts):
+    """check release status"""
+    release = opts.release
+    if release is None:
+        release = current_branch(repo_directory())
+    result = release_status(release)
+    if not result:
+        # unmerged/tagged release => exit as error status
+        sys.exit(1)
