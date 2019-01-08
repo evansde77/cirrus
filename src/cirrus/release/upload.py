@@ -36,3 +36,4 @@ def upload_release(opts):
 
     plugin.upload(opts, build_artifact)
     return
+

@@ -56,14 +56,14 @@ def artifact_name(config):
     given cirrus config, build the expected
     artifact name
     """
-    artifact_name = "{0}-{1}.tar.gz".format(
+    a_name = "{0}-{1}.tar.gz".format(
         config.package_name(),
         config.package_version()
     )
     build_artifact = os.path.join(
         os.getcwd(),
         'dist',
-        artifact_name
+        a_name
     )
     return build_artifact
 
@@ -73,14 +73,14 @@ def egg_artifact_name(config):
     given cirrus config, build the expected
     artifact name
     """
-    artifact_name = "{0}-{1}.tar.gz".format(
+    a_name = "{0}-{1}.tar.gz".format(
         config.package_name(),
         config.package_version()
     )
     build_artifact = os.path.join(
         os.getcwd(),
         'dist',
-        artifact_name
+        a_name
     )
     return build_artifact
 
@@ -90,14 +90,14 @@ def wheel_artifact_name(config):
     given cirrus config, build the expected
     artifact name
     """
-    artifact_name = "{0}-{1}.tar.gz".format(
+    a_name = "{0}-{1}.tar.gz".format(
         config.package_name(),
         config.package_version()
     )
     build_artifact = os.path.join(
         os.getcwd(),
         'dist',
-        artifact_name
+        a_name
     )
     return build_artifact
 
@@ -164,77 +164,77 @@ def release_config(config, opts):
         'update_master_github_context': False
     }
 
-    release_config = {}
+    release_conf = {}
     if 'release' not in config:
-        release_config = release_config_defaults
+        release_conf = release_config_defaults
     else:
         for key, val in release_config_defaults.iteritems():
-            release_config[key] = config.get_param('release', key, val)
+            release_conf[key] = config.get_param('release', key, val)
 
-    release_config['wait_on_ci'] = convert_bool(release_config['wait_on_ci'])
-    release_config['wait_on_ci_develop'] = convert_bool(
-        release_config['wait_on_ci_develop']
+    release_conf['wait_on_ci'] = convert_bool(release_conf['wait_on_ci'])
+    release_conf['wait_on_ci_develop'] = convert_bool(
+        release_conf['wait_on_ci_develop']
     )
-    release_config['wait_on_ci_master'] = convert_bool(
-        release_config['wait_on_ci_master']
+    release_conf['wait_on_ci_master'] = convert_bool(
+        release_conf['wait_on_ci_master']
     )
 
     if opts.wait_on_ci:
-        release_config['wait_on_ci'] = True
+        release_conf['wait_on_ci'] = True
     if opts.github_context_string:
-        release_config['update_github_context'] = True
-        release_config['github_context_string'] = opts.github_context_string
+        release_conf['update_github_context'] = True
+        release_conf['github_context_string'] = opts.github_context_string
 
     if opts.github_develop_context_string:
-        release_config['update_develop_github_context'] = True
-        release_config['github_develop_context_string'] = opts.github_develop_context_string
+        release_conf['update_develop_github_context'] = True
+        release_conf['github_develop_context_string'] = opts.github_develop_context_string
     if opts.github_master_context_string:
-        release_config['update_master_github_context'] = True
-        release_config['github_master_context_string'] = opts.github_master_context_string
+        release_conf['update_master_github_context'] = True
+        release_conf['github_master_context_string'] = opts.github_master_context_string
 
     # validate argument types
-    release_config['wait_on_ci_timeout'] = int(
-        release_config['wait_on_ci_timeout']
+    release_conf['wait_on_ci_timeout'] = int(
+        release_conf['wait_on_ci_timeout']
     )
-    release_config['wait_on_ci_interval'] = int(
-        release_config['wait_on_ci_interval']
+    release_conf['wait_on_ci_interval'] = int(
+        release_conf['wait_on_ci_interval']
     )
-    release_config['update_github_context'] = convert_bool(
-        release_config['update_github_context']
+    release_conf['update_github_context'] = convert_bool(
+        release_conf['update_github_context']
     )
-    release_config['push_retry_attempts'] = int(
-        release_config['push_retry_attempts']
+    release_conf['push_retry_attempts'] = int(
+        release_conf['push_retry_attempts']
     )
-    release_config['push_retry_cooloff'] = int(
-        release_config['push_retry_cooloff']
+    release_conf['push_retry_cooloff'] = int(
+        release_conf['push_retry_cooloff']
     )
 
-    if release_config['update_github_context']:
+    if release_conf['update_github_context']:
         # require context string
-        if release_config['github_context_string'] is None:
+        if release_conf['github_context_string'] is None:
             msg = "if using update_github_context you must provide a github_context_string"
             raise RuntimeError(msg)
-        release_config['github_context_string'] = parse_to_list(
-            release_config['github_context_string']
+        release_conf['github_context_string'] = parse_to_list(
+            release_conf['github_context_string']
         )
-    if release_config['update_develop_github_context']:
+    if release_conf['update_develop_github_context']:
         # require context string
-        # if release_config['github_develop_context_string'] is None:
-        if release_config['github_develop_context_string'] is None:
+        # if release_conf['github_develop_context_string'] is None:
+        if release_conf['github_develop_context_string'] is None:
             msg = "if using update_develop_github_context you must provide a github_context_string"
             raise RuntimeError(msg)
-        release_config['github_develop_context_string'] = parse_to_list(
-            release_config['github_develop_context_string']
+        release_conf['github_develop_context_string'] = parse_to_list(
+            release_conf['github_develop_context_string']
         )
-    if release_config['update_master_github_context']:
+    if release_conf['update_master_github_context']:
         # require context string
-        if release_config['github_master_context_string'] is None:
+        if release_conf['github_master_context_string'] is None:
             msg = "if using update_master_github_context you must provide a github_master_context_string"
             raise RuntimeError(msg)
-        release_config['github_master_context_string'] = parse_to_list(
-            release_config['github_master_context_string']
+        release_conf['github_master_context_string'] = parse_to_list(
+            release_conf['github_master_context_string']
         )
-    return release_config
+    return release_conf
 
 
 DEFAULT_FORMAT = "%Y%m%d"
