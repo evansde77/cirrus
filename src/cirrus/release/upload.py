@@ -16,7 +16,7 @@ def upload_release(opts):
 
     build_artifact = artifact_name(config)
     LOGGER.info("Uploading artifact: {0}".format(build_artifact))
-
+    print(os.path.exists)
     if not os.path.exists(build_artifact):
         msg = (
             "Expected build artifact: {0} Not Found, upload aborted\n"

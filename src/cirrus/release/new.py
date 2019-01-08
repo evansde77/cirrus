@@ -242,7 +242,6 @@ def trigger_release(opts):
     job = default
     """
     config = load_configuration()
-
     try:
         build_server = config['build-server']['name']
         build_server_config = config[build_server]

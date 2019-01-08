@@ -30,17 +30,15 @@ class UploadTests(unittest.TestCase):
         mock_opts.plugin = "PLUGIN"
         mock_opts.test = False
         with mock.patch("cirrus.release.upload.os.path.exists") as mock_exists:
-            mock_exists(return_value=True)
+            mock_exists.return_value = True
             upload_release(mock_opts)
             self.assertTrue(self.mock_get_plugin.called)
             self.assertTrue(self.mock_plugin.upload.called)
 
     def test_upload_no_artifact(self):
         mock_opts = mock.Mock()
-        mock_opts.plugin = "PLUGIN"
-        mock_opts.test = False
         with mock.patch("cirrus.release.upload.os.path.exists") as mock_exists:
-            mock_exists(return_value=False)
+            mock_exists.return_value = False
             self.assertRaises(RuntimeError, upload_release, mock_opts)
 
 

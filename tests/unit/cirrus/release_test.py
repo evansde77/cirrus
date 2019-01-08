@@ -17,7 +17,7 @@ from cirrus.configuration import Configuration
 from cirrus._2to3 import to_str
 from pluggage.errors import FactoryError
 
-from tests.unit.cirrus.harnesses import CirrusConfigurationHarness, write_cirrus_conf
+from .harnesses import CirrusConfigurationHarness, write_cirrus_conf
 
 
 class ReleaseNewCommandTest(unittest.TestCase):
@@ -320,75 +320,6 @@ class ReleaseBuildCommandTest(unittest.TestCase):
 
         self.assertTrue(self.mock_local.called)
         self.assertEqual(self.mock_local.call_args[0][0], 'python setup.py sdist')
-
-
-class ReleaseUploadTest(unittest.TestCase):
-    """unittest coverage for upload command using plugins"""
-    def setUp(self):
-        self.dir = tempfile.mkdtemp()
-        self.config = os.path.join(self.dir, 'cirrus.conf')
-        write_cirrus_conf(self.config,
-            **{
-                'package' :{'name': 'cirrus_unittest', 'version': '1.2.3'},
-                'github': {'develop_branch': 'develop', 'release_branch_prefix': 'release/'},
-                'pypi': {
-                    'pypi_upload_path': '/opt/pypi',
-                    'pypi_url': 'pypi.cloudant.com',
-                    'pypi_username': 'steve',
-                    'pypi_ssh_key': 'steves_creds'
-                }
-            }
-            )
-        self.harness = CirrusConfigurationHarness('cirrus.release.upload.load_configuration', self.config)
-        self.harness.setUp()
-        self.artifact_name = artifact_name(self.harness.config)
-
-    def tearDown(self):
-        self.harness.tearDown()
-
-    def test_missing_build_artifact(self):
-        """test throws if build artifact not found"""
-        opts = mock.Mock()
-        self.assertRaises(RuntimeError, upload_release, opts)
-
-    @mock.patch('cirrus.release.upload.os.path.exists')
-    @mock.patch('cirrus.release.upload.get_plugin')
-    def test_upload_plugin(self, mock_plugin, mock_exists):
-        """test call with well behaved plugin"""
-        plugin = mock.Mock()
-        plugin.upload = mock.Mock()
-        mock_exists.return_value = True
-        mock_plugin.return_value = plugin
-        opts = mock.Mock()
-        opts.plugin = 'pypi'
-        opts.test = False
-        upload_release(opts)
-        self.assertTrue(plugin.upload.called)
-        plugin.upload.assert_has_calls(
-            [mock.call(opts, self.artifact_name)]
-        )
-
-    @mock.patch('cirrus.release.upload.os.path.exists')
-    @mock.patch('cirrus.release.upload.get_plugin')
-    def test_upload_plugin_test_mode(self, mock_plugin, mock_exists):
-        plugin = mock.Mock()
-        plugin.upload = mock.Mock()
-        mock_exists.return_value = True
-        mock_plugin.return_value = plugin
-        opts = mock.Mock()
-        opts.plugin = 'pypi'
-        opts.test = True
-        upload_release(opts)
-        self.assertTrue(not plugin.upload.called)
-
-    @mock.patch('cirrus.release.upload.os.path.exists')
-    def test_upload_bad_plugin(self, mock_exists):
-        """test with missing plugin"""
-        mock_exists.return_value = True
-        opts = mock.Mock()
-        opts.plugin = 'womp'
-        opts.test = True
-        self.assertRaises(FactoryError, upload_release, opts)
 
 
 

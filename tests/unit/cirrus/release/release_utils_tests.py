@@ -5,6 +5,7 @@ import mock
 import cirrus.release.utils as rutils
 from cirrus.configuration import Configuration
 
+
 class ReleaseUtilsTest(unittest.TestCase):
     """test cases for release utils"""
 
