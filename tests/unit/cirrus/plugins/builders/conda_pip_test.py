@@ -164,10 +164,11 @@ class CondaPipBuilderTest(unittest.TestCase):
         plugin.create()
         mock_local.assert_has_calls([
             mock.call('conda create -y -m -p REPO/venv pip virtualenv'),
+            mock.call('source activate REPO/venv && conda install REPO/venv -f conda-requirements.txt'),
             mock.call('PIP_COMMAND'),
             mock.call('PIP_COMMAND'),
-            mock.call('PIP_COMMAND'),
-            mock.call('source activate REPO/venv && conda install REPO/venv -f conda-requirements.txt')
+            mock.call('PIP_COMMAND')
+
         ])
 
     @mock.patch('cirrus.builder_plugin.load_configuration')
