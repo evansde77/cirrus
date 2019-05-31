@@ -62,6 +62,28 @@ class CondaPip(Builder):
             LOGGER.info("Bootstrapping conda env: {0}".format(self.venv_path))
             local(venv_command)
 
+        if extra_conda:
+            for conda_file in extra_conda:
+                cmd = "{activate} && conda install {venv} -f {file}".format(
+                    activate=self.activate(),
+                    venv=self.venv_path,
+                    file=conda_file
+                )
+                LOGGER.info("Installing extra conda reqs: {}".format(conda_file))
+                try:
+                    local(cmd)
+                except OSError as ex:
+                    msg = (
+                        "Error running conda install extras command during build\n"
+                        "Error was {0}\n"
+                        "Running command: {1}\n"
+                        "Working Dir: {2}\n"
+                        "Conda env: {3}\n"
+                        "Extra Conda Requirements: {4}\n"
+                    ).format(ex, cmd, self.working_dir, self.venv_path, conda_file)
+                    LOGGER.error(msg)
+                    raise
+
         cmd = build_pip_command(
             self.config,
             self.venv_path,
@@ -100,28 +122,6 @@ class CondaPip(Builder):
                 ).format(req, ex)
                 LOGGER.error(msg)
                 raise
-
-        if extra_conda:
-            for conda_file in extra_conda:
-                cmd = "{activate} && conda install {venv} -f {file}".format(
-                    activate=self.activate(),
-                    venv=self.venv_path,
-                    file=conda_file
-                )
-                LOGGER.info("Installing extra conda reqs: {}".format(conda_file))
-                try:
-                    local(cmd)
-                except OSError as ex:
-                    msg = (
-                        "Error running conda install extras command during build\n"
-                        "Error was {0}\n"
-                        "Running command: {1}\n"
-                        "Working Dir: {2}\n"
-                        "Conda env: {3}\n"
-                        "Extra Conda Requirements: {4}\n"
-                    ).format(ex, cmd, self.working_dir, self.venv_path, conda_file)
-                    LOGGER.error(msg)
-                    raise
 
         # setup for development
         if nosetupdevelop:
