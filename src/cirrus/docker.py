@@ -88,6 +88,7 @@ class BuildOptionHelper(OptionHelper):
         self['defaults'] = config.get_param('docker', 'dockerstache_defaults', None)
         self['build_arg'] = {}
         self['no_cache'] = config.get_param('docker', 'no_cache', None)
+        self['pull'] = config.get_param('docker', 'pull', None)
         if cli_opts.docker_repo:
             self['docker_repo'] = cli_opts.docker_repo
         if cli_opts.directory:
@@ -98,6 +99,8 @@ class BuildOptionHelper(OptionHelper):
             self['build_arg'].update(cli_opts.build_arg)
         if cli_opts.no_cache:
             self['no_cache'] = True
+        if cli_opts.pull:
+            self['pull'] = True
 
 
 class StoreDictKeyPair(Action):
@@ -177,6 +180,12 @@ def build_parser():
         action='store_true'
     )
     build_command.add_argument(
+        '--pull',
+        help='Dont use cached base docker image for build, re-pull base image from docker-registry',
+        default=False,
+        action='store_true'
+    )
+    build_command.add_argument(
         '--local-test',
         help=(
             'install latest dist tarball from ./dist into container '
@@ -223,6 +232,8 @@ def _docker_build(path, tags, base_tag, build_helper):
     command = ['docker', 'build'] + _build_tag_opts(tags)
     if build_helper['no_cache']:
         command.append('--no-cache')
+    if build_helper['pull']:
+        command.append('--pull')
     if build_helper['build_arg']:
         for k, v in build_helper['build_arg'].items():
             command.extend(["--build-arg", "{}={}".format(k, v)])
