@@ -39,6 +39,7 @@ class DockerFunctionTests(unittest.TestCase):
         self.opts.dockerstache_defaults = None
         self.opts.docker_repo = None
         self.opts.no_cache = False
+        self.opts.pull = False
         self.opts.build_arg = {}
         self.opts.local_test = False
 
@@ -133,6 +134,26 @@ class DockerFunctionTests(unittest.TestCase):
                     '-t', 'unittesting/unittesting:latest',
                     '-t', 'unittesting/unittesting:1.2.3',
                     '--no-cache',
+                    '--build-arg', 'OPTION1=VALUE1',
+                    'vm/docker_image'],
+                stderr=mock.ANY,
+                stdout=mock.ANY
+            )
+        )
+
+    def test_docker_build_pull(self):
+        """test straight docker build call with --pull"""
+        self.opts.build_arg = {"OPTION1": "VALUE1"}
+        self.opts.pull = True
+        dckr.docker_build(self.opts, self.config)
+        self.failUnless(self.mock_popen.wait.called)
+        self.mock_popen.assert_has_calls(
+            mock.call(
+                [
+                    'docker', 'build',
+                    '-t', 'unittesting/unittesting:latest',
+                    '-t', 'unittesting/unittesting:1.2.3',
+                    '--pull',
                     '--build-arg', 'OPTION1=VALUE1',
                     'vm/docker_image'],
                 stderr=mock.ANY,
