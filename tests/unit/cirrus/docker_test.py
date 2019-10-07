@@ -82,6 +82,24 @@ class DockerFunctionTests(unittest.TestCase):
             )
         )
 
+    def test_docker_build_package_pfix(self):
+        """test straight docker build call"""
+        self.config['docker']['package_prefix'] = 'PACKAGE'
+        dckr.docker_build(self.opts, self.config)
+        self.failUnless(self.mock_popen.wait.called)
+        self.mock_popen.assert_has_calls(
+            mock.call(
+                [
+                    'docker', 'build', '-t',
+                    'unittesting/PACKAGE/unittesting:latest', '-t',
+                    'unittesting/PACKAGE/unittesting:1.2.3',
+                    'vm/docker_image'
+                ],
+                stderr=mock.ANY,
+                stdout=mock.ANY
+            )
+        )
+
     def test_docker_build_args(self):
         """test straight docker build call"""
         self.opts.build_arg = {"OPTION1": "VALUE1"}

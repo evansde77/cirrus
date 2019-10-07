@@ -1,5 +1,5 @@
 argparse
-arrow>=0.4.2
+arrow>=0.4.2,<0.15.0
 invoke
 GitPython>=2.1.8
 mock==1.0.1
