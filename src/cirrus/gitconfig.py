@@ -14,12 +14,16 @@ from cirrus._2to3 import to_str
 
 @contextlib.contextmanager
 def gitconfig(filename="~/.gitconfig"):
+    if os.environ.get('CIRRUS_GITCONFIG') is not None:
+        filename = os.environ['CIRRUS_GITCONFIG']
     c = GitConfig(filename=filename)
     c.parse()
     yield c
 
 
 def load_gitconfig(filename="~/.gitconfig"):
+    if os.environ.get('CIRRUS_GITCONFIG') is not None:
+        filename = os.environ['CIRRUS_GITCONFIG']
     c = GitConfig(filename=filename)
     c.parse()
     return c
