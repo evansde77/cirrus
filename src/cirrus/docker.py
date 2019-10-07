@@ -377,8 +377,12 @@ def tag_base(config):
     docker_repo = config.get_param('docker', 'repo', None)
     if docker_repo is None:
         docker_repo = config.organisation_name()
-    return "{}/{}".format(docker_repo, pname)
-
+    docker_pkg_pfix = config.get_param('docker', 'package_prefix', None)
+    if docker_pkg_pfix is None:
+        tag = "{}/{}".format(docker_repo, pname)
+    else:
+        tag = "{}/{}/{}".format(docker_repo, docker_pkg_pfix, pname)
+    return tag
 
 def tag_name(config):
     """
