@@ -191,7 +191,7 @@ def release_config(config, opts):
     if 'release' not in config:
         release_config = release_config_defaults
     else:
-        for key, val in release_config_defaults.iteritems():
+        for key, val in release_config_defaults.items():
             release_config[key] = config.get_param('release', key, val)
 
     release_config['wait_on_ci'] = convert_bool(release_config['wait_on_ci'])
