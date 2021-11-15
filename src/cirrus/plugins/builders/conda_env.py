@@ -62,7 +62,7 @@ class CondaEnv(Builder):
         if environment is None:
             environment = self.build_config.get('conda-environment', None)
         if environment is None:
-            msg = "No conda environment yaml specified in cirrus.conf [build] section or via --environment option"
+            msg = "No conda-environment yaml specified in cirrus.conf [build] section or via --environment option"
             LOGGER.error(msg)
             raise RuntimeError(msg)
         clean = kwargs.get('clean', False)
