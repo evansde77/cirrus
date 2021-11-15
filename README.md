@@ -21,6 +21,7 @@ Installation as a user:
 =======================
 
 ```bash
+pip install virtualenv 
 curl -O https://raw.githubusercontent.com/evansde77/cirrus/develop/installer.sh
 bash installer.sh
 ```

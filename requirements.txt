@@ -17,6 +17,6 @@ virtualenv-api>=2.1.16
 virtualenv
 twine==1.11.0
 pluggage>=0.0.4
-dockerstache>=0.0.14
+dockerstache>=0.0.17
 requests-toolbelt>=0.8.0
 tox>=2.7.0
