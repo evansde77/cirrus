@@ -20,6 +20,14 @@ class CondaPip(Builder):
             help='conda binary to use if different from default conda',
             default='conda'
         )
+        self.plugin_parser.add_argument(
+            '--conda-requirements',
+            nargs="+",
+            default=[],
+            dest='conda_requirements',
+            help="Extra conda requirements to conda install post env creation"
+        )
+
 
     def create(self, **kwargs):
         python_bin = kwargs.get("python")
@@ -29,6 +37,14 @@ class CondaPip(Builder):
         conda = kwargs.get('conda', self.conda_bin)
         upgrade = kwargs.get('upgrade', False)
         nosetupdevelop = kwargs.get('nosetupdevelop', False)
+        upgrade = kwargs.get('upgrade', False)
+
+        extra_conda = self.build_config.get('conda_requirements')
+        if extra_conda:
+            extra_conda = self.str_to_list(extra_conda)
+        if kwargs.get('conda-requirements'):
+            extra_conda = [kwargs['conda-requirements']]
+
         clean = kwargs.get('clean', False)
         if clean:
             self.clean(**kwargs)
@@ -45,6 +61,28 @@ class CondaPip(Builder):
         if not os.path.exists(self.venv_path):
             LOGGER.info("Bootstrapping conda env: {0}".format(self.venv_path))
             local(venv_command)
+
+        if extra_conda:
+            for conda_file in extra_conda:
+                cmd = "{activate} && conda install {venv} -f {file}".format(
+                    activate=self.activate(),
+                    venv=self.venv_path,
+                    file=conda_file
+                )
+                LOGGER.info("Installing extra conda reqs: {}".format(conda_file))
+                try:
+                    local(cmd)
+                except OSError as ex:
+                    msg = (
+                        "Error running conda install extras command during build\n"
+                        "Error was {0}\n"
+                        "Running command: {1}\n"
+                        "Working Dir: {2}\n"
+                        "Conda env: {3}\n"
+                        "Extra Conda Requirements: {4}\n"
+                    ).format(ex, cmd, self.working_dir, self.venv_path, conda_file)
+                    LOGGER.error(msg)
+                    raise
 
         cmd = build_pip_command(
             self.config,
@@ -84,6 +122,7 @@ class CondaPip(Builder):
                 ).format(req, ex)
                 LOGGER.error(msg)
                 raise
+
         # setup for development
         if nosetupdevelop:
             msg = "skipping python setup.py develop..."
